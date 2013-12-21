@@ -1,5 +1,4 @@
-﻿using Stacks.Executors;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -9,6 +8,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions;
+
+using Stacks.Executors;
+using Stacks.Server;
 
 namespace Stacks.Tests
 {

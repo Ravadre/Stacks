@@ -15,10 +15,13 @@ namespace Stacks.Executors
 
         public Task Completion { get { return tcs.Task; } }
 
+#pragma warning disable 67
         public event Action<Exception> Error;
+#pragma warning restore 67
 
         public CapturedContextExecutor(string name, SynchronizationContext context)
         {
+            Error = null;
             this.name = name;
             this.context = context;
             tcs = new TaskCompletionSource<int>();

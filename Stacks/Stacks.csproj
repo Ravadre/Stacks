@@ -53,7 +53,7 @@
     <Compile Include="Executors\ActionContextExecutorSettings.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
-    <Compile Include="SocketServer.cs" />
+    <Compile Include="Server\SocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

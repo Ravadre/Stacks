@@ -9,7 +9,7 @@ using System.Threading;
 using NLog;
 using Stacks.Executors;
 
-namespace Stacks
+namespace Stacks.Server
 {
     public class SocketServer
     {
