@@ -9,10 +9,12 @@ using System.Threading;
 using NLog;
 using Stacks.Executors;
 
-namespace Stacks.Server
+namespace Stacks
 {
     public class SocketServer
     {
+        private static readonly Logger log = LogManager.GetCurrentClassLogger();
+
         private Socket socket;
         private SocketAsyncEventArgs acceptArgs;
 
@@ -22,7 +24,7 @@ namespace Stacks.Server
 
         public event Action Started;
         public event Action Stopped;
-        public event Action<Socket> Connected;
+        public event Action<SocketClient> Connected;
 
         private IExecutor executor;
 
@@ -82,34 +84,42 @@ namespace Stacks.Server
                 {
                     case SocketError.ConnectionAborted:
                         {
-                            Console.WriteLine("Server stopped");
+                            log.Info("Server stopped");
                             OnStopped();
                             break;
                         }
                     case SocketError.Success:
                         {
-                            OnConnected(e.AcceptSocket);
+                            var sc = CreateSocketClient(e.AcceptSocket);
+                            OnConnected(sc);
+
                             StartAccepting();
                             break;
                         }
                     case SocketError.ConnectionReset:
                         {
-                            Console.WriteLine("Potential half-open SYN scan occured");
+                            log.Warn("Potential half-open SYN scan occured");
                             StartAccepting();
                             break;
                         }
                     default:
                         {
-                            OnStopped();
+                            log.Error("Error occured while connecting new client: " + e.SocketError);
+                            StartAccepting();
                             break;
                         }
                 }
             }
             catch (Exception exc)
             {
-                Console.WriteLine("Exception occured in SocketAccepted. Exc: " + exc);
+                log.Error("Exception occured in SocketAccepted. Exc: " + exc);
                 OnStopped();
             }
+        }
+
+        private SocketClient CreateSocketClient(Socket socket)
+        {
+            return new SocketClient(this.executor, socket);
         }
 
         private void OnStarted()
@@ -130,7 +140,7 @@ namespace Stacks.Server
             }
         }
 
-        private void OnConnected(Socket client)
+        private void OnConnected(SocketClient client)
         {
             var h = Connected;
             if (h != null)

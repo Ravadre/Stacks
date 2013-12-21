@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions;
 
+using Stacks;
 using Stacks.Executors;
-using Stacks.Server;
 
 namespace Stacks.Tests
 {
