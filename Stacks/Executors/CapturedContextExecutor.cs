@@ -1,0 +1,64 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Stacks.Executors
+{
+    public class CapturedContextExecutor : SynchronizationContext, IExecutor
+    {
+        private string name;
+        private SynchronizationContext context;
+        private TaskCompletionSource<int> tcs;
+
+        public Task Completion { get { return tcs.Task; } }
+
+        public event Action<Exception> Error;
+
+        public CapturedContextExecutor(string name, SynchronizationContext context)
+        {
+            this.name = name;
+            this.context = context;
+            tcs = new TaskCompletionSource<int>();
+        }
+
+        public void Enqueue(Action action)
+        {
+            context.Post(_ => action(), null);
+        }
+
+        public Task Stop()
+        {
+            tcs.SetResult(0);
+            return tcs.Task;
+        }
+
+        public SynchronizationContext Context
+        {
+            get { return context; }
+        }
+
+        public override SynchronizationContext CreateCopy()
+        {
+            return context.CreateCopy();
+        }
+
+        public override void Post(SendOrPostCallback d, object state)
+        {
+            context.Post(d, state);
+        }
+
+        public override void Send(SendOrPostCallback d, object state)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override string ToString()
+        {
+            return "CapturedContext Executor" +
+                (name == null ? "" : string.Format("({0})", name));
+        }
+    }
+}

@@ -17,7 +17,7 @@ namespace Stacks.Executors
 
         public event Action<Exception> Error;
 
-        public ActionBlockExecutor(string name, ActorContextSettings settings)
+        public ActionBlockExecutor(string name, ActionContextExecutorSettings settings)
         {
             this.name = name;
             this.queue = new ActionBlock<Action>(a =>

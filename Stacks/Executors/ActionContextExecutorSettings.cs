@@ -7,20 +7,20 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Stacks.Executors
 {
-    public class ActorContextSettings
+    public class ActionContextExecutorSettings
     {
         public int QueueBoundedCapacity { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
 
-        public ActorContextSettings()
+        public ActionContextExecutorSettings()
         {
             QueueBoundedCapacity = DataflowBlockOptions.Unbounded;
             MaxDegreeOfParallelism = 1;
         }
 
-        private static ActorContextSettings @default = new ActorContextSettings();
+        private static ActionContextExecutorSettings @default = new ActionContextExecutorSettings();
 
-        public static ActorContextSettings Default
+        public static ActionContextExecutorSettings Default
         {
             get { return @default; }
         }

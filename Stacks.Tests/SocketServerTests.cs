@@ -21,7 +21,7 @@ namespace Stacks.Tests
 
         protected SocketServer CreateServer()
         {
-            return new SocketServer(new ActionBlockExecutor("", new ActorContextSettings()),
+            return new SocketServer(new ActionBlockExecutor("", new ActionContextExecutorSettings()),
                                     new IPEndPoint(IPAddress.Any, 0));
         }
 
@@ -73,7 +73,7 @@ namespace Stacks.Tests
             {
                 var errOccured = new ManualResetEventSlim();
 
-                var exec = new ActionBlockExecutor("", new ActorContextSettings());
+                var exec = new ActionBlockExecutor(null, new ActionContextExecutorSettings());
                 var server = CreateServer(exec);
 
                 exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };

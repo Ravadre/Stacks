@@ -46,8 +46,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actors\ActorContext.cs" />
+    <Compile Include="Actors\IActorContext.cs" />
     <Compile Include="Executors\ActionBlockExecutor.cs" />
-    <Compile Include="Executors\ActionBlockExecutorSettings.cs" />
+    <Compile Include="Executors\ActionContextExecutorSettings.cs" />
+    <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
     <Compile Include="SocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
