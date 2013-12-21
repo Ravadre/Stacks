@@ -46,6 +46,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\IActorContext.cs" />
     <Compile Include="Executors\ActionBlockExecutor.cs" />
