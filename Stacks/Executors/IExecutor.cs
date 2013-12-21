@@ -9,6 +9,8 @@ namespace Stacks.Executors
 {
     public interface IExecutor
     {
+        event Action<Exception> Error;
+
         void Enqueue(Action action);
 
         Task Stop();

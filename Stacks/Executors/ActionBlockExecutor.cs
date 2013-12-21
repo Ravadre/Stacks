@@ -15,6 +15,8 @@ namespace Stacks.Executors
 
         public Task Completion { get { return queue.Completion; } }
 
+        public event Action<Exception> Error;
+
         public ActionBlockExecutor(string name, ActorContextSettings settings)
         {
             this.name = name;
@@ -26,8 +28,9 @@ namespace Stacks.Executors
                 {
                     a();
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    ErrorOccured(e);
                 }
                 finally
                 {
@@ -38,6 +41,22 @@ namespace Stacks.Executors
                 BoundedCapacity = settings.QueueBoundedCapacity,
                 MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism
             });
+        }
+
+        private void ErrorOccured(Exception e)
+        {
+            OnError(e);
+            this.queue.Complete();
+        }
+
+        private void OnError(Exception e)
+        {
+            var h = Error;
+            if (h != null)
+            {
+                try { h(e); }
+                catch { }
+            }
         }
 
         public void Enqueue(Action action)

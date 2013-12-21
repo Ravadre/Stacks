@@ -7,6 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using NLog;
+using Stacks.Executors;
 
 namespace Stacks
 {
@@ -23,10 +24,14 @@ namespace Stacks
         public event Action Stopped;
         public event Action<Socket> Connected;
 
+        private IExecutor executor;
+
         private int hasStarted;
 
-        public SocketServer(IPEndPoint bindEndPoint)
+        public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {
+            this.executor = executor;
+
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
@@ -111,9 +116,8 @@ namespace Stacks
         {
             var h = Started;
             if (h != null)
-            { 
-                try { h(); }
-                catch { };
+            {
+                executor.Enqueue(h);
             }
         }
 
@@ -122,8 +126,7 @@ namespace Stacks
             var h = Stopped;
             if (h != null)
             {
-                try { h(); }
-                catch { };
+                executor.Enqueue(h);
             }
         }
 
@@ -132,8 +135,7 @@ namespace Stacks
             var h = Connected;
             if (h != null)
             {
-                try { h(client); }
-                catch { };
+                executor.Enqueue(() => h(client));
             }
         }
     }

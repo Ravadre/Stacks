@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Stacks.Executors;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -13,9 +14,15 @@ namespace Stacks.Tests
 {
     public class SocketServerTests
     {
+        protected SocketServer CreateServer(IExecutor executor)
+        {
+            return new SocketServer(executor, new IPEndPoint(IPAddress.Any, 0));
+        }
+
         protected SocketServer CreateServer()
         {
-            return new SocketServer(new IPEndPoint(IPAddress.Any, 0));
+            return new SocketServer(new ActionBlockExecutor("", new ActorContextSettings()),
+                                    new IPEndPoint(IPAddress.Any, 0));
         }
 
         public class Starting_and_stopping : SocketServerTests
@@ -59,6 +66,25 @@ namespace Stacks.Tests
 
                 started.AssertWaitFor(2000);
                 stopped.AssertWaitFor(2000);
+            }
+
+            [Fact]
+            public void When_exception_is_thrown_inside_callback_executor_should_signal_error()
+            {
+                var errOccured = new ManualResetEventSlim();
+
+                var exec = new ActionBlockExecutor("", new ActorContextSettings());
+                var server = CreateServer(exec);
+
+                exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };
+                server.Started += () => { throw new Exception("abcdef"); };
+
+                server.Start();
+
+                errOccured.AssertWaitFor(2000);
+
+                server.Stop();
+                
             }
         }
     }
