@@ -51,9 +51,8 @@ namespace Stacks
             this.bindEndPoint = (IPEndPoint)this.socket.LocalEndPoint;
             this.socket.Listen(10);
             
-            OnStarted();
-
             StartAccepting();
+            OnStarted();
         }
 
         public void Stop()
@@ -71,6 +70,7 @@ namespace Stacks
 
         private void StartAccepting()
         {
+            this.acceptArgs.AcceptSocket = null;
             bool isPending = this.socket.AcceptAsync(this.acceptArgs);
             if (!isPending)
                 SocketAccepted(this, this.acceptArgs);

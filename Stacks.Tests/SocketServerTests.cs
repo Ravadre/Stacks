@@ -16,23 +16,13 @@ namespace Stacks.Tests
 {
     public class SocketServerTests
     {
-        protected SocketServer CreateServer(IExecutor executor)
-        {
-            return new SocketServer(executor, new IPEndPoint(IPAddress.Any, 0));
-        }
-
-        protected SocketServer CreateServer()
-        {
-            return new SocketServer(new ActionBlockExecutor("", new ActionContextExecutorSettings()),
-                                    new IPEndPoint(IPAddress.Any, 0));
-        }
-
+       
         public class Starting_and_stopping : SocketServerTests
         {
             [Fact]
             public void Starting_two_times_should_throw()
             {
-                var server = CreateServer();
+                var server = ServerHelpers.CreateServer();
                 server.Start();
 
                 Assert.Throws(typeof(InvalidOperationException), () =>
@@ -45,12 +35,14 @@ namespace Stacks.Tests
             public void Starting_should_call_started_callback()
             {
                 var started = new ManualResetEventSlim();
-                var server = CreateServer();
+                var server = ServerHelpers.CreateServer();
 
                 server.Started += () => { started.Set(); };
                 server.Start();
 
                 started.AssertWaitFor(2000);
+
+                server.StopAndAssertStopped();
             }
 
             [Fact]
@@ -58,7 +50,7 @@ namespace Stacks.Tests
             {
                 var started = new ManualResetEventSlim();
                 var stopped = new ManualResetEventSlim();
-                var server = CreateServer();
+                var server = ServerHelpers.CreateServer();
 
                 server.Started += () => { started.Set(); };
                 server.Stopped += () => { stopped.Set(); };
@@ -76,7 +68,7 @@ namespace Stacks.Tests
                 var errOccured = new ManualResetEventSlim();
 
                 var exec = new ActionBlockExecutor(null, new ActionContextExecutorSettings());
-                var server = CreateServer(exec);
+                var server = ServerHelpers.CreateServer(exec);
 
                 exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };
                 server.Started += () => { throw new Exception("abcdef"); };
@@ -85,7 +77,7 @@ namespace Stacks.Tests
 
                 errOccured.AssertWaitFor(2000);
 
-                server.Stop();
+                server.StopAndAssertStopped();
                 
             }
         }

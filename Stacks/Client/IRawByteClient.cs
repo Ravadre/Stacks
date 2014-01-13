@@ -9,6 +9,8 @@ namespace Stacks
     public interface IRawByteClient
     {
         event Action<ArraySegment<byte>> Received;
+        event Action Sent;
+        event Action<Exception> Disconnected;
 
         void Send(byte[] buffer);
         void Send(ArraySegment<byte> buffer);
