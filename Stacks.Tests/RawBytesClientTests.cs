@@ -62,5 +62,19 @@ namespace Stacks.Tests
 
             server.StopAndAssertStopped();
         }
+
+        [Fact]
+        public void Send_packets_should_be_received()
+        {
+            SocketServer server;
+            SocketClient c1, c2;
+            var buffer = DataHelpers.CreateRandomBuffer(204800);
+
+            ServerHelpers.CreateServerAndConnectedClient(out server, out c1, out c2);
+
+            var recvBuffer = c2.ReceiveData(204800, 1000, () => c1.Send(buffer));
+
+            Assert.Equal(buffer, recvBuffer);
+        }
     }
 }

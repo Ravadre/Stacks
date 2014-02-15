@@ -45,6 +45,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataHelpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RawBytesClientTests.cs" />
     <Compile Include="SocketServerTests.cs" />

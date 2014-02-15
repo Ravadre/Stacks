@@ -1,6 +1,7 @@
 ﻿using Stacks.Executors;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -87,6 +88,46 @@ namespace Stacks.Tests
             };
             server.Stop();
             stopped.AssertWaitFor(3000);
+        }
+    }
+
+    public static class SocketClientExtensions
+    {
+        public static byte[] ReceiveData(this SocketClient client, int totalExpectedBytes, int timeout,
+            Action sendAction)
+        {
+            var ev = new ManualResetEventSlim();
+            var buffer = new List<byte>();
+
+            client.Received += bs =>
+                {
+                    lock (buffer)
+                    {
+                        buffer.AddRange(bs);
+                    }
+                };
+
+            sendAction();
+            
+            var sw = Stopwatch.StartNew();
+            while(true)
+            {
+                lock(buffer)
+                {
+                    if (buffer.Count == totalExpectedBytes)
+                        break;
+                }
+
+                Thread.Sleep(1000);
+
+                if (sw.ElapsedMilliseconds > timeout)
+                    throw new TimeoutException();
+            }
+
+            lock(buffer)
+            {
+                return buffer.ToArray();
+            }
         }
     }
 }
