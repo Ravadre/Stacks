@@ -205,8 +205,7 @@ namespace Stacks
 
         public void Send(ArraySegment<byte> buffer)
         {
-            if (buffer.Array == null)
-                throw new ArgumentNullException("buffer.Array");
+            Ensure.IsNotNull(buffer.Array, "buffer.Array");
 
             executor.Enqueue(() =>
                 {

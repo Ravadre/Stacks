@@ -20,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -28,6 +29,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="NLog">
@@ -49,8 +51,11 @@
     <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\IActorContext.cs" />
+    <Compile Include="Client\FramedClient.cs" />
+    <Compile Include="Client\FramedClientBuffer.cs" />
     <Compile Include="Client\IRawByteClient.cs" />
     <Compile Include="Client\SocketClient.cs" />
+    <Compile Include="Ensure.cs" />
     <Compile Include="Executors\ActionBlockExecutor.cs" />
     <Compile Include="Executors\ActionContextExecutorSettings.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
