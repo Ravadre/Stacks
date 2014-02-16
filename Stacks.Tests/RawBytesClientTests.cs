@@ -72,9 +72,10 @@ namespace Stacks.Tests
 
             ServerHelpers.CreateServerAndConnectedClient(out server, out c1, out c2);
 
-            var recvBuffer = c2.ReceiveData(204800, 1000, () => c1.Send(buffer));
+            var recvBuffer = c2.ReceiveData(204800, 2000, () => c1.Send(buffer));
 
             Assert.Equal(buffer, recvBuffer);
         }
+
     }
 }

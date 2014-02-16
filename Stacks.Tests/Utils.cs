@@ -118,7 +118,7 @@ namespace Stacks.Tests
                         break;
                 }
 
-                Thread.Sleep(1000);
+                Thread.Sleep(50);
 
                 if (sw.ElapsedMilliseconds > timeout)
                     throw new TimeoutException();

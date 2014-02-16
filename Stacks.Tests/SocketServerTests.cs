@@ -77,7 +77,7 @@ namespace Stacks.Tests
 
                 errOccured.AssertWaitFor(2000);
 
-                server.StopAndAssertStopped();
+                server.Stop();
                 
             }
         }
