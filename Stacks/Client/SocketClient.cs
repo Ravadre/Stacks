@@ -214,7 +214,6 @@ namespace Stacks
 
                     if (!isSending)
                     {
-                        isSending = true;
                         StartSending();
                     }
                 });
@@ -243,6 +242,8 @@ namespace Stacks
 
                 if (!isPending)
                     DataSent(this, sendArgs);
+                else
+                    isSending = true;
             }
             catch (Exception exc)
             {
@@ -264,8 +265,6 @@ namespace Stacks
                 if (e.SocketError == SocketError.Success)
                 {
                     int transferred = e.BytesTransferred;
-
-                    log.Trace("Send transferred: " + transferred);
 
                     OnDataSent();
                 }
