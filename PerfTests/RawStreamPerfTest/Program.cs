@@ -24,10 +24,10 @@ namespace RawStreamPerfTest
             c2.Disconnected += exn => { Console.WriteLine("C2 d/c " + exn); };
             
             Measure(8192, 8192);
-           // Console.ReadLine();
-            Measure(1, 8192 * 8192 / 16);
+            Console.ReadLine();
+            Measure(8192, 8192 * 16);
 
-           // Console.ReadLine();
+            Console.ReadLine();
         }
 
         private static void Measure(int bufSize, int packets)
@@ -48,8 +48,11 @@ namespace RawStreamPerfTest
                     totalRecv += bs.Count;
                     if (totalRecv == l * bufSize) received.Set();
                 };
+            Action sent = () => Console.WriteLine("Sent ");
 
+            c1.Sent += sent;
             c2.Received += recv;
+           
 
             for (int i = 0; i < l; ++i)
             {
@@ -60,13 +63,14 @@ namespace RawStreamPerfTest
 
             c2.Received -= recv;
 
-            var elapsed = sw.ElapsedMilliseconds;
+            var elapsed = sw.Elapsed.TotalSeconds;
             GC.Collect();
             Console.WriteLine("Gen 0: " + GC.CollectionCount(0) +
                 ", Gen 1: " + GC.CollectionCount(1) + ", Gen 2: " +
                 GC.CollectionCount(2));
 
-            Console.WriteLine("Elapsed ms: " + elapsed);
+            Console.WriteLine("Elapsed s: " + elapsed);
+            Console.WriteLine("Rate: " + (double)totalRecv * 8 / elapsed / 1024 / 1024 + " Mb/sec");
         }
     }
 }
