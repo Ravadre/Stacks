@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Stacks.Client
+{
+    interface IFramedClient
+    {
+        event Action<Exception> Disconnected;
+        event Action Sent;
+        event Action<ArraySegment<byte>> Received;
+
+        void SendPacket(byte[] packet);
+        void SendPacket(ArraySegment<byte> packet);
+        void SendPacket(FramedClientBuffer packet);
+        FramedClientBuffer PreparePacketBuffer(int packetBytes);
+    }
+}
