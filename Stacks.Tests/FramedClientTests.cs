@@ -12,21 +12,21 @@ namespace Stacks.Tests
 {
     public class FramedClienTests
     {
-        public class Receive
+        public class Base
         {
-            Mock<IRawByteClient> rawClient;
+            protected Mock<IRawByteClient> rawClient;
 
-            public Receive()
+            public Base()
             {
                 rawClient = new Mock<IRawByteClient>();
             }
 
-            private ArraySegment<byte> CreateBuffer(params byte[] bs)
+            protected ArraySegment<byte> CreateBuffer(params byte[] bs)
             {
                 return new ArraySegment<byte>(bs);
             }
 
-            private ArraySegment<byte> CreateBufferInt(params int[] ints)
+            protected ArraySegment<byte> CreateBufferInt(params int[] ints)
             {
                 var bs = new byte[ints.Length * 4];
                 Buffer.BlockCopy(ints, 0, bs, 0, bs.Length);
@@ -34,7 +34,7 @@ namespace Stacks.Tests
                 return new ArraySegment<byte>(bs);
             }
 
-            private IEnumerable<ArraySegment<byte>> Split(
+            protected IEnumerable<ArraySegment<byte>> Split(
                 ArraySegment<byte> bs, params int[] offsets)
             {
                 var xs = new List<ArraySegment<byte>>();
@@ -54,21 +54,21 @@ namespace Stacks.Tests
                 return xs;
             }
 
-            private int ToInt(ArraySegment<byte> bs, int byteOffset)
+            protected int ToInt(ArraySegment<byte> bs, int byteOffset)
             {
                 return BitConverter.ToInt32(bs.Array, bs.Offset + byteOffset);
             }
 
-            private void ReceiveBytesAndAssertPacket(Action<ArraySegment<byte>> recvAsserts,
+            protected void ReceiveBytesAndAssertPacket(Action<ArraySegment<byte>> recvAsserts,
                 ArraySegment<byte> recvBytes)
             {
                 bool called = false;
                 var c = new FramedClient(rawClient.Object);
                 c.Received += bs =>
-                    {
-                        called = true;
-                        recvAsserts(bs);
-                    };
+                {
+                    called = true;
+                    recvAsserts(bs);
+                };
 
                 rawClient.Raise(r => r.Received += null,
                     recvBytes);
@@ -76,14 +76,14 @@ namespace Stacks.Tests
                 Assert.True(called);
             }
 
-            private void ReceiveBytesAndAssertPackets(Action<int, ArraySegment<byte>> recvAsserts,
+            protected void ReceiveBytesAndAssertPackets(Action<int, ArraySegment<byte>> recvAsserts,
                 ArraySegment<byte> recvBytes)
             {
                 ReceiveBytesSegmentsAndAssertPackets(recvAsserts,
                     new[] { recvBytes });
             }
 
-            private void ReceiveBytesSegmentsAndAssertPackets(Action<int, ArraySegment<byte>> recvAsserts,
+            protected void ReceiveBytesSegmentsAndAssertPackets(Action<int, ArraySegment<byte>> recvAsserts,
                 IEnumerable<ArraySegment<byte>> recvBytes)
             {
                 int idx = 0;
@@ -99,7 +99,10 @@ namespace Stacks.Tests
                         recv);
                 }
             }
+        }
 
+        public class Receive : Base
+        {
             [Fact]
             public void When_full_packet_is_received_it_should_be_processed()
             {
@@ -177,6 +180,45 @@ namespace Stacks.Tests
                     });
 
                 Assert.Equal(3, calls);
+            }
+        }
+
+        public class Send : Base
+        {
+            [Fact]
+            public void Sending_packet_with_byte_array_should_call_raw_client_with_header_appended()
+            {
+                var c = new FramedClient(rawClient.Object);
+
+                c.SendPacket(new byte[] { 1, 2, 3 });
+
+                rawClient.Verify(r => r.Send(new byte[] { 7, 0, 0, 0, 1, 2, 3 }));
+            }
+
+            [Fact]
+            public void Sending_packet_with_array_segment_should_call_raw_client_with_header_appended()
+            {
+                var c = new FramedClient(rawClient.Object);
+
+                c.SendPacket(new ArraySegment<byte>(new byte[] { 0, 0, 5, 0, 0, 0, 54, 1, 2, 3 }, 6, 1));
+
+                rawClient.Verify(r => r.Send(new byte[] { 5, 0, 0, 0, 54 }));
+            }
+
+            [Fact]
+            public void Sending_preformatted_packet_should_not_add_additional_header()
+            {
+                var c = new FramedClient(rawClient.Object);
+                var data = new byte[] { 1, 2, 3, 4, 5, 6, 7 };
+
+                var buffer = c.PreparePacketBuffer(7);
+                Buffer.BlockCopy(data, 0, buffer.Packet.Array, buffer.Packet.Offset, data.Length);
+                
+                c.SendPacket(buffer);
+
+                rawClient.Verify(r => r.Send(new byte[] { 11, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7 }));
+                Assert.Equal(11, buffer.Packet.Array.Length);
+                Assert.Equal(7, buffer.Packet.Count);
             }
         }
     }
