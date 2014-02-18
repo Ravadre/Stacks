@@ -9,6 +9,7 @@ namespace Stacks.Client
     public class FramedClient
     {
         private IRawByteClient client;
+        private ResizableCyclicBuffer recvBuffer;
 
         public event Action<Exception> Disconnected
         {
@@ -27,13 +28,19 @@ namespace Stacks.Client
         public FramedClient(IRawByteClient client)
         {
             this.client = client;
+            this.recvBuffer = new ResizableCyclicBuffer(4096);
 
             this.client.Received += ClientReceivedData;
         }
 
         private void ClientReceivedData(ArraySegment<byte> data)
         {
-            
+            recvBuffer.AddData(data);
+
+            foreach (var packet in recvBuffer.GetPackets())
+            {
+                OnReceived(packet);
+            }
         }
 
         public void SendPacket(byte[] packet)

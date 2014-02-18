@@ -12,6 +12,7 @@ namespace Stacks.Client
         internal byte[] InternalBuffer { get { return Packet.Array; } }
 
         public FramedClientBuffer(int packetLength)
+            : this()
         {
             var intBuffer = new byte[packetLength + 4];
             PrepareHeader(intBuffer, packetLength + 4);
