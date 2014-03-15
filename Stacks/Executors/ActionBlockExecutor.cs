@@ -22,25 +22,30 @@ namespace Stacks.Executors
             this.name = name;
             this.queue = new ActionBlock<Action>(a =>
             {
-                var oldCtx = SynchronizationContext.Current;
-                SynchronizationContext.SetSynchronizationContext(this);
-                try
-                {
-                    a();
-                }
-                catch (Exception e)
-                {
-                    ErrorOccured(e);
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(oldCtx);
-                }
+                ExecuteAction(a);
             }, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = settings.QueueBoundedCapacity,
                 MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism
             });
+        }
+
+        private void ExecuteAction(Action a)
+        {
+            var oldCtx = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(this);
+            try
+            {
+                a();
+            }
+            catch (Exception e)
+            {
+                ErrorOccured(e);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(oldCtx);
+            }
         }
 
         private void ErrorOccured(Exception e)
@@ -63,7 +68,7 @@ namespace Stacks.Executors
         {
             if (!queue.Post(action))
                 queue.SendAsync(action).Wait();
-        }
+       }
 
         public Task Stop()
         {
