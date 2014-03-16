@@ -167,15 +167,15 @@ namespace Stacks.Tests
                         Assert.Equal(idx * 5, ToInt(bs, 4));
                     }, new[]
                     {
-                        CreateBuffer(8, 0, 0, 0,
-                                     0, 0, 0, 0,
+                        CreateBuffer(8,  0, 0, 0,
+                                     0,  0, 0, 0,
                                      16, 0, 0),
-                        CreateBuffer(         0,
-                                     5, 0, 0, 0, 
-                                     1, 2, 3, 4, 
-                                     5, 6, 7, 8,
+                        CreateBuffer(          0,
+                                     5,  0, 0, 0, 
+                                     1,  2, 3, 4, 
+                                     5,  6, 7, 8,
                                      8),
-                        CreateBuffer(   0, 0, 0, 
+                        CreateBuffer(    0, 0, 0, 
                                      15, 0, 0, 0)
                     });
 
@@ -213,7 +213,7 @@ namespace Stacks.Tests
 
                 var buffer = c.PreparePacketBuffer(7);
                 Buffer.BlockCopy(data, 0, buffer.Packet.Array, buffer.Packet.Offset, data.Length);
-                
+
                 c.SendPacket(buffer);
 
                 rawClient.Verify(r => r.Send(new byte[] { 11, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7 }));

@@ -72,7 +72,7 @@ namespace Stacks.Tests
 
                 exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };
                 server.Started += () => { throw new Exception("abcdef"); };
-
+                
                 server.Start();
 
                 errOccured.AssertWaitFor(2000);

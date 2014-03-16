@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Client
 {
-    public class FramedClient
+    public class FramedClient : IFramedClient
     {
         private IRawByteClient client;
         private ResizableCyclicBuffer recvBuffer;
@@ -19,8 +19,8 @@ namespace Stacks.Client
 
         public event Action Sent
         {
-            add { this.Sent += value; }
-            remove { this.Sent -= value; }
+            add { this.client.Sent += value; }
+            remove { this.client.Sent -= value; }
         }
 
         public event Action<ArraySegment<byte>> Received;
