@@ -10,7 +10,7 @@ using Stacks.Client;
 
 namespace Stacks.Tests
 {
-    public class FramedClienTests
+    public class FramedClientTests
     {
         public class Base
         {

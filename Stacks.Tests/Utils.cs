@@ -130,4 +130,22 @@ namespace Stacks.Tests
             }
         }
     }
+
+    public static class ArraySegmentExtensions
+    {
+        public static string ToBinaryString(this ArraySegment<byte> bytes)
+        {
+            var sb = new StringBuilder();
+
+            foreach (var b in bytes)
+            {
+                sb.AppendFormat("{0:X2} ", b);
+            }
+
+            if (sb.Length > 0)
+                sb.Length--;
+
+            return sb.ToString();
+        }
+    }
 }
