@@ -75,10 +75,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataHelpers.cs" />
-    <Compile Include="FramedClientTests.cs" />
-    <Compile Include="MessageClientTests.cs" />
+    <Compile Include="Client\FramedClientTests.cs" />
+    <Compile Include="Client\MessageClientTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RawBytesClientTests.cs" />
+    <Compile Include="Client\RawBytesClientTests.cs" />
     <Compile Include="Serialization\MessagePackSerializerTests.cs" />
     <Compile Include="SocketServerTests.cs" />
     <Compile Include="Utils.cs" />
