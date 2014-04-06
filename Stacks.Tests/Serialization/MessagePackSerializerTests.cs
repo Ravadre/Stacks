@@ -86,6 +86,24 @@ namespace Stacks.Tests.Serialization
                 m.Verify(x => x.HandleTestData4(It.IsAny<TestData3>()), Times.Never());
                 m.Verify(x => x.HandleTestData5(It.IsAny<TestData3>()), Times.Never());
             }
+
+            [Fact]
+            public void Throw_exception_when_trying_to_deserialize_packet_without_handler()
+            {
+                var test = CreateSampleTestData();
+                var obj = CreateSerializedObject(test);
+
+                var m = new Mock<TestDataHandler>();
+                m.Setup(s => s.HandleTestData(It.IsAny<TestData>())).Callback((TestData data) => { });
+
+                var serializer = new MessagePackStacksSerializer(m.Object);
+
+                Assert.Throws(typeof(InvalidOperationException),
+                    () =>
+                    {
+                        serializer.Deserialize(4, obj);
+                    });
+            }
         }
 
 

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Serializers
 {
-    public interface  IStacksSerializer
+    public interface IStacksSerializer
     {
         void Deserialize(int typeCode, MemoryStream ms);
         void Serialize<T>(T obj, MemoryStream ms);
