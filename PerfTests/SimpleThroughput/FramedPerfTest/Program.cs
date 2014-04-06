@@ -40,6 +40,7 @@ namespace RawStreamPerfTest
             var buffer = DataHelpers.CreateRandomBuffer(bufSize);
             long l = packets;
             long totalRecv = 0;
+            long totalPacketsRecv = 0;
             var received = new ManualResetEventSlim();
 
             GC.Collect();
@@ -51,6 +52,7 @@ namespace RawStreamPerfTest
             Action<ArraySegment<byte>> recv = bs =>
             {
                 totalRecv += bs.Count;
+                ++totalPacketsRecv;
                 if (totalRecv == l * (bufSize + 4)) received.Set();
             };
             Action<int> sent = (t) => Console.WriteLine("Sent ");
@@ -75,6 +77,7 @@ namespace RawStreamPerfTest
 
             Console.WriteLine("Elapsed s: " + elapsed);
             Console.WriteLine("Rate: " + (double)totalRecv * 8 / elapsed / 1024 / 1024 + " Mb/sec");
+            Console.WriteLine("Sent {0} packets. Received: {1}", packets, totalPacketsRecv);
         }
     }
 }
