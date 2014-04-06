@@ -17,6 +17,11 @@ namespace Stacks.Tests
             if (!ev.Wait(timeout))
                 throw new TimeoutException();
         }
+
+        public static void AssertWaitFor(this ManualResetEventSlim ev)
+        {
+            ev.AssertWaitFor(5000);
+        }
     }
 
     public static class ServerHelpers
@@ -52,7 +57,7 @@ namespace Stacks.Tests
             s.Connected += c =>
             {
                 sClient = c;
-                connected1.Set();
+                connected2.Set();
             };
 
             s.Started += () =>
@@ -61,7 +66,7 @@ namespace Stacks.Tests
                 c.Connected += () =>
                 {
                     lClient = c;
-                    connected2.Set();
+                    connected1.Set();
                 };
                 c.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
             };

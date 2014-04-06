@@ -95,6 +95,12 @@ namespace Stacks
                     InitialiseConnectedSocket();
 
                     OnConnected();
+
+                    StartReceiving();
+                }
+                else
+                {
+                    HandleDisconnection(new SocketException((int)e.SocketError));
                 }
             }
             catch (Exception exc)
@@ -153,7 +159,7 @@ namespace Stacks
                     if (transferred == 0)
                     {
                         //Graceful disconnection
-                        HandleDisconnection(null);
+                        HandleDisconnection(new SocketException((int)SocketError.Disconnecting));
 
                         return;
                     }
@@ -282,6 +288,10 @@ namespace Stacks
             StartSending();
         }
 
+        public void Close()
+        {
+            SafeCloseSocket();
+        }
 
         private void OnDataReceived()
         {
@@ -301,8 +311,15 @@ namespace Stacks
             if (disconnectionNotified)
                 return;
             disconnectionNotified = true;
-
-            log.Info("Client disconnected. " + exc.Message);
+            
+            if (exc != null)
+            {
+                log.Info("Client disconnected. " + exc.Message);
+            }
+            else
+            {
+                log.Info("Client disconnected (gracefully).");
+            }
 
             SafeCloseSocket();
             OnDisconnected(exc);
@@ -340,5 +357,6 @@ namespace Stacks
                 catch { }
             }
         }
+
     }
 }

@@ -48,6 +48,7 @@ namespace Stacks
             VerifyFirstStart();
 
             this.socket.Bind(this.bindEndPoint);
+            this.socket.LingerState = new LingerOption(false, 0);
             this.bindEndPoint = (IPEndPoint)this.socket.LocalEndPoint;
             this.socket.Listen(10);
             

@@ -14,5 +14,7 @@ namespace Stacks
 
         void Send(byte[] buffer);
         void Send(ArraySegment<byte> buffer);
+
+        void Close();
     }
 }
