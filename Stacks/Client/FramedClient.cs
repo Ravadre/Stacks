@@ -17,7 +17,7 @@ namespace Stacks.Client
             remove { this.client.Disconnected -= value; }
         }
 
-        public event Action Sent
+        public event Action<int> Sent
         {
             add { this.client.Sent += value; }
             remove { this.client.Sent -= value; }

@@ -9,7 +9,7 @@ namespace Stacks.Client
     interface IFramedClient
     {
         event Action<Exception> Disconnected;
-        event Action Sent;
+        event Action<int> Sent;
         event Action<ArraySegment<byte>> Received;
 
         void SendPacket(byte[] packet);

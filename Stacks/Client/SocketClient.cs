@@ -38,7 +38,7 @@ namespace Stacks
         public event Action Connected;
         public event Action<Exception> Disconnected;
         public event Action<ArraySegment<byte>> Received;
-        public event Action Sent;
+        public event Action<int> Sent;
 
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
@@ -271,7 +271,7 @@ namespace Stacks
                 {
                     int transferred = e.BytesTransferred;
 
-                    OnDataSent();
+                    OnDataSent(transferred);
                 }
                 else
                 {
@@ -336,13 +336,13 @@ namespace Stacks
             }
         }
 
-        private void OnDataSent()
+        private void OnDataSent(int transferred)
         {
             var h = Sent;
 
             if (h != null)
             {
-                try { h(); }
+                try { h(transferred); }
                 catch { }
             }
         }

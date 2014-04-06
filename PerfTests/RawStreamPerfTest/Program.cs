@@ -48,7 +48,7 @@ namespace RawStreamPerfTest
                     totalRecv += bs.Count;
                     if (totalRecv == l * bufSize) received.Set();
                 };
-            Action sent = () => Console.WriteLine("Sent ");
+            Action<int> sent = (t) => Console.WriteLine("Sent ");
 
             c1.Sent += sent;
             c2.Received += recv;
