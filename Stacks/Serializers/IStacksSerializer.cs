@@ -11,5 +11,7 @@ namespace Stacks.Serializers
     {
         void Deserialize(int typeCode, MemoryStream ms);
         void Serialize<T>(T obj, MemoryStream ms);
+
+        void PrepareSerializerForType<T>();
     }
 }

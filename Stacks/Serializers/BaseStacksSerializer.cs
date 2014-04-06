@@ -26,6 +26,8 @@ namespace Stacks.Serializers
 
         protected virtual void Initialize() { }
         
+        public virtual void PrepareSerializerForType<T>() { }
+        
         public abstract void Serialize<T>(T obj, MemoryStream ms);
 
         public void Deserialize(int typeCode, MemoryStream ms)
