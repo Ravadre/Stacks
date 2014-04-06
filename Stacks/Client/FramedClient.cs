@@ -68,6 +68,11 @@ namespace Stacks.Client
             return new FramedClientBuffer(packetBytes);
         }
 
+        public void Close()
+        {
+            this.client.Close();
+        }
+
         private void OnReceived(ArraySegment<byte> data)
         {
             var h = Received;

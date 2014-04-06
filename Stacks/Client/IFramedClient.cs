@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Client
 {
-    interface IFramedClient
+    public interface IFramedClient
     {
         event Action<Exception> Disconnected;
         event Action<int> Sent;
@@ -16,5 +16,7 @@ namespace Stacks.Client
         void SendPacket(ArraySegment<byte> packet);
         void SendPacket(FramedClientBuffer packet);
         FramedClientBuffer PreparePacketBuffer(int packetBytes);
+
+        void Close();
     }
 }
