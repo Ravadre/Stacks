@@ -69,11 +69,11 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Stacks.Tests\Stacks.Tests.csproj">
+    <ProjectReference Include="..\..\..\Stacks.Tests\Stacks.Tests.csproj">
       <Project>{d7d92dbf-9a29-4a86-ada7-d60be73e7cb2}</Project>
       <Name>Stacks.Tests</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Stacks\Stacks.csproj">
+    <ProjectReference Include="..\..\..\Stacks\Stacks.csproj">
       <Project>{9e0d5c52-ad78-4a5e-82ad-289d272a111d}</Project>
       <Name>Stacks</Name>
     </ProjectReference>

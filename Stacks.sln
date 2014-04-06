@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30110.0
+VisualStudioVersion = 12.0.30324.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks", "Stacks\Stacks.csproj", "{9E0D5C52-AD78-4A5E-82AD-289D272A111D}"
 EndProject
@@ -17,9 +17,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{6FF9EC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PerfTests", "PerfTests", "{1E638865-0E75-4443-9BD2-130751C33DEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RawStreamPerfTest", "PerfTests\RawStreamPerfTest\RawStreamPerfTest.csproj", "{C47406E4-A196-456A-91AD-5B86DB5F44E8}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Actors", "PerfTests\Actors\Actors.csproj", "{7FC0E05A-0E60-4788-B015-1071B104447F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SimpleThroughput", "SimpleThroughput", "{2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RawStreamPerfTest", "PerfTests\SimpleThroughput\RawStreamPerfTest\RawStreamPerfTest.csproj", "{C47406E4-A196-456A-91AD-5B86DB5F44E8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -45,14 +47,6 @@ Global
 		{D7D92DBF-9A29-4A86-ADA7-D60BE73E7CB2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D7D92DBF-9A29-4A86-ADA7-D60BE73E7CB2}.Release|x64.ActiveCfg = Release|x64
 		{D7D92DBF-9A29-4A86-ADA7-D60BE73E7CB2}.Release|x64.Build.0 = Release|x64
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|x64.ActiveCfg = Debug|x64
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|x64.Build.0 = Debug|x64
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|x64.ActiveCfg = Release|x64
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|x64.Build.0 = Release|x64
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Debug|x64.ActiveCfg = Debug|x64
@@ -61,12 +55,21 @@ Global
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Release|x64.ActiveCfg = Release|x64
 		{7FC0E05A-0E60-4788-B015-1071B104447F}.Release|x64.Build.0 = Release|x64
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|x64.ActiveCfg = Debug|x64
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Debug|x64.Build.0 = Debug|x64
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|x64.ActiveCfg = Release|x64
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{C47406E4-A196-456A-91AD-5B86DB5F44E8} = {1E638865-0E75-4443-9BD2-130751C33DEF}
 		{7FC0E05A-0E60-4788-B015-1071B104447F} = {1E638865-0E75-4443-9BD2-130751C33DEF}
+		{2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC} = {1E638865-0E75-4443-9BD2-130751C33DEF}
+		{C47406E4-A196-456A-91AD-5B86DB5F44E8} = {2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC}
 	EndGlobalSection
 EndGlobal

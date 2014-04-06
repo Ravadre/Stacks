@@ -9,6 +9,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
+
+//TODO: Refactor those and messagepack tests to share some code base
 namespace Stacks.Tests.Serialization
 {
     public class ProtoBufSerializerTests
