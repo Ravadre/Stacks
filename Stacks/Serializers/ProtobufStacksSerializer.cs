@@ -9,9 +9,9 @@ using ProtoBuf;
 
 namespace Stacks.Serializers
 {
-    public class ProtobufStacksSerializer : BaseStacksSerializer
+    public class ProtoBufStacksSerializer : BaseStacksSerializer
     { 
-        public ProtobufStacksSerializer(IMessageHandler messageHandler)
+        public ProtoBufStacksSerializer(IMessageHandler messageHandler)
             : base(messageHandler)
         {
             
