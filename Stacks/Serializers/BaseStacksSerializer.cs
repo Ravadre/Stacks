@@ -95,6 +95,12 @@ namespace Stacks.Serializers
                                          .GetMethod("CreateLambda", BindingFlags.Instance | BindingFlags.NonPublic)
                                          .MakeGenericMethod(type);
 
+            this.GetType()
+                .GetMethod("PrepareSerializerForType")
+                .MakeGenericMethod(type)
+                .Invoke(this, Type.EmptyTypes);
+                    
+
             return (Action<MemoryStream>)createLambdaMethod.Invoke(this, new[] { mi });
         }
 
