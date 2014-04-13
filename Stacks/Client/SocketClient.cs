@@ -13,7 +13,7 @@ using NLog;
 
 namespace Stacks
 {
-    public class SocketClient : IRawByteClient
+    public class SocketClient : IRawSocketClient
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
@@ -43,6 +43,8 @@ namespace Stacks
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
+        public Socket Socket { get { return socket; } }
+
         private bool disconnectionNotified;
         private bool wasConnected;
 
@@ -52,8 +54,16 @@ namespace Stacks
             this.socket = socket;
             this.wasConnected = true;
 
+            EnsureSocketIsConnected();
+         
             InitialiseConnectedSocket();
             executor.Enqueue(StartReceiving);
+        }
+
+        private void EnsureSocketIsConnected()
+        {
+            if (!socket.Connected)
+                throw new InvalidOperationException("Socket must be connected");
         }
 
         public SocketClient(IExecutor executor)

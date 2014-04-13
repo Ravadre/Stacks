@@ -81,8 +81,10 @@
     <Compile Include="Client\IFramedClient.cs" />
     <Compile Include="Client\IMessageClient.cs" />
     <Compile Include="Client\IRawByteClient.cs" />
+    <Compile Include="Client\IRawSocketClient.cs" />
     <Compile Include="Client\MessageClient.cs" />
     <Compile Include="Client\SocketClient.cs" />
+    <Compile Include="Client\SslClient.cs" />
     <Compile Include="Ensure.cs" />
     <Compile Include="Executors\ActionBlockExecutor.cs" />
     <Compile Include="Executors\ActionContextExecutorSettings.cs" />
