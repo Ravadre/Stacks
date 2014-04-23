@@ -39,6 +39,22 @@ namespace Stacks
             this.buffer = newBuffer;
         }
 
+        public int ReadRawBytes(ArraySegment<byte> buffer)
+        {
+            CleanupBuffer();
+
+            int totalBytes = endOffset - beginOffset;
+            int toRead = Math.Min(buffer.Count, totalBytes);
+
+            if (toRead == 0)
+                return 0;
+
+            Buffer.BlockCopy(this.buffer, this.beginOffset, 
+                buffer.Array, buffer.Offset, toRead);
+
+            return toRead;
+        }
+
         public unsafe IEnumerable<ArraySegment<byte>> GetPackets()
         {
             CleanupBuffer();
