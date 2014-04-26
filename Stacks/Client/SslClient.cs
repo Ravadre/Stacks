@@ -17,15 +17,15 @@ namespace Stacks
         public event Action<int> Sent;
         public event Action<Exception> Disconnected;
 
-        private IRawSocketClient client;
+        private IRawByteClient client;
         private Socket socket;
         private SslStream sslStream;
 
-        public SslClient(IRawSocketClient client)
+        public SslClient(IRawByteClient client)
             : this(client, allowEveryCertificate: false)
         { }
 
-        public SslClient(IRawSocketClient client, bool allowEveryCertificate)
+        public SslClient(IRawByteClient client, bool allowEveryCertificate)
         {
             if (allowEveryCertificate)
                 Initialize(client, AllowEveryCertificate);
@@ -33,19 +33,19 @@ namespace Stacks
                 Initialize(client, null);
         }
 
-        public SslClient(IRawSocketClient client, 
+        public SslClient(IRawByteClient client, 
                          RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
             Initialize(client, remoteCertificateValidationCallback);
         }
 
-        private void Initialize(IRawSocketClient client,
+        private void Initialize(IRawByteClient client,
                                 RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
             this.client = client;
-            this.socket = client.Socket;
             this.sslStream = new SslStream(
-                new NetworkStream(socket, false), true,
+                new RawByteClientStream(this.client), 
+                true,
                 remoteCertificateValidationCallback,
                 null,
                 EncryptionPolicy.RequireEncryption);
@@ -64,19 +64,18 @@ namespace Stacks
 
         public void Send(byte[] buffer)
         {
-            throw new NotImplementedException();
+            this.sslStream.Write(buffer);
         }
 
         public void Send(ArraySegment<byte> buffer)
         {
-            throw new NotImplementedException();
+            this.sslStream.Write(buffer.Array, buffer.Offset, buffer.Count);
         }
 
         public void Close()
         {
-            throw new NotImplementedException();
+            this.client.Close();
         }
-
 
         private bool AllowEveryCertificate(
                         object sender, 
@@ -139,7 +138,18 @@ namespace Stacks
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            throw new NotImplementedException();
+            lock(this.buffer)
+            {
+                var segment = new ArraySegment<byte>(buffer, offset, count);
+                var read = this.buffer.ReadRawBytes(segment);
+
+                return read;
+            }
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            client.Send(new ArraySegment<byte>(buffer, offset, count));
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -152,19 +162,12 @@ namespace Stacks
             throw new NotImplementedException();
         }
 
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-        {
-            return base.ReadAsync(buffer, offset, count, cancellationToken);
-        }
-
         private void DataReceived(ArraySegment<byte> data)
         {
-            this.buffer.AddData(data);
+            lock(this.buffer)
+            {
+                this.buffer.AddData(data);
+            }
         }
 
     }

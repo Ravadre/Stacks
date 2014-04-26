@@ -52,6 +52,8 @@ namespace Stacks
             Buffer.BlockCopy(this.buffer, this.beginOffset, 
                 buffer.Array, buffer.Offset, toRead);
 
+            this.beginOffset += toRead;
+
             return toRead;
         }
 
