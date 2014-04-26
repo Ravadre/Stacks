@@ -17,6 +17,14 @@ namespace Stacks.Executors
 
         public event Action<Exception> Error;
 
+        public ActionBlockExecutor()
+            : this(null, new ActionContextExecutorSettings())
+        { }
+
+        public ActionBlockExecutor(string name)
+            : this(name, new ActionContextExecutorSettings())
+        { }
+
         public ActionBlockExecutor(string name, ActionContextExecutorSettings settings)
         {
             this.name = name;
@@ -34,6 +42,7 @@ namespace Stacks.Executors
         {
             var oldCtx = SynchronizationContext.Current;
             SynchronizationContext.SetSynchronizationContext(this);
+
             try
             {
                 a();

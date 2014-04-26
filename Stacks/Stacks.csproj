@@ -81,7 +81,7 @@
     <Compile Include="Client\IFramedClient.cs" />
     <Compile Include="Client\IMessageClient.cs" />
     <Compile Include="Client\IRawByteClient.cs" />
-    <Compile Include="Client\IRawSocketClient.cs" />
+    <Compile Include="Client\ISocketClient.cs" />
     <Compile Include="Client\MessageClient.cs" />
     <Compile Include="Client\SocketClient.cs" />
     <Compile Include="Client\SslClient.cs" />
@@ -89,6 +89,7 @@
     <Compile Include="Executors\ActionBlockExecutor.cs" />
     <Compile Include="Executors\ActionContextExecutorSettings.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
+    <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
     <Compile Include="Serializers\BaseStacksSerializer.cs" />

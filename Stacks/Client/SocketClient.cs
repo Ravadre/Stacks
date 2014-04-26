@@ -13,7 +13,7 @@ using NLog;
 
 namespace Stacks
 {
-    public class SocketClient : IRawSocketClient
+    public class SocketClient : ISocketClient
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
@@ -48,6 +48,8 @@ namespace Stacks
         private bool disconnectionNotified;
         private bool wasConnected;
 
+        public IExecutor Executor { get { return executor; } }
+
         public SocketClient(IExecutor executor, Socket socket)
         {
             this.executor = executor;
@@ -65,6 +67,10 @@ namespace Stacks
             if (!socket.Connected)
                 throw new InvalidOperationException("Socket must be connected");
         }
+
+        public SocketClient()
+            : this(new ActionBlockExecutor())
+        { }
 
         public SocketClient(IExecutor executor)
         {
