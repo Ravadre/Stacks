@@ -11,6 +11,7 @@ namespace Stacks
     public interface ISocketClient : IRawByteClient
     {
         IExecutor Executor { get; }
+        bool IsConnected { get; }
 
         event Action Connected;
 

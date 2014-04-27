@@ -10,7 +10,7 @@ using Stacks.Executors;
 
 namespace Stacks.Actors
 {
-    public class ActorContext : IActorContext, INotifyCompletion
+    public class ActorContext : IActorContext, INotifyCompletion /* , ICriticalNotifyCompletion */
     {
         private IExecutor executor;
         private string name;
@@ -55,6 +55,13 @@ namespace Stacks.Actors
             executor.Enqueue(continuation);
         }
 
+        /*
+        public void UnsafeOnCompleted(Action continuation)
+        {
+            executor.Enqueue(continuation);
+        }
+        */
+
         public void GetResult() { }
 
         public SynchronizationContext Context { get { return executor.Context; } }
@@ -75,5 +82,6 @@ namespace Stacks.Actors
 
             return new ActorContext(null, new CapturedContextExecutor(null, context));
         }
+
     }
 }

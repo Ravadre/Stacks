@@ -48,6 +48,8 @@ namespace Stacks
         private bool disconnectionNotified;
         private bool wasConnected;
 
+        public bool IsConnected { get { return socket.Connected; } }
+
         public IExecutor Executor { get { return executor; } }
 
         public SocketClient(IExecutor executor, Socket socket)

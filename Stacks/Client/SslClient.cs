@@ -25,49 +25,79 @@ namespace Stacks
         private RawByteClientStream clientStreamWrapper;
         private string targetHost;
         private bool isClient;
+        private X509Certificate serverCertificate;
 
         private bool disconnectCalled;
 
         private const int internalBufferLength = 4096;
 
         public IExecutor Executor { get { return this.client.Executor; } }
-
+        public bool IsConnected { get { return this.client.IsConnected; } }
+        
+        /// <summary>
+        /// Initialises ssl client as a client side endpoint.
+        /// </summary>
         public SslClient(ISocketClient client, string targetHost)
             : this(client, targetHost, allowEveryCertificate: false)
         { }
 
+        /// <summary>
+        /// Initialises ssl client as a client side endpoint.
+        /// </summary>
         public SslClient(ISocketClient client, string targetHost, bool allowEveryCertificate)
         {
             if (allowEveryCertificate)
-                Initialize(client, targetHost, AllowEveryCertificate, isClient: true);
+                InitializeAsClient(client, targetHost, AllowEveryCertificate);
             else
-                Initialize(client, targetHost, null, isClient: true);
+                InitializeAsClient(client, targetHost, null);
         }
 
+        /// <summary>
+        /// Initialises ssl client as a client side endpoint.
+        /// </summary>
         public SslClient(ISocketClient client,
                          string targetHost,
                          RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
-            Initialize(client, targetHost, remoteCertificateValidationCallback, isClient: true);
+            InitializeAsClient(client, targetHost, remoteCertificateValidationCallback);
         }
 
+        /// <summary>
+        /// Initialises ssl client as a server side endpoint.
+        /// It is assumed, that passed client is already connected.
+        /// EstablishSsl should be called when this constructor is used.
+        /// </summary>
         public SslClient(ISocketClient client,
                          X509Certificate serverCertificate)
         {
-            Initialize(client, string.Empty, null, isClient: false);
+            Ensure.IsNotNull(client, "client");
+            Ensure.IsNotNull(serverCertificate, "serverCertificate");
+
+            if (!client.IsConnected)
+                throw new InvalidOperationException("Socket client should be connected");
+
+            InitializeAsServer(client, serverCertificate);
         }
 
-        private void Initialize(ISocketClient client,
-                                string targetHost,
-                                RemoteCertificateValidationCallback remoteCertificateValidationCallback,
-                                bool isClient)
+        private void InitializeAsServer(ISocketClient client,
+                                        X509Certificate certificate)
         {
-            this.isClient = isClient;
-            this.disconnectCalled = false;
+            InitializeCommon(client, isClient: false);
+
+            this.serverCertificate = certificate;
+            this.clientStreamWrapper = new RawByteClientStream(this.client);
+            this.sslStream = new SslStream(
+                this.clientStreamWrapper,
+                true);
+        }
+
+        private void InitializeAsClient(ISocketClient client,
+                                        string targetHost,
+                                        RemoteCertificateValidationCallback remoteCertificateValidationCallback)
+        {
+            InitializeCommon(client, isClient: true);
+
             this.targetHost = targetHost;
-
-            this.client = client;
-
             this.clientStreamWrapper = new RawByteClientStream(this.client);
             this.sslStream = new SslStream(
                 this.clientStreamWrapper,
@@ -75,6 +105,14 @@ namespace Stacks
                 remoteCertificateValidationCallback,
                 null,
                 EncryptionPolicy.RequireEncryption);
+        }
+
+        private void InitializeCommon(ISocketClient client,
+                                bool isClient)
+        {
+            this.isClient = isClient;
+            this.disconnectCalled = false;
+            this.client = client;
 
             this.client.Disconnected += ClientDisconnected;
             this.client.Connected += ClientConnected;
@@ -86,16 +124,39 @@ namespace Stacks
             OnSent(count);
         }
 
+        /// <summary>
+        /// Connectes to a remote host. Connected event is raised when connection
+        /// and ssl stream are both established.
+        /// </summary>
+        /// <param name="remoteEndPoint"></param>
         public void Connect(IPEndPoint remoteEndPoint)
         {
             this.client.Connect(remoteEndPoint);
+        }
+
+        /// <summary>
+        /// This method should be called only if SslClient was created 
+        /// with already connected socket. In this case, this method will
+        /// establish ssl and call Connected event.
+        /// </summary>
+        public void EstablishSsl()
+        {
+            this.Executor.Enqueue(() => ClientConnected());
         }
 
         private async void ClientConnected()
         {
             try
             {
-                await this.sslStream.AuthenticateAsClientAsync(this.targetHost);
+                if (this.isClient)
+                {
+                    await this.sslStream.AuthenticateAsClientAsync(this.targetHost);
+                }
+                else
+                {
+                    await this.sslStream.AuthenticateAsServerAsync(this.serverCertificate);
+                }
+
                 //Rest of the code is executed using executor.
 
                 ReadLoop();
