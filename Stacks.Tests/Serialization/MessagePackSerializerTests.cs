@@ -8,7 +8,6 @@ using Stacks.Serializers;
 
 using Moq;
 using Xunit;
-using Xunit.Extensions;
 
 using MsgPack;
 using MsgPack.Serialization;
