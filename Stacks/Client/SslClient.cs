@@ -46,6 +46,9 @@ namespace Stacks
         /// </summary>
         public SslClient(ISocketClient client, string targetHost, bool allowEveryCertificate)
         {
+            Ensure.IsNotNull(client, "client");
+            Ensure.IsNotNullOrWhiteSpace(targetHost, "targetHost");
+
             if (allowEveryCertificate)
                 InitializeAsClient(client, targetHost, AllowEveryCertificate);
             else
@@ -59,6 +62,9 @@ namespace Stacks
                          string targetHost,
                          RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
+            Ensure.IsNotNull(client, "client");
+            Ensure.IsNotNullOrWhiteSpace(targetHost, "targetHost");
+
             InitializeAsClient(client, targetHost, remoteCertificateValidationCallback);
         }
 
@@ -131,6 +137,8 @@ namespace Stacks
         /// <param name="remoteEndPoint"></param>
         public void Connect(IPEndPoint remoteEndPoint)
         {
+            Ensure.IsNotNull(remoteEndPoint, "remoteEndPoint");
+
             this.client.Connect(remoteEndPoint);
         }
 
@@ -242,11 +250,15 @@ namespace Stacks
 
         public void Send(byte[] buffer)
         {
+            Ensure.IsNotNull(buffer, "buffer");
+
             this.sslStream.Write(buffer);
         }
 
         public void Send(ArraySegment<byte> buffer)
         {
+            Ensure.IsNotNull(buffer.Array, "buffer.Array");
+
             this.sslStream.Write(buffer.Array, buffer.Offset, buffer.Count);
         }
 
