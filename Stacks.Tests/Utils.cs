@@ -7,6 +7,9 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Reflection;
+using System.IO;
+using System.Security.Cryptography.X509Certificates;
 
 namespace Stacks.Tests
 {
@@ -82,6 +85,59 @@ namespace Stacks.Tests
         }
     }
 
+    public static class SslHelpers
+    {
+        public static void CreateServerAndConnectedClient(out SocketServer server,
+          out SslClient client1, out SslClient client2)
+        {
+            var connected1 = new ManualResetEventSlim(false);
+            var connected2 = new ManualResetEventSlim(false);
+
+            var ex = ServerHelpers.CreateExecutor();
+            var s = ServerHelpers.CreateServer();
+
+            SslClient lClient = null;
+            SslClient sClient = null;
+
+            var certBytesStream = Assembly.GetExecutingAssembly()
+                                          .GetManifestResourceStream("Stacks.Tests.StacksTest.pfx");
+            var certBytes = new BinaryReader(certBytesStream).ReadBytes((int)certBytesStream.Length);
+
+            s.Connected += c =>
+            {
+                sClient = new SslClient(c, new X509Certificate2(certBytes));
+
+                sClient.Connected += () =>
+                    {
+                        connected2.Set();
+                    };
+
+                sClient.EstablishSsl();
+            };
+
+            s.Started += () =>
+            {
+                lClient = new SslClient(new SocketClient(ex), "Stacks Test", true);
+
+                lClient.Connected += () =>
+                {
+                    connected1.Set();
+                };
+
+                lClient.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
+            };
+
+            s.Start();
+
+            connected1.AssertWaitFor(300000);
+            connected2.AssertWaitFor(300000);
+
+            server = s;
+            client1 = lClient;
+            client2 = sClient;
+        }
+    }
+
     public static class SocketServerExtensions
     {
         public static void StopAndAssertStopped(this SocketServer server)
@@ -98,7 +154,7 @@ namespace Stacks.Tests
 
     public static class SocketClientExtensions
     {
-        public static byte[] ReceiveData(this SocketClient client, int totalExpectedBytes, int timeout,
+        public static byte[] ReceiveData(this IRawByteClient client, int totalExpectedBytes, int timeout,
             Action sendAction)
         {
             var ev = new ManualResetEventSlim();
