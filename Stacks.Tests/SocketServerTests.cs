@@ -8,9 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
-using Stacks;
-using Stacks.Executors;
-
 namespace Stacks.Tests
 {
     public class SocketServerTests

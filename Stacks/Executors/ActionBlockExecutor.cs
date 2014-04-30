@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Stacks.Executors
+namespace Stacks
 {
     public class ActionBlockExecutor : SynchronizationContext, IExecutor
     {

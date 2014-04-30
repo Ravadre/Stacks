@@ -1,5 +1,4 @@
-﻿using Stacks.Executors;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,7 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Stacks
+namespace Stacks.Tcp
 {
     public class SslClient : ISocketClient
     {

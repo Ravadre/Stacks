@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Stacks.Executors
+namespace Stacks
 {
     public class ActionContextExecutorSettings
     {

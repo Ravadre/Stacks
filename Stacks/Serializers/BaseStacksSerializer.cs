@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Stacks.Serializers
+namespace Stacks
 {
     public abstract class BaseStacksSerializer : IStacksSerializer
     {

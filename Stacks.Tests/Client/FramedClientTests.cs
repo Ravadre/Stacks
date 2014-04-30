@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Moq;
-using Stacks.Client;
+using Stacks.Tcp;
 
 namespace Stacks.Tests
 {

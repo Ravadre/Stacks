@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using System.Net;
 using System.Threading;
-
-using Stacks.Executors;
-
+using System.Threading.Tasks;
 using NLog;
 
-namespace Stacks
+namespace Stacks.Tcp
 {
     public class SocketClient : ISocketClient
     {
