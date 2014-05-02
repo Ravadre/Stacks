@@ -22,7 +22,8 @@ namespace Executors
                 action();
                 sw.Stop();
 
-                times.Add(sw.Elapsed);
+                if (i > 0)
+                    times.Add(sw.Elapsed);
             }
 
             return new BenchmarkStats(times, timesToRepeat);
@@ -31,7 +32,7 @@ namespace Executors
 
     public class BenchmarkStats
     {
-        public IReadOnlyList<TimeSpan> Times { get;private set;}
+        public IReadOnlyList<TimeSpan> Times { get; private set; }
         public TimeSpan TotalAverageTime { get; private set; }
         public TimeSpan AverageTimePerAction { get; private set; }
 

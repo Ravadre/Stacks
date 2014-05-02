@@ -13,6 +13,8 @@ namespace Stacks
         private ActionBlock<Action> queue;
         private string name;
 
+        private bool supportSynchronizationContext;
+
         public Task Completion { get { return queue.Completion; } }
 
         public event Action<Exception> Error;
@@ -28,6 +30,7 @@ namespace Stacks
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
             this.name = name;
+            this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
                 ExecuteAction(a);
@@ -40,8 +43,12 @@ namespace Stacks
 
         private void ExecuteAction(Action a)
         {
-            var oldCtx = SynchronizationContext.Current;
-            SynchronizationContext.SetSynchronizationContext(this);
+            SynchronizationContext oldCtx = null;
+            if (this.supportSynchronizationContext)
+            {
+                oldCtx = SynchronizationContext.Current;
+                SynchronizationContext.SetSynchronizationContext(this);
+            }
 
             try
             {
@@ -53,7 +60,8 @@ namespace Stacks
             }
             finally
             {
-                SynchronizationContext.SetSynchronizationContext(oldCtx);
+                if (this.supportSynchronizationContext)
+                    SynchronizationContext.SetSynchronizationContext(oldCtx);
             }
         }
 
@@ -77,7 +85,7 @@ namespace Stacks
         {
             if (!queue.Post(action))
                 queue.SendAsync(action).Wait();
-       }
+        }
 
         public Task Stop()
         {
@@ -87,7 +95,13 @@ namespace Stacks
 
         public SynchronizationContext Context
         {
-            get { return this; }
+            get
+            {
+                if (!this.supportSynchronizationContext)
+                    throw new InvalidOperationException("This instance of action block executor " +
+                                                        "does not support synchronization context");
+                return this;
+            }
         }
 
         public override SynchronizationContext CreateCopy()

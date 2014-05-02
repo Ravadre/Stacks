@@ -11,11 +11,13 @@ namespace Stacks
     {
         public int QueueBoundedCapacity { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
+        public bool SupportSynchronizationContext { get; set; }
 
         public ActionBlockExecutorSettings()
         {
             QueueBoundedCapacity = DataflowBlockOptions.Unbounded;
             MaxDegreeOfParallelism = 1;
+            SupportSynchronizationContext = true;
         }
 
         private static ActionBlockExecutorSettings @default = new ActionBlockExecutorSettings();
