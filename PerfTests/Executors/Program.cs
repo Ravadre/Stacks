@@ -22,20 +22,20 @@ namespace Executors
             var stats = Benchmark.Measure(test.Run, 5);
 
             Console.WriteLine("Action block (ctx) executor: " + stats);
-            Console.WriteLine("Action block (ctx) time per msg: " + stats.AverageTimePerAction.TotalMilliseconds.ToString("F4") + "ms");
+            Console.WriteLine("Action block (ctx) time per msg: " + stats.GetAverateTimePerActionNs(1000000).ToString() + "ns");
 
             test = new SingleExecutor(1000000, () => new ActionBlockExecutor("", new ActionBlockExecutorSettings() { SupportSynchronizationContext = false }));
             stats = Benchmark.Measure(test.Run, 5);
 
             Console.WriteLine("Action block (no ctx) executor: " + stats);
-            Console.WriteLine("Action block (no ctx) time per msg: " + stats.AverageTimePerAction.TotalMilliseconds.ToString("F4") + "ms");
+            Console.WriteLine("Action block (no ctx) time per msg: " + stats.GetAverateTimePerActionNs(1000000).ToString() + "ns");
 
 
             test = new SingleExecutor(1000000, () => new BusyWaitExecutor());
             stats = Benchmark.Measure(test.Run, 5);
 
             Console.WriteLine("Yielding executor: " + stats);
-            Console.WriteLine("Yielding time per msg: " + stats.AverageTimePerAction.TotalMilliseconds.ToString("F4") + "ms");
+            Console.WriteLine("Yielding time per msg: " + stats.GetAverateTimePerActionNs(1000000).ToString() + "ns");
 
         }
     }

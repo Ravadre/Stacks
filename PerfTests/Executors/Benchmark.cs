@@ -26,7 +26,7 @@ namespace Executors
                     times.Add(sw.Elapsed);
             }
 
-            return new BenchmarkStats(times, timesToRepeat);
+            return new BenchmarkStats(times);
         }
     }
 
@@ -34,13 +34,16 @@ namespace Executors
     {
         public IReadOnlyList<TimeSpan> Times { get; private set; }
         public TimeSpan TotalAverageTime { get; private set; }
-        public TimeSpan AverageTimePerAction { get; private set; }
 
-        public BenchmarkStats(IEnumerable<TimeSpan> times, int timesToRepeat)
+        public BenchmarkStats(IEnumerable<TimeSpan> times)
         {
             Times = times.ToList();
             TotalAverageTime = TimeSpan.FromSeconds(Times.Average(t => t.TotalSeconds));
-            AverageTimePerAction = TimeSpan.FromSeconds(TotalAverageTime.TotalSeconds / timesToRepeat);
+        }
+
+        public long GetAverateTimePerActionNs(int actionCount)
+        {
+            return TotalAverageTime.Ticks * 1000000L / TimeSpan.TicksPerMillisecond / actionCount;
         }
 
         public override string ToString()
