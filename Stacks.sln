@@ -34,6 +34,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Executors", "PerfTests\Executors\Executors.csproj", "{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +94,12 @@ Global
 		{27637DF0-FDA6-409D-879E-35AB309EE0E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{27637DF0-FDA6-409D-879E-35AB309EE0E6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{27637DF0-FDA6-409D-879E-35AB309EE0E6}.Release|x64.ActiveCfg = Release|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,5 +109,6 @@ Global
 		{2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC} = {1E638865-0E75-4443-9BD2-130751C33DEF}
 		{C47406E4-A196-456A-91AD-5B86DB5F44E8} = {2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC}
 		{9DA21C1F-DFF8-49F9-B7D8-DD5BA07AAFE9} = {2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC}
+		{08A3C98B-5A61-4C3B-954B-A6ACDD009C27} = {1E638865-0E75-4443-9BD2-130751C33DEF}
 	EndGlobalSection
 EndGlobal
