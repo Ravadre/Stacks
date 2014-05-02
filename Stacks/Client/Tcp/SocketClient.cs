@@ -1,19 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using System.Net;
 using System.Threading;
-
-using Stacks.Executors;
-
+using System.Threading.Tasks;
 using NLog;
 
-namespace Stacks
+namespace Stacks.Tcp
 {
-    public class SocketClient : IRawByteClient
+    public class SocketClient : ISocketClient
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
@@ -43,8 +40,14 @@ namespace Stacks
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
+        public Socket Socket { get { return socket; } }
+
         private bool disconnectionNotified;
         private bool wasConnected;
+
+        public bool IsConnected { get { return socket.Connected; } }
+
+        public IExecutor Executor { get { return executor; } }
 
         public SocketClient(IExecutor executor, Socket socket)
         {
@@ -52,9 +55,21 @@ namespace Stacks
             this.socket = socket;
             this.wasConnected = true;
 
+            EnsureSocketIsConnected();
+         
             InitialiseConnectedSocket();
             executor.Enqueue(StartReceiving);
         }
+
+        private void EnsureSocketIsConnected()
+        {
+            if (!socket.Connected)
+                throw new InvalidOperationException("Socket must be connected");
+        }
+
+        public SocketClient()
+            : this(new ActionBlockExecutor())
+        { }
 
         public SocketClient(IExecutor executor)
         {

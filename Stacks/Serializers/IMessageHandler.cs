@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Stacks.Serializers
+namespace Stacks
 {
     public interface IMessageHandler
     {

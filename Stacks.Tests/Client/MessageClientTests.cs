@@ -1,7 +1,5 @@
 ﻿using Moq;
 using MsgPack.Serialization;
-using Stacks.Client;
-using Stacks.Serializers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
+using Stacks.Tcp;
 
 namespace Stacks.Tests
 {

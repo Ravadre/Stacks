@@ -7,9 +7,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using NLog;
-using Stacks.Executors;
 
-namespace Stacks
+namespace Stacks.Tcp
 {
     public class SocketServer
     {
@@ -29,6 +28,10 @@ namespace Stacks
         private IExecutor executor;
 
         private int hasStarted;
+
+        public SocketServer(IPEndPoint bindEndPoint)
+            : this(new ActionBlockExecutor(), bindEndPoint)
+        { }
 
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {

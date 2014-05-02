@@ -1,6 +1,4 @@
 ﻿using Stacks;
-using Stacks.Client;
-using Stacks.Tests;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,6 +6,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stacks.Tcp;
+using Stacks.Tests;
 
 namespace RawStreamPerfTest
 {
@@ -19,7 +19,6 @@ namespace RawStreamPerfTest
 
         static void Main(string[] args)
         {
-
             ServerHelpers.CreateServerAndConnectedClient(out s, out c1, out c2);
 
             c1.Disconnected += exn => { Console.WriteLine("C1 d/c " + exn); };

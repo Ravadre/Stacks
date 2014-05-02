@@ -6,23 +6,21 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-using Stacks.Executors;
-
 namespace Stacks.Actors
 {
-    public class ActorContext : IActorContext, INotifyCompletion
+    public class ActorContext : IActorContext, INotifyCompletion /* , ICriticalNotifyCompletion */
     {
         private IExecutor executor;
         private string name;
 
         public ActorContext()
             : this(null, 
-                   new ActionBlockExecutor(null, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(string name)
             : this(name,
-                   new ActionBlockExecutor(name, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(string name, IExecutor executor)
@@ -55,6 +53,13 @@ namespace Stacks.Actors
             executor.Enqueue(continuation);
         }
 
+        /*
+        public void UnsafeOnCompleted(Action continuation)
+        {
+            executor.Enqueue(continuation);
+        }
+        */
+
         public void GetResult() { }
 
         public SynchronizationContext Context { get { return executor.Context; } }
@@ -75,5 +80,6 @@ namespace Stacks.Actors
 
             return new ActorContext(null, new CapturedContextExecutor(null, context));
         }
+
     }
 }

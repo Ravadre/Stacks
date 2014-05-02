@@ -1,12 +1,11 @@
-﻿using Moq;
-using ProtoBuf;
-using Stacks.Serializers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Moq;
+using ProtoBuf;
 using Xunit;
 
 

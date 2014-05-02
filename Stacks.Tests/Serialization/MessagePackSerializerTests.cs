@@ -4,11 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Stacks.Serializers;
-
 using Moq;
 using Xunit;
-using Xunit.Extensions;
 
 using MsgPack;
 using MsgPack.Serialization;

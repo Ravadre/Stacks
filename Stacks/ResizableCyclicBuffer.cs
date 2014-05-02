@@ -12,12 +12,20 @@ namespace Stacks
         private int endOffset;
         private int beginOffset;
 
-        private static IEnumerable<ArraySegment<byte>> EmptyPacketList 
+        private static IEnumerable<ArraySegment<byte>> EmptyPacketList
             = new List<ArraySegment<byte>>();
 
         public ResizableCyclicBuffer(int initSize)
         {
             buffer = new byte[initSize];
+        }
+
+        public int Count
+        {
+            get
+            {
+                return endOffset - beginOffset;
+            }
         }
 
         public void AddData(ArraySegment<byte> data)
@@ -26,7 +34,7 @@ namespace Stacks
 
             while (buffer.Length - endOffset < data.Count)
                 ResizeBuffer();
-            
+
             Buffer.BlockCopy(data.Array, data.Offset,
                              buffer, endOffset, data.Count);
             endOffset += data.Count;
@@ -39,19 +47,37 @@ namespace Stacks
             this.buffer = newBuffer;
         }
 
+        public int ReadRawBytes(ArraySegment<byte> buffer)
+        {
+            CleanupBuffer();
+
+            int totalBytes = endOffset - beginOffset;
+            int toRead = Math.Min(buffer.Count, totalBytes);
+
+            if (toRead == 0)
+                return 0;
+
+            Buffer.BlockCopy(this.buffer, this.beginOffset,
+                buffer.Array, buffer.Offset, toRead);
+
+            this.beginOffset += toRead;
+
+            return toRead;
+        }
+
         public unsafe IEnumerable<ArraySegment<byte>> GetPackets()
         {
             CleanupBuffer();
 
             if (endOffset < 4)
                 return EmptyPacketList;
-            
+
             var packets = new List<ArraySegment<byte>>();
 
             fixed (byte* b = buffer)
             {
                 byte* bPtr = b;
-                
+
                 while (true)
                 {
                     if (beginOffset + 4 > endOffset)

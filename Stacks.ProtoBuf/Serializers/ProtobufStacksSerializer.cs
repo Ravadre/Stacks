@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 using ProtoBuf;
 
-namespace Stacks.Serializers
+namespace Stacks
 {
     public class ProtoBufStacksSerializer : BaseStacksSerializer
     { 

@@ -5,22 +5,24 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
-namespace Stacks.Executors
+namespace Stacks
 {
-    public class ActionContextExecutorSettings
+    public class ActionBlockExecutorSettings
     {
         public int QueueBoundedCapacity { get; set; }
         public int MaxDegreeOfParallelism { get; set; }
+        public bool SupportSynchronizationContext { get; set; }
 
-        public ActionContextExecutorSettings()
+        public ActionBlockExecutorSettings()
         {
             QueueBoundedCapacity = DataflowBlockOptions.Unbounded;
             MaxDegreeOfParallelism = 1;
+            SupportSynchronizationContext = true;
         }
 
-        private static ActionContextExecutorSettings @default = new ActionContextExecutorSettings();
+        private static ActionBlockExecutorSettings @default = new ActionBlockExecutorSettings();
 
-        public static ActionContextExecutorSettings Default
+        public static ActionBlockExecutorSettings Default
         {
             get { return @default; }
         }

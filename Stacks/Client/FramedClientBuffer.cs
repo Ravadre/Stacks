@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Stacks.Client
+namespace Stacks
 {
     public struct FramedClientBuffer
     {

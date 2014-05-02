@@ -1,5 +1,4 @@
-﻿using Stacks.Executors;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,12 +14,12 @@ namespace Stacks.Actors
 
         public Actor()
             : this(null, 
-                   new ActionBlockExecutor(null, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
         public Actor(string name)
             : this(name, 
-                   new ActionBlockExecutor(name, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
         { }
 
         public Actor(string name, IExecutor executor)
