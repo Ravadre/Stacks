@@ -18,14 +18,14 @@ namespace Stacks
         public event Action<Exception> Error;
 
         public ActionBlockExecutor()
-            : this(null, new ActionContextExecutorSettings())
+            : this(null, new ActionBlockExecutorSettings())
         { }
 
         public ActionBlockExecutor(string name)
-            : this(name, new ActionContextExecutorSettings())
+            : this(name, new ActionBlockExecutorSettings())
         { }
 
-        public ActionBlockExecutor(string name, ActionContextExecutorSettings settings)
+        public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
             this.name = name;
             this.queue = new ActionBlock<Action>(a =>

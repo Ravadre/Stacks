@@ -63,7 +63,7 @@ namespace Stacks.Tests
             {
                 var errOccured = new ManualResetEventSlim();
 
-                var exec = new ActionBlockExecutor(null, new ActionContextExecutorSettings());
+                var exec = new ActionBlockExecutor(null, new ActionBlockExecutorSettings());
                 var server = ServerHelpers.CreateServer(exec);
 
                 exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };

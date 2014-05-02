@@ -88,7 +88,7 @@
     <Compile Include="Client\Tcp\SslClient.cs" />
     <Compile Include="Ensure.cs" />
     <Compile Include="Executors\ActionBlockExecutor.cs" />
-    <Compile Include="Executors\ActionContextExecutorSettings.cs" />
+    <Compile Include="Executors\ActionBlockExecutorSettings.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\IExecutor.cs" />

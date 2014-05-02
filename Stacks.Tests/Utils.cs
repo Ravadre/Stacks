@@ -36,13 +36,13 @@ namespace Stacks.Tests
 
         public static SocketServer CreateServer()
         {
-            return new SocketServer(new ActionBlockExecutor("", new ActionContextExecutorSettings()),
+            return new SocketServer(new ActionBlockExecutor("", new ActionBlockExecutorSettings()),
                                     new IPEndPoint(IPAddress.Any, 0));
         }
 
         public static IExecutor CreateExecutor()
         {
-            return new ActionBlockExecutor("", new ActionContextExecutorSettings());
+            return new ActionBlockExecutor("", new ActionBlockExecutorSettings());
         }
 
         public static void CreateServerAndConnectedClient(out SocketServer server, 

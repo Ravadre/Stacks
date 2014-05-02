@@ -15,12 +15,12 @@ namespace Stacks.Actors
 
         public ActorContext()
             : this(null, 
-                   new ActionBlockExecutor(null, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(string name)
             : this(name,
-                   new ActionBlockExecutor(name, ActionContextExecutorSettings.Default))
+                   new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(string name, IExecutor executor)
