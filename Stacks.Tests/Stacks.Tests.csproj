@@ -91,6 +91,7 @@
     <Compile Include="Client\RawBytesClientTests.cs" />
     <Compile Include="Serialization\MessagePackSerializerTests.cs" />
     <Compile Include="Serialization\ProtoBufSerializerTests.cs" />
+    <Compile Include="Serialization\SerializationHandlerTests.cs" />
     <Compile Include="SocketServerTests.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>

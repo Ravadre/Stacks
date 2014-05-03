@@ -94,7 +94,7 @@
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
-    <Compile Include="Serializers\BaseStacksSerializer.cs" />
+    <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />
     <Compile Include="Serializers\IStacksSerializer.cs" />
     <Compile Include="Serializers\MessageHandlerAttribute.cs" />

@@ -9,7 +9,9 @@ namespace Stacks
 {
     public interface IStacksSerializer
     {
-        void Deserialize(int typeCode, MemoryStream ms);
+        void Initialize();
+
+        Func<MemoryStream, T> CreateDeserializer<T>();
         void Serialize<T>(T obj, MemoryStream ms);
 
         void PrepareSerializerForType<T>();

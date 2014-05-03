@@ -10,7 +10,7 @@ namespace Stacks.Tcp
     public class MessageClient
     {
         private IFramedClient framedClient;
-        private IStacksSerializer packetSerializer;
+        private BaseStacksSerializer packetSerializer;
         
         public event Action<Exception> Disconnected
         {
@@ -24,10 +24,11 @@ namespace Stacks.Tcp
         }
 
         public MessageClient(IFramedClient framedClient, 
-                             IStacksSerializer packetSerializer)
+                             IStacksSerializer packetSerializer,
+                             IMessageHandler messageHandler)
         {
             this.framedClient = framedClient;
-            this.packetSerializer = packetSerializer;
+            this.packetSerializer = new BaseStacksSerializer(packetSerializer, messageHandler);
 
             this.framedClient.Received += PacketReceived;
         }

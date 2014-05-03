@@ -8,27 +8,31 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public abstract class BaseStacksSerializer : IStacksSerializer
+    public class BaseStacksSerializer
     {
         private Dictionary<int, Action<MemoryStream>> serializerHandlerByTypeCode;
 
         private IMessageHandler messageHandler;
+        private IStacksSerializer serializer;
 
-        public BaseStacksSerializer(IMessageHandler messageHandler)
+        public BaseStacksSerializer(IStacksSerializer serializer, IMessageHandler messageHandler)
         {
+            Ensure.IsNotNull(serializer, "serializer");
+            Ensure.IsNotNull(messageHandler, "messageHandler");
+
             this.serializerHandlerByTypeCode = new Dictionary<int, Action<MemoryStream>>();
             this.messageHandler = messageHandler;
+            this.serializer = serializer;
 
-            Initialize();
+            this.serializer.Initialize();
 
             ParseMessageHandler();
         }
 
-        protected virtual void Initialize() { }
-        
-        public virtual void PrepareSerializerForType<T>() { }
-        
-        public abstract void Serialize<T>(T obj, MemoryStream ms);
+        public void Serialize<T>(T obj, MemoryStream ms)
+        {
+            this.serializer.Serialize(obj, ms);
+        }
 
         public void Deserialize(int typeCode, MemoryStream ms)
         {
@@ -95,10 +99,11 @@ namespace Stacks
                                          .GetMethod("CreateLambda", BindingFlags.Instance | BindingFlags.NonPublic)
                                          .MakeGenericMethod(type);
 
-            this.GetType()
+            this.serializer
+                .GetType()
                 .GetMethod("PrepareSerializerForType")
                 .MakeGenericMethod(type)
-                .Invoke(this, Type.EmptyTypes);
+                .Invoke(this.serializer, Type.EmptyTypes);
                     
 
             return (Action<MemoryStream>)createLambdaMethod.Invoke(this, new[] { mi });
@@ -108,7 +113,7 @@ namespace Stacks
         {
             var handler = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), messageHandler, mi);
 
-            var deserializer = CreateDeserializer<T>();
+            var deserializer = this.serializer.CreateDeserializer<T>();
 
             return ms =>
             {
@@ -116,7 +121,5 @@ namespace Stacks
                 handler(obj);
             };
         }
-
-        protected abstract Func<MemoryStream, T> CreateDeserializer<T>();
     }
 }

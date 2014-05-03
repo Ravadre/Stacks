@@ -17,13 +17,15 @@ namespace Stacks.Tests
         {
             protected Mock<IRawByteClient> rawClient;
             protected FramedClient framedClient;
-            protected Mock<IStacksSerializer> serializer; 
+            protected Mock<IStacksSerializer> serializer;
+            protected Mock<IMessageHandler> messageHandler;
 
             public Base()
             {
                 rawClient = new Mock<IRawByteClient>();
                 framedClient = new FramedClient(rawClient.Object);
                 serializer = new Mock<IStacksSerializer>();
+                messageHandler = new Mock<IMessageHandler>();
             }
 
             protected TestData CreateSampleTestData()
@@ -37,7 +39,7 @@ namespace Stacks.Tests
             [Fact]
             public void Sending_packet_should_send_serialized_data_with_proper_header()
             {
-                var c = new MessageClient(framedClient, serializer.Object);
+                var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
 
                 serializer.Setup(s => s.Serialize(It.IsAny<TestData>(), It.IsAny<MemoryStream>()))
                           .Callback((TestData d, MemoryStream ms) =>

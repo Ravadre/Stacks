@@ -9,29 +9,28 @@ using ProtoBuf;
 
 namespace Stacks
 {
-    public class ProtoBufStacksSerializer : BaseStacksSerializer
+    public class ProtoBufStacksSerializer : IStacksSerializer
     { 
-        public ProtoBufStacksSerializer(IMessageHandler messageHandler)
-            : base(messageHandler)
+        public ProtoBufStacksSerializer()
         {
             
         }
 
-        protected override void Initialize()
+        public void Initialize()
         {
         }
 
-        protected override Func<MemoryStream, T> CreateDeserializer<T>()
+        public Func<MemoryStream, T> CreateDeserializer<T>()
         {
             return ms => ProtoBuf.Serializer.Deserialize<T>(ms);
         }
 
-        public override void Serialize<T>(T obj, MemoryStream ms)
+        public void Serialize<T>(T obj, MemoryStream ms)
         {
             ProtoBuf.Serializer.Serialize(ms, obj);
         }
 
-        public override void PrepareSerializerForType<T>()
+        public void PrepareSerializerForType<T>()
         {
             ProtoBuf.Serializer.PrepareSerializer<T>();
         }

@@ -10,31 +10,34 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public class MessagePackStacksSerializer : BaseStacksSerializer
+    public class MessagePackStacksSerializer : IStacksSerializer
     {
         private SerializationContext context;
 
-        public MessagePackStacksSerializer(IMessageHandler messageHandler)
-            : base(messageHandler)
+        public MessagePackStacksSerializer()
         {
             
         }
 
-        protected override void Initialize()
+        public void Initialize()
         {
             this.context = new SerializationContext();
         }
 
-        protected override Func<MemoryStream, T> CreateDeserializer<T>()
+        public Func<MemoryStream, T> CreateDeserializer<T>()
         {
             var d = MessagePackSerializer.Create<T>(this.context);
             return ms => d.Unpack(ms);
         }
 
-        public override void Serialize<T>(T obj, MemoryStream ms)
+        public void Serialize<T>(T obj, MemoryStream ms)
         {
             var s = MessagePackSerializer.Create<T>(this.context);
             s.Pack(ms, obj);
+        }
+
+        public void PrepareSerializerForType<T>()
+        {
         }
     }
 }
