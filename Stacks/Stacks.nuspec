@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">    
+    <id>Stacks</id>
+    <version>@build.number@</version>
+    <authors>Marcin Deptuła</authors>
+    <owners>Marcin Deptuła</owners>
+    <summary>Simple to use actor/network library</summary>
+    <licenseUrl>https://github.com/Ravadre/Stacks</licenseUrl>
+    <projectUrl>https://github.com/Ravadre/Stacks</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Stacks - actor/network library</description>
+    <copyright>Copyright Marcin Deptuła</copyright>    
+    <tags>C# Socket Network Actor</tags>
+    @dependencies@
+  </metadata>
+</package>
