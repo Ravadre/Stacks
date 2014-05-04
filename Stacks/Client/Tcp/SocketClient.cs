@@ -10,7 +10,7 @@ using NLog;
 
 namespace Stacks.Tcp
 {
-    public class SocketClient : ISocketClient
+    public class SocketClient : IRawByteClient
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
@@ -37,6 +37,8 @@ namespace Stacks.Tcp
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
 
+        private TaskCompletionSource<int> connectedTcs;
+
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
@@ -51,6 +53,7 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor, Socket socket)
         {
+            this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = socket;
             this.wasConnected = true;
@@ -73,6 +76,7 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor)
         {
+            this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
@@ -80,7 +84,7 @@ namespace Stacks.Tcp
             this.wasConnected = false;
         }
 
-        public void Connect(IPEndPoint remoteEndPoint)
+        public Task Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
                 throw new InvalidOperationException("Socket was already in connected state");
@@ -94,6 +98,8 @@ namespace Stacks.Tcp
 
             if (!isPending)
                 ConnectedCapture(this, this.connectArgs);
+
+            return connectedTcs.Task;
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
@@ -342,6 +348,8 @@ namespace Stacks.Tcp
 
         private void OnDisconnected(Exception e)
         {
+            NotifyConnectedTask(e);
+
             var h = Disconnected;
 
             if (h != null)
@@ -364,6 +372,8 @@ namespace Stacks.Tcp
 
         private void OnConnected()
         {
+            NotifyConnectedTask(null);
+
             var h = Connected;
 
             if (h != null)
@@ -373,5 +383,12 @@ namespace Stacks.Tcp
             }
         }
 
+        private void NotifyConnectedTask(Exception error)
+        {
+            if (error == null)
+                connectedTcs.SetResult(0);
+            else
+                connectedTcs.SetException(error);
+        }
     }
 }

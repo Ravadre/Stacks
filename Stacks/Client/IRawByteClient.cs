@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public interface IRawByteClient
+    public interface IRawByteClient : ISocketClient
     {
         event Action<ArraySegment<byte>> Received;
         event Action<int> Sent;

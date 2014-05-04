@@ -23,6 +23,12 @@ namespace Stacks.Tcp
             remove { this.client.Sent -= value; }
         }
 
+        public event Action Connected
+        {
+            add { this.client.Connected += value; }
+            remove { this.client.Connected -= value; }
+        }
+
         public event Action<ArraySegment<byte>> Received;
 
         public FramedClient(IRawByteClient client)
@@ -81,6 +87,21 @@ namespace Stacks.Tcp
                 try { h(data); }
                 catch { }
             }
+        }
+
+        public IExecutor Executor
+        {
+            get { return client.Executor; }
+        }
+
+        public bool IsConnected
+        {
+            get { return client.IsConnected; }
+        }
+
+        public Task Connect(System.Net.IPEndPoint remoteEndPoint)
+        {
+            return client.Connect(remoteEndPoint);
         }
     }
 }

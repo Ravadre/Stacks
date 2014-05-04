@@ -35,6 +35,9 @@ namespace Stacks.Tcp
 
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {
+            Ensure.IsNotNull(executor, "executor");
+            Ensure.IsNotNull(bindEndPoint, "bindEndPoint");
+
             this.executor = executor;
 
             this.socket = new Socket(AddressFamily.InterNetwork,
@@ -54,7 +57,7 @@ namespace Stacks.Tcp
             this.socket.LingerState = new LingerOption(false, 0);
             this.bindEndPoint = (IPEndPoint)this.socket.LocalEndPoint;
             this.socket.Listen(10);
-            
+
             StartAccepting();
             OnStarted();
         }

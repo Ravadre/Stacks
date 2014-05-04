@@ -4,22 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Threading.Tasks.Dataflow;
+using System.Collections.Concurrent;
 
 namespace Stacks
 {
-#if !MONO
+#if MONO
     public class ActionBlockExecutor : SynchronizationContext, IExecutor
     {
-        private ActionBlock<Action> queue;
-        private string name;
+        private BlockingCollection<Action> col;
+        private TaskCompletionSource<int> tcs;
+        private volatile bool isStopping;
+        private Thread runner;
 
-        private bool supportSynchronizationContext;
-
-        public Task Completion { get { return queue.Completion; } }
+        private readonly string name;
+        private readonly bool supportSynchronizationContext;
 
         public event Action<Exception> Error;
-
+          
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
         { }
@@ -32,20 +33,41 @@ namespace Stacks
         {
             this.name = name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
-            this.queue = new ActionBlock<Action>(a =>
+         
+            if (settings.QueueBoundedCapacity <= 0)
+                col = new BlockingCollection<Action>();
+            else
+                col = new BlockingCollection<Action>(settings.QueueBoundedCapacity);
+           
+            tcs = new TaskCompletionSource<int>();
+            runner = new Thread(new ThreadStart(Run));
+            runner.IsBackground = true;
+            runner.Start();
+        }
+
+        private void Run()
+        {
+            Action a;
+
+            while (true)
             {
-                ExecuteAction(a);
-            }, new ExecutionDataflowBlockOptions
-            {
-                BoundedCapacity = settings.QueueBoundedCapacity,
-                MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism
-            });
+                if (this.isStopping && col.Count == 0)
+                    break;
+
+                if (col.TryTake(out a, 50))
+                {
+                    ExecuteAction(a);
+                }
+            }
+            
+            tcs.SetResult(0);
         }
 
         private void ExecuteAction(Action a)
         {
             SynchronizationContext oldCtx = null;
-            if (this.supportSynchronizationContext)
+
+            if (supportSynchronizationContext)
             {
                 oldCtx = SynchronizationContext.Current;
                 SynchronizationContext.SetSynchronizationContext(this);
@@ -61,15 +83,17 @@ namespace Stacks
             }
             finally
             {
-                if (this.supportSynchronizationContext)
+                if (supportSynchronizationContext)
+                {
                     SynchronizationContext.SetSynchronizationContext(oldCtx);
+                }
             }
         }
 
         private void ErrorOccured(Exception e)
         {
             OnError(e);
-            this.queue.Complete();
+            isStopping = true;
         }
 
         private void OnError(Exception e)
@@ -84,40 +108,24 @@ namespace Stacks
 
         public void Enqueue(Action action)
         {
-            if (!queue.Post(action))
-                queue.SendAsync(action).Wait();
+            if (!isStopping)
+                col.Add(action);
         }
 
         public Task Stop()
         {
-            queue.Complete();
-            return queue.Completion;
+            isStopping = true;
+            return tcs.Task as Task;
+        }
+
+        public Task Completion
+        {
+            get { return tcs.Task as Task; }
         }
 
         public SynchronizationContext Context
         {
-            get
-            {
-                if (!this.supportSynchronizationContext)
-                    throw new InvalidOperationException("This instance of action block executor " +
-                                                        "does not support synchronization context");
-                return this;
-            }
-        }
-
-        public override SynchronizationContext CreateCopy()
-        {
-            return this;
-        }
-
-        public override void Post(SendOrPostCallback d, object state)
-        {
-            Enqueue(() => d(state));
-        }
-
-        public override void Send(SendOrPostCallback d, object state)
-        {
-            throw new NotSupportedException();
+            get { return this; }
         }
 
         public override string ToString()

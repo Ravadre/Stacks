@@ -18,14 +18,14 @@ namespace Stacks.Tests
             protected Mock<IRawByteClient> rawClient;
             protected FramedClient framedClient;
             protected Mock<IStacksSerializer> serializer;
-            protected Mock<IMessageHandler> messageHandler;
+            protected Mock<TestDataHandler> messageHandler;
 
             public Base()
             {
                 rawClient = new Mock<IRawByteClient>();
                 framedClient = new FramedClient(rawClient.Object);
                 serializer = new Mock<IStacksSerializer>();
-                messageHandler = new Mock<IMessageHandler>();
+                messageHandler = new Mock<TestDataHandler>();
             }
 
             protected TestData CreateSampleTestData()
@@ -62,6 +62,22 @@ namespace Stacks.Tests
             }
         }
 
+        public class Receive : Base
+        {
+            [Fact]
+            public void Receiving_packet_should_be_deserialized_properly()
+            {
+                serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns((MemoryStream ms) => new TestData());
+
+                var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
+
+                rawClient.Raise(r => r.Received += delegate { }, new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0 }));
+
+                messageHandler.Verify(m => m.HandleTestData(It.IsAny<IMessageClient>(), It.IsAny<TestData>()), Times.Once());
+
+            }
+        }
+
 
 
         
@@ -76,7 +92,7 @@ namespace Stacks.Tests
         public abstract class TestDataHandler : IMessageHandler
         {
             [MessageHandler(3)]
-            public abstract void HandleTestData(TestData data);
+            public abstract void HandleTestData(IMessageClient client, TestData data);
         }
     }
 }
