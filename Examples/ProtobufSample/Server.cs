@@ -67,17 +67,17 @@ namespace ProtobufSample
         }
 
         [MessageHandler(1)]
-        public async void HandleTemperatureRequest(TemperatureRequest request)
+        public async void HandleTemperatureRequest(MessageClient client, TemperatureRequest request)
         {
             await Context;
 
             var temp = await service.GetTemperature(request.City);
 
-            //client.Send(2, new TemperatureResponse 
-            //{ 
-            //    City = request.City, 
-            //    Temperature = temp,
-            //});
+            client.Send(2, new TemperatureResponse
+            {
+                City = request.City,
+                Temperature = temp,
+            });
         }
     }
 

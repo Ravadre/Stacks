@@ -42,14 +42,14 @@ namespace ProtobufSample
         public void HandleTemperatureResponse(TemperatureResponse response)
         {
             Console.WriteLine("Received temperature response: " + 
-                response.City + " = " + response.Temperature);
+                response.City + " = " + response.Temperature.ToString("F2") + "\u00b0C");
         }
 
         [MessageHandler(3)]
         public void HandleTemperatureChanged(TemperatureChanged tempChanged)
         {
             Console.WriteLine("Temperature changed: " +
-                tempChanged.City + " = " + tempChanged.Temperature);
+                tempChanged.City + " = " + tempChanged.Temperature.ToString("F2") + "\u00b0C");
         }
     }
 }
