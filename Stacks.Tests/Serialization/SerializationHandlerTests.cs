@@ -14,10 +14,12 @@ namespace Stacks.Tests.Serialization
     {
         protected Mock<IStacksSerializer> serializer;
         protected Mock<IMessageHandler> messageHandler;
+        protected Mock<IMessageClient> messageClient;
 
         public SerializationHandlerTests()
         {
             serializer = new Mock<IStacksSerializer>();
+            messageClient = new Mock<IMessageClient>();
             messageHandler = new Mock<IMessageHandler>();
         }
 
@@ -34,7 +36,7 @@ namespace Stacks.Tests.Serialization
         [Fact]
         public void Serialize_should_call_implemented_serializer()
         {
-            var ser = new BaseStacksSerializer(serializer.Object, messageHandler.Object);
+            var ser = new StacksSerializationHandler(messageClient.Object, serializer.Object, messageHandler.Object);
 
             var test = CreateSampleTestData();
             var ms = new MemoryStream();
@@ -53,15 +55,15 @@ namespace Stacks.Tests.Serialization
             serializer.Setup(s => s.CreateDeserializer<TestData2>()).Returns(ms => CreateSampleTestData2());
             serializer.Setup(s => s.CreateDeserializer<TestData3>()).Returns(ms => new TestData3());
 
-            h.Setup(m => m.HandleTestData3(It.IsAny<TestData2>())).Callback((TestData2 c) =>
+            h.Setup(m => m.HandleTestData3(It.IsAny<IMessageClient>(), It.IsAny<TestData2>())).Callback((IMessageClient _, TestData2 c) =>
                 {
                     Assert.Equal(data.Foo2, c.Foo2);
                 });
 
-            var ser = new BaseStacksSerializer(serializer.Object, h.Object);
+            var ser = new StacksSerializationHandler(messageClient.Object, serializer.Object, h.Object);
             ser.Deserialize(3, new MemoryStream());
 
-            h.Verify(m => m.HandleTestData3(It.IsAny<TestData2>()), Times.Once());
+            h.Verify(m => m.HandleTestData3(It.IsAny<IMessageClient>(), It.IsAny<TestData2>()), Times.Once());
         }
         
         [Fact]
@@ -70,7 +72,7 @@ namespace Stacks.Tests.Serialization
             var h = new Mock<TestDataHandler>();
             serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns(ms => CreateSampleTestData());
 
-            var ser = new BaseStacksSerializer(serializer.Object, h.Object);
+            var ser = new StacksSerializationHandler(messageClient.Object, serializer.Object, h.Object);
 
             Assert.Throws(typeof(InvalidOperationException),
                 () =>
@@ -100,21 +102,21 @@ namespace Stacks.Tests.Serialization
         public abstract class TestDataHandler : IMessageHandler
         {
             [MessageHandler(3)]
-            public abstract void HandleTestData(TestData data);
+            public abstract void HandleTestData(IMessageClient client, TestData data);
         }
 
         public abstract class MultiTestDataHandler : IMessageHandler
         {
             [MessageHandler(1)]
-            public abstract void HandleTestData(TestData data);
+            public abstract void HandleTestData(IMessageClient client, TestData data);
             [MessageHandler(2)]
-            public abstract void HandleTestData2(TestData2 data);
+            public abstract void HandleTestData2(IMessageClient client, TestData2 data);
             [MessageHandler(3)]
-            public abstract void HandleTestData3(TestData2 data);
+            public abstract void HandleTestData3(IMessageClient client, TestData2 data);
             [MessageHandler(4)]
-            public abstract void HandleTestData4(TestData3 data);
+            public abstract void HandleTestData4(IMessageClient client, TestData3 data);
             [MessageHandler(5)]
-            public abstract void HandleTestData5(TestData3 data);
+            public abstract void HandleTestData5(IMessageClient client, TestData3 data);
         }
     }
 }

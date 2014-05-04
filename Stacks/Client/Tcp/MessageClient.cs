@@ -8,11 +8,27 @@ using System.Threading.Tasks;
 
 namespace Stacks.Tcp
 {
-    public class MessageClient
+    public class MessageClient : IMessageClient
     {
         private IFramedClient framedClient;
-        private BaseStacksSerializer packetSerializer;
-        
+        private StacksSerializationHandler packetSerializer;
+
+        public IExecutor Executor
+        {
+            get { return framedClient.Executor; }
+        }
+
+        public bool IsConnected
+        {
+            get { return framedClient.IsConnected; }
+        }
+
+        public event Action Connected
+        {
+            add { this.framedClient.Connected += value; }
+            remove { this.framedClient.Connected -= value; }
+        }
+
         public event Action<Exception> Disconnected
         {
             add { this.framedClient.Disconnected += value; }
@@ -29,7 +45,7 @@ namespace Stacks.Tcp
                              IMessageHandler messageHandler)
         {
             this.framedClient = framedClient;
-            this.packetSerializer = new BaseStacksSerializer(packetSerializer, messageHandler);
+            this.packetSerializer = new StacksSerializationHandler(this, packetSerializer, messageHandler);
 
             this.framedClient.Received += PacketReceived;
         }
@@ -76,5 +92,6 @@ namespace Stacks.Tcp
         {
             this.framedClient.Close();
         }
+
     }
 }
