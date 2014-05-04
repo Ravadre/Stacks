@@ -6,7 +6,7 @@
     <authors>Marcin Deptuła</authors>
     <owners>Marcin Deptuła</owners>
     <summary>Stacks serialization extension which uses MessagePack</summary>
-    <licenseUrl>https://github.com/Ravadre/Stacks</licenseUrl>
+    <licenseUrl>https://raw.githubusercontent.com/Ravadre/Stacks/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Ravadre/Stacks</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Stacks - actor/network library</description>
