@@ -29,6 +29,8 @@ namespace Stacks.Tcp
             remove { this.client.Connected -= value; }
         }
 
+        public Task ConnectedTask { get { return client.ConnectedTask; } }
+
         public event Action<ArraySegment<byte>> Received;
 
         public FramedClient(IRawByteClient client)

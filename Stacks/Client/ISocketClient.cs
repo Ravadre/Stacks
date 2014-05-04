@@ -11,6 +11,7 @@ namespace Stacks
     {
         IExecutor Executor { get; }
         bool IsConnected { get; }
+        Task ConnectedTask { get; }
 
         event Action Connected;
 

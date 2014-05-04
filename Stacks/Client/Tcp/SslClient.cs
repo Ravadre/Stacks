@@ -19,6 +19,9 @@ namespace Stacks.Tcp
         public event Action<Exception> Disconnected;
         public event Action Connected;
 
+        public Task ConnectedTask { get { return (Task)connectedTcs.Task; } }
+        private TaskCompletionSource<int> connectedTcs;
+
         private IRawByteClient client;
         private SslStream sslStream;
         private RawByteClientStream clientStreamWrapper;
@@ -115,6 +118,7 @@ namespace Stacks.Tcp
         private void InitializeCommon(IRawByteClient client,
                                 bool isClient)
         {
+            this.connectedTcs = new TaskCompletionSource<int>();
             this.isClient = isClient;
             this.disconnectCalled = false;
             this.client = client;
@@ -290,6 +294,8 @@ namespace Stacks.Tcp
 
         private void OnConnected()
         {
+            NotifyConnectedTask(null);
+
             var handler = this.Connected;
 
             if (handler != null)
@@ -301,6 +307,8 @@ namespace Stacks.Tcp
 
         private void OnDisconnected(Exception exn)
         {
+            NotifyConnectedTask(exn);
+
             var handler = this.Disconnected;
 
             if (handler != null)
@@ -319,6 +327,14 @@ namespace Stacks.Tcp
                 try { handler(count); }
                 catch { }
             }
+        }
+
+        private void NotifyConnectedTask(Exception error)
+        {
+            if (error == null)
+                connectedTcs.SetResult(0);
+            else
+                connectedTcs.SetException(error);
         }
     }
 }

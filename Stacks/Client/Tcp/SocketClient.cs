@@ -37,6 +37,9 @@ namespace Stacks.Tcp
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
 
+        private TaskCompletionSource<int> connectedTcs;
+        public Task ConnectedTask { get { return (Task)connectedTcs.Task; }}
+
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
@@ -51,6 +54,7 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor, Socket socket)
         {
+            this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = socket;
             this.wasConnected = true;
@@ -73,6 +77,7 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor)
         {
+            this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
@@ -342,6 +347,8 @@ namespace Stacks.Tcp
 
         private void OnDisconnected(Exception e)
         {
+            NotifyConnectedTask(e);
+
             var h = Disconnected;
 
             if (h != null)
@@ -364,6 +371,8 @@ namespace Stacks.Tcp
 
         private void OnConnected()
         {
+            NotifyConnectedTask(null);
+
             var h = Connected;
 
             if (h != null)
@@ -373,5 +382,12 @@ namespace Stacks.Tcp
             }
         }
 
+        private void NotifyConnectedTask(Exception error)
+        {
+            if (error == null)
+                connectedTcs.SetResult(0);
+            else
+                connectedTcs.SetException(error);
+        }
     }
 }
