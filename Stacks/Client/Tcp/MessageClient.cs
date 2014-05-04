@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -31,6 +32,11 @@ namespace Stacks.Tcp
             this.packetSerializer = new BaseStacksSerializer(packetSerializer, messageHandler);
 
             this.framedClient.Received += PacketReceived;
+        }
+
+        public Task Connect(IPEndPoint endPoint)
+        {
+            return framedClient.Connect(endPoint);
         }
 
         private unsafe void PacketReceived(ArraySegment<byte> buffer)
