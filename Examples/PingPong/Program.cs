@@ -12,33 +12,38 @@ namespace PingPong
     class Program
     {
         static IFramedClient client;
+        static IFramedClient serverClient;
+        static Encoding encoding;
 
         static void Main(string[] args)
         {
+            encoding = Encoding.ASCII;
             SocketServer server;
             server = new SocketServer(new IPEndPoint(IPAddress.Loopback, 0));
 
-            server.Started += () =>
-                {
-                    HandleClient(server.BindEndPoint.Port);
-                };
             server.Connected += c =>
                 {
-                    var framed = new FramedClient(c);
-                    framed.Received += bs =>
+                    serverClient = new FramedClient(c);
+
+                    // When received is called, bs will contain no more and no less
+                    // data than whole packet as sent from client.
+                    serverClient.Received += bs =>
                         {
-                            var msg = Encoding.ASCII.GetString(bs.Array, bs.Offset, bs.Count);
+                            var msg = encoding.GetString(bs.Array, bs.Offset, bs.Count);
                             msg = "Hello, " + msg + "!";
-                            framed.SendPacket(Encoding.ASCII.GetBytes(msg));
+                            serverClient.SendPacket(encoding.GetBytes(msg));
                         };
                 };
-            server.Start();
 
+            server.Start();
+            HandleClient(server.BindEndPoint.Port);
+            
             Console.WriteLine("Press any key to stop...");
             Console.ReadKey();
 
             server.Stop();
             client.Close();
+            serverClient.Close();
 
         }
 
@@ -49,24 +54,12 @@ namespace PingPong
 
             client.Received += bs =>
                 {
-                    Console.WriteLine("Received: " + 
-                        Encoding.ASCII.GetString(bs.Array, bs.Offset, bs.Count));
+                    Console.WriteLine("Received: " +
+                        encoding.GetString(bs.Array, bs.Offset, bs.Count));
                 };
             
             await client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort));
-            client.SendPacket(Encoding.ASCII.GetBytes("Steve"));
-        }
-    }
-
-    class Server
-    {
-    }
-
-    class Client
-    {
-        public void Run()
-        {
-
+            client.SendPacket(encoding.GetBytes("Steve"));
         }
     }
 }
