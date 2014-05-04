@@ -48,6 +48,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "Examples\PingPo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtobufSample", "Examples\ProtobufSample\ProtobufSample.csproj", "{36E76069-E5AA-4D43-9EA8-864A58BE9E66}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{F4ED655C-386E-42D7-9B7D-EC00408287AD}"
+	ProjectSection(SolutionItems) = preProject
+		Build.fsx = Build.fsx
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
