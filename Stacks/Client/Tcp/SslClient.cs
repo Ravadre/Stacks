@@ -19,7 +19,6 @@ namespace Stacks.Tcp
         public event Action<Exception> Disconnected;
         public event Action Connected;
 
-        public Task ConnectedTask { get { return (Task)connectedTcs.Task; } }
         private TaskCompletionSource<int> connectedTcs;
 
         private IRawByteClient client;
@@ -138,11 +137,13 @@ namespace Stacks.Tcp
         /// and ssl stream are both established.
         /// </summary>
         /// <param name="remoteEndPoint"></param>
-        public void Connect(IPEndPoint remoteEndPoint)
+        public Task Connect(IPEndPoint remoteEndPoint)
         {
             Ensure.IsNotNull(remoteEndPoint, "remoteEndPoint");
 
             this.client.Connect(remoteEndPoint);
+
+            return connectedTcs.Task;
         }
 
         /// <summary>
@@ -150,9 +151,11 @@ namespace Stacks.Tcp
         /// with already connected socket. In this case, this method will
         /// establish ssl and call Connected event.
         /// </summary>
-        public void EstablishSsl()
+        public Task EstablishSsl()
         {
             this.Executor.Enqueue(() => ClientConnected());
+
+            return connectedTcs.Task;
         }
 
         private async void ClientConnected()

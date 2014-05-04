@@ -42,7 +42,7 @@ namespace PingPong
 
         }
 
-        static void HandleClient(int serverPort)
+        static async void HandleClient(int serverPort)
         {
             client = new FramedClient(
                             new SocketClient());
@@ -52,12 +52,9 @@ namespace PingPong
                     Console.WriteLine("Received: " + 
                         Encoding.ASCII.GetString(bs.Array, bs.Offset, bs.Count));
                 };
-            client.Connected += () =>
-                {
-                    client.SendPacket(Encoding.ASCII.GetBytes("Steve"));
-                };
-
-            client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort));
+            
+            await client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort));
+            client.SendPacket(Encoding.ASCII.GetBytes("Steve"));
         }
     }
 

@@ -38,7 +38,6 @@ namespace Stacks.Tcp
         public event Action<int> Sent;
 
         private TaskCompletionSource<int> connectedTcs;
-        public Task ConnectedTask { get { return (Task)connectedTcs.Task; }}
 
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
@@ -85,7 +84,7 @@ namespace Stacks.Tcp
             this.wasConnected = false;
         }
 
-        public void Connect(IPEndPoint remoteEndPoint)
+        public Task Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
                 throw new InvalidOperationException("Socket was already in connected state");
@@ -99,6 +98,8 @@ namespace Stacks.Tcp
 
             if (!isPending)
                 ConnectedCapture(this, this.connectArgs);
+
+            return connectedTcs.Task;
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
