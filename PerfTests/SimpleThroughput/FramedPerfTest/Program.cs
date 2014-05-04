@@ -52,7 +52,7 @@ namespace RawStreamPerfTest
             {
                 totalRecv += bs.Count;
                 ++totalPacketsRecv;
-                if (totalRecv == l * (bufSize + 4)) received.Set();
+                if (totalRecv == l * bufSize) received.Set();
             };
             Action<int> sent = (t) => Console.WriteLine("Sent ");
 
