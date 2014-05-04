@@ -126,4 +126,4 @@ Copyright and License
 ----------
 Copyright 2014 Marcin Deptuła
 
-Licensed under the MIT License
+Licensed under the [MIT License](/LICENSE)
