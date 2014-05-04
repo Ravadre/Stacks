@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public interface IFramedClient
+    public interface IFramedClient : ISocketClient
     {
         event Action<Exception> Disconnected;
         event Action<int> Sent;

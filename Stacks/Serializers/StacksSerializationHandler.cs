@@ -5,21 +5,25 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Tcp;
 
 namespace Stacks
 {
-    public class BaseStacksSerializer
+    public class StacksSerializationHandler
     {
         private Dictionary<int, Action<MemoryStream>> serializerHandlerByTypeCode;
 
         private IMessageHandler messageHandler;
         private IStacksSerializer serializer;
+        private IMessageClient client;
 
-        public BaseStacksSerializer(IStacksSerializer serializer, IMessageHandler messageHandler)
+        public StacksSerializationHandler(IMessageClient client, IStacksSerializer serializer, IMessageHandler messageHandler)
         {
+            Ensure.IsNotNull(client, "client");
             Ensure.IsNotNull(serializer, "serializer");
             Ensure.IsNotNull(messageHandler, "messageHandler");
 
+            this.client = client;
             this.serializerHandlerByTypeCode = new Dictionary<int, Action<MemoryStream>>();
             this.messageHandler = messageHandler;
             this.serializer = serializer;
@@ -72,7 +76,10 @@ namespace Stacks
             if (mi.IsConstructor)
                 return false;
 
-            if (mi.GetParameters().Length != 1)
+            if (mi.GetParameters().Length != 2)
+                return false;
+
+            if (!typeof(IMessageClient).IsAssignableFrom(mi.GetParameters()[0].ParameterType))
                 return false;
 
             return true;
@@ -90,14 +97,14 @@ namespace Stacks
 
         private static Type GetMessageHandlerParameterType(MethodInfo mi)
         {
-            return mi.GetParameters()[0].ParameterType;
+            return mi.GetParameters()[1].ParameterType;
         }
 
         private Action<MemoryStream> CreateSerializerForType(Type type, MethodInfo mi)
         {
-            var createLambdaMethod = typeof(BaseStacksSerializer)
+            var createLambdaMethod = typeof(StacksSerializationHandler)
                                          .GetMethod("CreateLambda", BindingFlags.Instance | BindingFlags.NonPublic)
-                                         .MakeGenericMethod(type);
+                                         .MakeGenericMethod(mi.GetParameters()[0].ParameterType, type);
 
             this.serializer
                 .GetType()
@@ -109,16 +116,16 @@ namespace Stacks
             return (Action<MemoryStream>)createLambdaMethod.Invoke(this, new[] { mi });
         }
 
-        private Action<MemoryStream> CreateLambda<T>(MethodInfo mi)
+        private Action<MemoryStream> CreateLambda<T, Y>(MethodInfo mi)
         {
-            var handler = (Action<T>)Delegate.CreateDelegate(typeof(Action<T>), messageHandler, mi);
+            var handler = (Action<T, Y>)Delegate.CreateDelegate(typeof(Action<T, Y>), messageHandler, mi);
 
-            var deserializer = this.serializer.CreateDeserializer<T>();
+            var deserializer = this.serializer.CreateDeserializer<Y>();
 
             return ms =>
             {
                 var obj = deserializer(ms);
-                handler(obj);
+                handler((T)client, obj);
             };
         }
     }

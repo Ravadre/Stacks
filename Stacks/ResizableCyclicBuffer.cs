@@ -89,7 +89,7 @@ namespace Stacks
                         break;
 
                     packets.Add(new ArraySegment<byte>
-                        (buffer, beginOffset, size));
+                        (buffer, beginOffset + 4, size - 4));
 
                     beginOffset += size;
                     bPtr += size;
