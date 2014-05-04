@@ -44,7 +44,6 @@ namespace PingPong
             server.Stop();
             client.Close();
             serverClient.Close();
-
         }
 
         static async void HandleClient(int serverPort)
