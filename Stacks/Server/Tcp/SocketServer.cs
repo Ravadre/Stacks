@@ -25,6 +25,8 @@ namespace Stacks.Tcp
         public event Action Stopped;
         public event Action<SocketClient> Connected;
 
+        private TaskCompletionSource<int> startedTcs;
+
         private IExecutor executor;
 
         private int hasStarted;
@@ -35,6 +37,10 @@ namespace Stacks.Tcp
 
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {
+            Ensure.IsNotNull(executor, "executor");
+            Ensure.IsNotNull(bindEndPoint, "bindEndPoint");
+
+            this.startedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
 
             this.socket = new Socket(AddressFamily.InterNetwork,
