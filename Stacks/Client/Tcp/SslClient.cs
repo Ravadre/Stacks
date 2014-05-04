@@ -12,14 +12,14 @@ using System.Threading.Tasks;
 
 namespace Stacks.Tcp
 {
-    public class SslClient : ISocketClient
+    public class SslClient : IRawByteClient
     {
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
         public event Action<Exception> Disconnected;
         public event Action Connected;
 
-        private ISocketClient client;
+        private IRawByteClient client;
         private SslStream sslStream;
         private RawByteClientStream clientStreamWrapper;
         private string targetHost;
@@ -36,14 +36,14 @@ namespace Stacks.Tcp
         /// <summary>
         /// Initialises ssl client as a client side endpoint.
         /// </summary>
-        public SslClient(ISocketClient client, string targetHost)
+        public SslClient(IRawByteClient client, string targetHost)
             : this(client, targetHost, allowEveryCertificate: false)
         { }
 
         /// <summary>
         /// Initialises ssl client as a client side endpoint.
         /// </summary>
-        public SslClient(ISocketClient client, string targetHost, bool allowEveryCertificate)
+        public SslClient(IRawByteClient client, string targetHost, bool allowEveryCertificate)
         {
             Ensure.IsNotNull(client, "client");
             Ensure.IsNotNullOrWhiteSpace(targetHost, "targetHost");
@@ -57,7 +57,7 @@ namespace Stacks.Tcp
         /// <summary>
         /// Initialises ssl client as a client side endpoint.
         /// </summary>
-        public SslClient(ISocketClient client,
+        public SslClient(IRawByteClient client,
                          string targetHost,
                          RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
@@ -72,7 +72,7 @@ namespace Stacks.Tcp
         /// It is assumed, that passed client is already connected.
         /// EstablishSsl should be called when this constructor is used.
         /// </summary>
-        public SslClient(ISocketClient client,
+        public SslClient(IRawByteClient client,
                          X509Certificate serverCertificate)
         {
             Ensure.IsNotNull(client, "client");
@@ -84,7 +84,7 @@ namespace Stacks.Tcp
             InitializeAsServer(client, serverCertificate);
         }
 
-        private void InitializeAsServer(ISocketClient client,
+        private void InitializeAsServer(IRawByteClient client,
                                         X509Certificate certificate)
         {
             InitializeCommon(client, isClient: false);
@@ -96,7 +96,7 @@ namespace Stacks.Tcp
                 true);
         }
 
-        private void InitializeAsClient(ISocketClient client,
+        private void InitializeAsClient(IRawByteClient client,
                                         string targetHost,
                                         RemoteCertificateValidationCallback remoteCertificateValidationCallback)
         {
@@ -112,7 +112,7 @@ namespace Stacks.Tcp
                 EncryptionPolicy.RequireEncryption);
         }
 
-        private void InitializeCommon(ISocketClient client,
+        private void InitializeCommon(IRawByteClient client,
                                 bool isClient)
         {
             this.isClient = isClient;

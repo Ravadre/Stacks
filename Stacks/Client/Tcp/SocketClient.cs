@@ -10,7 +10,7 @@ using NLog;
 
 namespace Stacks.Tcp
 {
-    public class SocketClient : ISocketClient
+    public class SocketClient : IRawByteClient
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 

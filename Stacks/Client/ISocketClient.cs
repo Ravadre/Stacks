@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public interface ISocketClient : IRawByteClient
+    public interface ISocketClient
     {
         IExecutor Executor { get; }
         bool IsConnected { get; }
