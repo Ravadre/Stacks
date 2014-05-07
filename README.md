@@ -121,6 +121,15 @@ public class ServerMessageHandler : Actor, IMessageHandler
 }
 ```
 
+### Building on Mono (and Linux) ###
+
+Building requires at least Mono 3.2, previous versions will crash during compilation.
+```
+wget https://nuget.org/nuget.exe
+mono nuget.exe restore
+xbuild Stacks-Mono.sln
+```
+
 Copyright and License
 ---------------------
 ----------
