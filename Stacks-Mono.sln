@@ -1,44 +1,44 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30324.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks", "Stacks\Stacks.csproj", "{9E0D5C52-AD78-4A5E-82AD-289D272A111D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks", "Stacks\Stacks-Mono.csproj", "{9E0D5C52-AD78-4A5E-82AD-289D272A111D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Tests", "Stacks.Tests\Stacks.Tests.csproj", "{D7D92DBF-9A29-4A86-ADA7-D60BE73E7CB2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Tests", "Stacks.Tests\Stacks.Tests-Mono.csproj", "{D7D92DBF-9A29-4A86-ADA7-D60BE73E7CB2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PerfTests", "PerfTests", "{1E638865-0E75-4443-9BD2-130751C33DEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Actors", "PerfTests\Actors\Actors.csproj", "{7FC0E05A-0E60-4788-B015-1071B104447F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Actors", "PerfTests\Actors\Actors-Mono.csproj", "{7FC0E05A-0E60-4788-B015-1071B104447F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SimpleThroughput", "SimpleThroughput", "{2E7A4305-4D99-4BFC-8857-72EF8CDEBCFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RawStreamPerfTest", "PerfTests\SimpleThroughput\RawStreamPerfTest\RawStreamPerfTest.csproj", "{C47406E4-A196-456A-91AD-5B86DB5F44E8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RawStreamPerfTest", "PerfTests\SimpleThroughput\RawStreamPerfTest\RawStreamPerfTest-Mono.csproj", "{C47406E4-A196-456A-91AD-5B86DB5F44E8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FramedPerfTest", "PerfTests\SimpleThroughput\FramedPerfTest\FramedPerfTest.csproj", "{9DA21C1F-DFF8-49F9-B7D8-DD5BA07AAFE9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FramedPerfTest", "PerfTests\SimpleThroughput\FramedPerfTest\FramedPerfTest-Mono.csproj", "{9DA21C1F-DFF8-49F9-B7D8-DD5BA07AAFE9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.MessagePack", "Stacks.MessagePack\Stacks.MessagePack.csproj", "{3DB3E2C1-08DF-4FA5-A3B1-BFBAA8AC513C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.MessagePack", "Stacks.MessagePack\Stacks.MessagePack-Mono.csproj", "{3DB3E2C1-08DF-4FA5-A3B1-BFBAA8AC513C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.ProtoBuf", "Stacks.ProtoBuf\Stacks.ProtoBuf.csproj", "{27637DF0-FDA6-409D-879E-35AB309EE0E6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.ProtoBuf", "Stacks.ProtoBuf\Stacks.ProtoBuf-Mono.csproj", "{27637DF0-FDA6-409D-879E-35AB309EE0E6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5503BE7F-BF48-4825-94DF-D6B2ABACC848}"
 	ProjectSection(SolutionItems) = preProject
 		SharedAssemblyInfo.cs = SharedAssemblyInfo.cs
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Executors", "PerfTests\Executors\Executors.csproj", "{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Executors", "PerfTests\Executors\Executors-Mono.csproj", "{08A3C98B-5A61-4C3B-954B-A6ACDD009C27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Rpc", "Stacks.Rpc\Stacks.Rpc.csproj", "{41C8A811-D6EE-449A-B508-8BFE42ABB65D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Rpc", "Stacks.Rpc\Stacks.Rpc-Mono.csproj", "{41C8A811-D6EE-449A-B508-8BFE42ABB65D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{03B85743-07E0-40A3-A074-CBCDECEB3B55}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorSample1", "Examples\ActorSample1\ActorSample1.csproj", "{B72D2B13-5003-47B3-8404-F3696CEEA4C1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorSample1", "Examples\ActorSample1\ActorSample1-Mono.csproj", "{B72D2B13-5003-47B3-8404-F3696CEEA4C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorSample2", "Examples\ActorSample2\ActorSample2.csproj", "{2961BCD8-1814-4F1E-993E-003F831FA085}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActorSample2", "Examples\ActorSample2\ActorSample2-Mono.csproj", "{2961BCD8-1814-4F1E-993E-003F831FA085}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "Examples\PingPong\PingPong.csproj", "{1E1371B8-1F03-465A-BAEF-EEB1ED31B43C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "Examples\PingPong\PingPong-Mono.csproj", "{1E1371B8-1F03-465A-BAEF-EEB1ED31B43C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtobufSample", "Examples\ProtobufSample\ProtobufSample.csproj", "{36E76069-E5AA-4D43-9EA8-864A58BE9E66}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtobufSample", "Examples\ProtobufSample\ProtobufSample-Mono.csproj", "{36E76069-E5AA-4D43-9EA8-864A58BE9E66}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{F4ED655C-386E-42D7-9B7D-EC00408287AD}"
 	ProjectSection(SolutionItems) = preProject

@@ -106,12 +106,20 @@ namespace Stacks.Tcp
 
             this.targetHost = targetHost;
             this.clientStreamWrapper = new RawByteClientStream(this.client);
+#if !MONO
             this.sslStream = new SslStream(
                 this.clientStreamWrapper,
                 true,
                 remoteCertificateValidationCallback,
                 null,
                 EncryptionPolicy.RequireEncryption);
+#else
+            this.sslStream = new SslStream(
+                this.clientStreamWrapper,
+                true,
+                remoteCertificateValidationCallback,
+                null);
+#endif
         }
 
         private void InitializeCommon(IRawByteClient client,
