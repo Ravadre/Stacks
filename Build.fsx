@@ -9,7 +9,7 @@ let dir (project) =
     project @@ "bin" @@ (if platform = "Any CPU" then "" else platform) @@ configuration
 
 let getVersion file = 
-    System.Reflection.Assembly.ReflectionOnlyLoadFrom(file).GetName().Version.ToString()
+    System.Reflection.AssemblyName.GetAssemblyName(file).Version.ToString()
 
 Target "Build" (fun _ ->
     RestorePackages()
