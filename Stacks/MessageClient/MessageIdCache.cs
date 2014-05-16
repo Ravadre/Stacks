@@ -9,15 +9,15 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public class MessageTypeCodeCache : IMessageTypeCodeCache
+    public class MessageIdCache : IMessageIdCache
     {
-        private Dictionary<Type, int> typeCodeByType;
+        private Dictionary<Type, int> messageIdByType;
 
         ReaderWriterLockSlim rwLock;
 
-        public MessageTypeCodeCache()
+        public MessageIdCache()
         {
-            typeCodeByType = new Dictionary<Type, int>();
+            messageIdByType = new Dictionary<Type, int>();
 
             rwLock = new ReaderWriterLockSlim();
 
@@ -25,7 +25,7 @@ namespace Stacks
 
         public void PreLoadTypesFromAssemblyOfType<T>()
         {
-            var codeByTypeLocal = new Dictionary<Type, int>();
+            var idByTypeLocal = new Dictionary<Type, int>();
 
             foreach (var t in typeof(T).Assembly.GetTypes()
                                        .Where(t => !t.IsInterface)
@@ -35,7 +35,7 @@ namespace Stacks
 
                 if (attr != null)
                 {
-                    codeByTypeLocal[t] = attr.TypeCode;
+                    idByTypeLocal[t] = attr.MessageId;
                 }
             }
                               
@@ -43,9 +43,9 @@ namespace Stacks
             {
                 rwLock.EnterWriteLock();
 
-                foreach (var kv in codeByTypeLocal)
+                foreach (var kv in idByTypeLocal)
                 {
-                    typeCodeByType[kv.Key] = kv.Value;
+                    messageIdByType[kv.Key] = kv.Value;
                 }
             }
             finally
@@ -54,21 +54,21 @@ namespace Stacks
             }
         }
 
-        public int GetTypeCode<T>()
+        public int GetMessageId<T>()
         {
-            return GetTypeCode(typeof(T));
+            return GetMessageId(typeof(T));
         }
 
-        public int GetTypeCode(Type t)
+        public int GetMessageId(Type t)
         {
             try
             {
                 rwLock.EnterUpgradeableReadLock();
 
-                int typeCode;
-                if (typeCodeByType.TryGetValue(t, out typeCode))
+                int messageid;
+                if (messageIdByType.TryGetValue(t, out messageid))
                 {
-                    return typeCode;
+                    return messageid;
                 }
                 else
                 {
@@ -85,9 +85,9 @@ namespace Stacks
                     {
                         rwLock.EnterWriteLock();
 
-                        typeCodeByType[t] = attribute.TypeCode;
+                        messageIdByType[t] = attribute.MessageId;
 
-                        return attribute.TypeCode;
+                        return attribute.MessageId;
                     }
                     finally { rwLock.ExitWriteLock(); }
                 }
@@ -113,7 +113,7 @@ namespace Stacks
                 {
                     rwLock.EnterWriteLock();
 
-                    typeCodeByType[t] = attr.TypeCode;
+                    messageIdByType[t] = attr.MessageId;
                 }
                 finally
                 {

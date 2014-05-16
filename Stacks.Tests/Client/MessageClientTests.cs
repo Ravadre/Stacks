@@ -50,11 +50,11 @@ namespace Stacks.Tests
                 rawClient.Setup(rc => rc.Send(It.IsAny<byte[]>())).Callback((byte[] b) =>
                 {
                     var length = BitConverter.ToInt32(b, 0);
-                    var typeCode = BitConverter.ToInt32(b, 4);
+                    var messageId = BitConverter.ToInt32(b, 4);
 
                     Assert.Equal(4 + 4 + 5, length);
                     Assert.Equal(4 + 4 + 5, b.Length);
-                    Assert.Equal(3, typeCode);
+                    Assert.Equal(3, messageId);
                     Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
                 });
 
@@ -77,11 +77,11 @@ namespace Stacks.Tests
                 rawClient.Setup(rc => rc.Send(It.IsAny<byte[]>())).Callback((byte[] b) =>
                 {
                     var length = BitConverter.ToInt32(b, 0);
-                    var typeCode = BitConverter.ToInt32(b, 4);
+                    var messageId = BitConverter.ToInt32(b, 4);
 
                     Assert.Equal(4 + 4 + 5, length);
                     Assert.Equal(4 + 4 + 5, b.Length);
-                    Assert.Equal(3, typeCode);
+                    Assert.Equal(3, messageId);
                     Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
                 });
 
@@ -89,13 +89,13 @@ namespace Stacks.Tests
             }
 
             [Fact]
-            public void Sending_message_should_throw_data_exception_if_sent_message_has_no_TypeCode()
+            public void Sending_message_should_throw_data_exception_if_sent_message_has_no_MessageId()
             {
                 var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
 
                 Assert.Throws(typeof(InvalidDataException), () =>
                     {
-                        c.Send(new TestDataWithoutTypeCode());
+                        c.Send(new TestDataWithoutMessageId());
                     });
             }
 
@@ -103,12 +103,11 @@ namespace Stacks.Tests
             [Fact]
             public void Sending_message_should_succeed_if_message_was_declared_imperatively()
             {
-                var c = new MessageClient(framedClient, serializer.Object, new Mock<TestDataWithoutTypeCodeHandler>().Object,
-                    MessageTypeCodeRegistration.RegisterTypes()
-                        .RegisterMessage<TestDataWithoutTypeCode>(3));
+                var c = new MessageClient(framedClient, serializer.Object, new Mock<TestDataWithoutMessageIdHandler>().Object,
+                    r => r.RegisterMessage<TestDataWithoutMessageId>(3));
            
-                serializer.Setup(s => s.Serialize(It.IsAny<TestDataWithoutTypeCode>(), It.IsAny<MemoryStream>()))
-                         .Callback((TestDataWithoutTypeCode d, MemoryStream ms) =>
+                serializer.Setup(s => s.Serialize(It.IsAny<TestDataWithoutMessageId>(), It.IsAny<MemoryStream>()))
+                         .Callback((TestDataWithoutMessageId d, MemoryStream ms) =>
                          {
                              ms.Write(new byte[] { 0, 1, 2, 3, 4 }, 0, 5);
                          });
@@ -116,15 +115,15 @@ namespace Stacks.Tests
                 rawClient.Setup(rc => rc.Send(It.IsAny<byte[]>())).Callback((byte[] b) =>
                 {
                     var length = BitConverter.ToInt32(b, 0);
-                    var typeCode = BitConverter.ToInt32(b, 4);
+                    var messageId = BitConverter.ToInt32(b, 4);
 
                     Assert.Equal(4 + 4 + 5, length);
                     Assert.Equal(4 + 4 + 5, b.Length);
-                    Assert.Equal(3, typeCode);
+                    Assert.Equal(3, messageId);
                     Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
                 });
 
-                c.Send(new TestDataWithoutTypeCode());
+                c.Send(new TestDataWithoutMessageId());
             }
 
             [Fact]
@@ -133,9 +132,8 @@ namespace Stacks.Tests
                 Assert.Throws(typeof(InvalidOperationException), () =>
                     {
                         var c = new MessageClient(framedClient, serializer.Object,
-                                        new Mock<BrokenTestDataWithoutTypeCodeHandler>().Object,
-                                        MessageTypeCodeRegistration.RegisterTypes()
-                                        .RegisterMessage<TestDataWithoutTypeCode>(2));
+                                        new Mock<BrokenTestDataWithoutMessageIdHandler>().Object,
+                                        r => r.RegisterMessage<TestDataWithoutMessageId>(2));
                     });
             }
         }
@@ -156,7 +154,7 @@ namespace Stacks.Tests
             }
         }
 
-        public class TestDataWithoutTypeCode
+        public class TestDataWithoutMessageId
         {
             public int Foo { get; set; }
         }
@@ -175,14 +173,14 @@ namespace Stacks.Tests
             public abstract void HandleTestData(IMessageClient client, TestData data);
         }
 
-        public abstract class TestDataWithoutTypeCodeHandler : IMessageHandler
+        public abstract class TestDataWithoutMessageIdHandler : IMessageHandler
         {
-            public abstract void HandleTestData(IMessageClient client, TestDataWithoutTypeCode data);
+            public abstract void HandleTestData(IMessageClient client, TestDataWithoutMessageId data);
         }
 
-        public abstract class BrokenTestDataWithoutTypeCodeHandler : IMessageHandler
+        public abstract class BrokenTestDataWithoutMessageIdHandler : IMessageHandler
         {
-            public abstract void HandleTestData(IMessageClient client, TestDataWithoutTypeCode data);
+            public abstract void HandleTestData(IMessageClient client, TestDataWithoutMessageId data);
             public abstract void HandleTestData(IMessageClient client, TestData data);
         }
     }

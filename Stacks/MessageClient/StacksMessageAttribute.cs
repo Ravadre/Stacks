@@ -9,11 +9,11 @@ namespace Stacks
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class StacksMessageAttribute : Attribute
     {
-        public int TypeCode { get; private set; }
+        public int MessageId { get; private set; }
 
-        public StacksMessageAttribute(int typeId)
+        public StacksMessageAttribute(int messageId)
         {
-            TypeCode = typeId;
+            MessageId = messageId;
         }
     }
 }

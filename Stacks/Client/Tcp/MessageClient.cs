@@ -14,7 +14,7 @@ namespace Stacks.Tcp
         private IFramedClient framedClient;
         private StacksSerializationHandler packetSerializer;
 
-        private IMessageTypeCodeCache typeCodeCache;
+        private IMessageIdCache messageIdCache;
 
         public IExecutor Executor
         {
@@ -46,8 +46,8 @@ namespace Stacks.Tcp
         public MessageClient(IFramedClient framedClient,
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler,
-                             MessageTypeCodeRegistration registration)
-            : this(registration.CreateCache(), 
+                             Func<MessageIdRegistration, MessageIdRegistration> registration)
+            : this(registration(new MessageIdRegistration()).CreateCache(), 
                    framedClient, packetSerializer, messageHandler)
         {
         }
@@ -55,22 +55,22 @@ namespace Stacks.Tcp
         public MessageClient(IFramedClient framedClient, 
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler)
-            : this(new MessageTypeCodeCache(),
+            : this(new MessageIdCache(),
                    framedClient, packetSerializer, messageHandler)
         {
         }
 
-        private MessageClient(IMessageTypeCodeCache typeCodeCache, 
+        private MessageClient(IMessageIdCache messageIdCache, 
                               IFramedClient framedClient,
                               IStacksSerializer packetSerializer,
                               IMessageHandler messageHandler)
         {
 
-            this.typeCodeCache = typeCodeCache;
+            this.messageIdCache = messageIdCache;
 
             this.framedClient = framedClient;
             this.packetSerializer = new StacksSerializationHandler(
-                                            typeCodeCache,
+                                            messageIdCache,
                                             this,
                                             packetSerializer,
                                             messageHandler);
@@ -87,17 +87,17 @@ namespace Stacks.Tcp
         {
             fixed (byte* b = &buffer.Array[buffer.Offset])
             {
-                int typeCode = *((int*)b);
+                int messageId = *((int*)b);
                 using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 4, buffer.Count - 4))
                 {
-                    this.packetSerializer.Deserialize(typeCode, ms);
+                    this.packetSerializer.Deserialize(messageId, ms);
                 }
             }
         }
 
         public unsafe void Send<T>(T obj)
         {
-            var typeCode = typeCodeCache.GetTypeCode<T>();
+            var messageId = messageIdCache.GetMessageId<T>();
 
             using (var ms = new MemoryStream())
             {
@@ -111,7 +111,7 @@ namespace Stacks.Tcp
                 fixed (byte* buf = buffer)
                 {
                     int* iBuf = (int*)buf;
-                    *iBuf = typeCode;
+                    *iBuf = messageId;
                 }
 
                 this.framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
@@ -120,12 +120,12 @@ namespace Stacks.Tcp
 
         public void PreLoadTypesFromAssemblyOfType<T>()
         {
-            typeCodeCache.PreLoadTypesFromAssemblyOfType<T>();
+            messageIdCache.PreLoadTypesFromAssemblyOfType<T>();
         }
 
         public void PreLoadType<T>()
         {
-            typeCodeCache.PreLoadType<T>();
+            messageIdCache.PreLoadType<T>();
         }
 
 

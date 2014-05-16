@@ -2,10 +2,10 @@
 
 namespace Stacks
 {
-    public interface IMessageTypeCodeCache
+    public interface IMessageIdCache
     {
-        int GetTypeCode(Type t);
-        int GetTypeCode<T>();
+        int GetMessageId(Type t);
+        int GetMessageId<T>();
         void PreLoadType(Type t);
         void PreLoadType<T>();
         void PreLoadTypesFromAssemblyOfType<T>();

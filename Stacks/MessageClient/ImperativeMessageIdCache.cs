@@ -8,15 +8,15 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public class DeclaredMessageTypeCodeCache : IMessageTypeCodeCache
+    public class ImperativeMessageIdCache : IMessageIdCache
     {
-        private Dictionary<Type, int> typeCodeByType;
+        private Dictionary<Type, int> messageIdByType;
 
         ReaderWriterLockSlim rwLock;
 
-        public DeclaredMessageTypeCodeCache()
+        public ImperativeMessageIdCache()
         {
-            typeCodeByType = new Dictionary<Type, int>();
+            messageIdByType = new Dictionary<Type, int>();
 
             rwLock = new ReaderWriterLockSlim();
         }
@@ -24,16 +24,16 @@ namespace Stacks
         public void PreLoadTypesFromAssemblyOfType<T>()
         {
             throw new InvalidOperationException(
-                "Cannot load types from assembly if type codes were declared imperatively");
+                "Cannot load types from assembly if message ids were declared imperatively");
         }
 
-        internal void RegisterTypeCode(int typeCode, Type type)
+        internal void RegisterMessageId(int messageId, Type type)
         {
             try
             {
                 rwLock.EnterWriteLock();
 
-                typeCodeByType[type] = typeCode;
+                messageIdByType[type] = messageId;
             }
             finally
             {
@@ -41,25 +41,25 @@ namespace Stacks
             }
         }
 
-        public int GetTypeCode<T>()
+        public int GetMessageId<T>()
         {
-            return GetTypeCode(typeof(T));
+            return GetMessageId(typeof(T));
         }
 
-        public int GetTypeCode(Type t)
+        public int GetMessageId(Type t)
         {
             try
             {
                 rwLock.EnterReadLock();
 
-                int typeCode;
-                if (typeCodeByType.TryGetValue(t, out typeCode))
+                int messageId;
+                if (messageIdByType.TryGetValue(t, out messageId))
                 {
-                    return typeCode;
+                    return messageId;
                 }
                 else
                 {
-                    throw new InvalidDataException(string.Format("Cannot resolve type id for type {0}. " +
+                    throw new InvalidDataException(string.Format("Cannot resolve message id for type {0}. " +
                         "It has no {1} attribute and it wasn't declared imperatively",
                             t.Name, typeof(StacksMessageAttribute).Name));
                 }
@@ -81,7 +81,7 @@ namespace Stacks
             {
                 rwLock.EnterReadLock();
 
-                if (typeCodeByType.ContainsKey(t))
+                if (messageIdByType.ContainsKey(t))
                     return;
             }
             finally
