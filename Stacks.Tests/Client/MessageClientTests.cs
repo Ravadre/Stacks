@@ -87,6 +87,17 @@ namespace Stacks.Tests
 
                 c.Send(CreateSampleTestData());
             }
+
+            [Fact]
+            public void Sending_message_should_throw_data_exception_if_sent_message_has_no_TypeCode()
+            {
+                var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
+
+                Assert.Throws(typeof(InvalidDataException), () =>
+                    {
+                        c.Send(new TestDataWithoutTypeCode());
+                    });
+            }
         }
 
         public class Receive : Base
@@ -105,7 +116,10 @@ namespace Stacks.Tests
             }
         }
 
-
+        public class TestDataWithoutTypeCode
+        {
+            public int Foo { get; set; }
+        }
 
         [StacksMessage(3)]
         public class TestData
