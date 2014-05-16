@@ -36,7 +36,7 @@ namespace Stacks.Tests.Serialization
         [Fact]
         public void Serialize_should_call_implemented_serializer()
         {
-            var ser = new StacksSerializationHandler(new MessageTypeCodeCache(), 
+            var ser = new StacksSerializationHandler(new MessageIdCache(), 
                             messageClient.Object, serializer.Object, messageHandler.Object);
 
             var test = CreateSampleTestData();
@@ -61,7 +61,7 @@ namespace Stacks.Tests.Serialization
                     Assert.Equal(data.Foo2, c.Foo2);
                 });
 
-            var ser = new StacksSerializationHandler(new MessageTypeCodeCache(), 
+            var ser = new StacksSerializationHandler(new MessageIdCache(), 
                             messageClient.Object, serializer.Object, h.Object);
             ser.Deserialize(2, new MemoryStream());
 
@@ -74,7 +74,7 @@ namespace Stacks.Tests.Serialization
             var h = new Mock<TestDataHandler>();
             serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns(ms => CreateSampleTestData());
 
-            var ser = new StacksSerializationHandler(new MessageTypeCodeCache(), 
+            var ser = new StacksSerializationHandler(new MessageIdCache(), 
                             messageClient.Object, serializer.Object, h.Object);
 
             Assert.Throws(typeof(InvalidOperationException),

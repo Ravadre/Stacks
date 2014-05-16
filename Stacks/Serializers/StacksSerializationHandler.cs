@@ -11,28 +11,28 @@ namespace Stacks
 {
     public class StacksSerializationHandler
     {
-        private Dictionary<int, Action<MemoryStream>> serializerHandlerByTypeCode;
+        private Dictionary<int, Action<MemoryStream>> serializerHandlerByMessageId;
 
-        private IMessageTypeCodeCache typeCodeCache;
+        private IMessageIdCache messageIdCache;
 
         private IMessageHandler messageHandler;
         private IStacksSerializer serializer;
         private IMessageClient client;
 
         public StacksSerializationHandler(
-                    IMessageTypeCodeCache typeCodeCache,
+                    IMessageIdCache messageIdCache,
                     IMessageClient client, 
                     IStacksSerializer serializer, 
                     IMessageHandler messageHandler)
         {
-            Ensure.IsNotNull(typeCodeCache, "typeCodeCache");
+            Ensure.IsNotNull(messageIdCache, "messageIdCache");
             Ensure.IsNotNull(client, "client");
             Ensure.IsNotNull(serializer, "serializer");
             Ensure.IsNotNull(messageHandler, "messageHandler");
 
-            this.typeCodeCache = typeCodeCache;
+            this.messageIdCache = messageIdCache;
             this.client = client;
-            this.serializerHandlerByTypeCode = new Dictionary<int, Action<MemoryStream>>();
+            this.serializerHandlerByMessageId = new Dictionary<int, Action<MemoryStream>>();
             this.messageHandler = messageHandler;
             this.serializer = serializer;
 
@@ -46,18 +46,18 @@ namespace Stacks
             this.serializer.Serialize(obj, ms);
         }
 
-        public void Deserialize(int typeCode, MemoryStream ms)
+        public void Deserialize(int messageId, MemoryStream ms)
         {
             Action<MemoryStream> handler;
 
-            if (serializerHandlerByTypeCode.TryGetValue(typeCode, out handler))
+            if (serializerHandlerByMessageId.TryGetValue(messageId, out handler))
             {
                 handler(ms);
             }
             else
             {
                 throw new InvalidOperationException(
-                    string.Format("No registered message handler for type code {0}", typeCode));
+                    string.Format("No registered message handler for message id {0}", messageId));
             }
         }
 
@@ -65,18 +65,18 @@ namespace Stacks
 
         private void ParseMessageHandler()
         {
-            this.serializerHandlerByTypeCode = new Dictionary<int,Action<MemoryStream>>();
+            this.serializerHandlerByMessageId = new Dictionary<int,Action<MemoryStream>>();
 
             foreach (var mi in messageHandler.GetType()
                                              .GetMethods(BindingFlags.Instance | BindingFlags.Public)
                                              .Where(IsValidMessageHandlerMethod))
             {
                 var paramType = mi.GetParameters()[1].ParameterType;
-                typeCodeCache.PreLoadType(paramType);
+                messageIdCache.PreLoadType(paramType);
 
                 var serializer = CreateSerializerForType(paramType, mi);
 
-                this.serializerHandlerByTypeCode[typeCodeCache.GetTypeCode(paramType)] = serializer;
+                this.serializerHandlerByMessageId[messageIdCache.GetMessageId(paramType)] = serializer;
             }
         }
 
