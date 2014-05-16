@@ -100,11 +100,14 @@ public class ServerMessageHandler : Actor, IMessageHandler
         this.service = service;
     }
 
-    // Id of incoming packet is supplied here.
+    // Every packet has its own id, which is resolved using following rules:
+    // - if owning MessageClient was created without registering ids' imperatively
+    //   it is assumed, that packets are decorated with StacksMessage attribute
+    // - if owning MessageClient was created with imperatively set ids,
+    //   each of handler's packets should be registered, otherwise, an exception is thrown.
     // Handler method should take 2 parameters:
     // IMessageClient - client which sent the packet
     // T - packet of type T, casting will be done automatically.
-    [MessageHandler(1)]
     public async void HandleTemperatureRequest(IMessageClient client, 
                                                TemperatureRequest request)
     {
@@ -112,7 +115,7 @@ public class ServerMessageHandler : Actor, IMessageHandler
 
         var temp = await service.GetTemperature(request.City);
 
-        client.Send(2, new TemperatureResponse
+        client.Send(new TemperatureResponse
         {
             City = request.City,
             Temperature = temp,
