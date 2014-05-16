@@ -10,14 +10,9 @@ namespace Stacks
     {
         private DeclaredMessageTypeCodeCache cache;
 
-        private MessageTypeCodeRegistration()
+        internal MessageTypeCodeRegistration()
         {
             cache = new DeclaredMessageTypeCodeCache();
-        }
-
-        public static MessageTypeCodeRegistration RegisterTypes()
-        {
-            return new MessageTypeCodeRegistration();
         }
 
         public MessageTypeCodeRegistration RegisterMessage<T>(int typeCode)

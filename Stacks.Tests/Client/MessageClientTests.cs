@@ -104,8 +104,7 @@ namespace Stacks.Tests
             public void Sending_message_should_succeed_if_message_was_declared_imperatively()
             {
                 var c = new MessageClient(framedClient, serializer.Object, new Mock<TestDataWithoutTypeCodeHandler>().Object,
-                    MessageTypeCodeRegistration.RegisterTypes()
-                        .RegisterMessage<TestDataWithoutTypeCode>(3));
+                    r => r.RegisterMessage<TestDataWithoutTypeCode>(3));
            
                 serializer.Setup(s => s.Serialize(It.IsAny<TestDataWithoutTypeCode>(), It.IsAny<MemoryStream>()))
                          .Callback((TestDataWithoutTypeCode d, MemoryStream ms) =>
@@ -134,8 +133,7 @@ namespace Stacks.Tests
                     {
                         var c = new MessageClient(framedClient, serializer.Object,
                                         new Mock<BrokenTestDataWithoutTypeCodeHandler>().Object,
-                                        MessageTypeCodeRegistration.RegisterTypes()
-                                        .RegisterMessage<TestDataWithoutTypeCode>(2));
+                                        r => r.RegisterMessage<TestDataWithoutTypeCode>(2));
                     });
             }
         }

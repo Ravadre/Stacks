@@ -46,8 +46,8 @@ namespace Stacks.Tcp
         public MessageClient(IFramedClient framedClient,
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler,
-                             MessageTypeCodeRegistration registration)
-            : this(registration.CreateCache(), 
+                             Func<MessageTypeCodeRegistration, MessageTypeCodeRegistration> registration)
+            : this(registration(new MessageTypeCodeRegistration()).CreateCache(), 
                    framedClient, packetSerializer, messageHandler)
         {
         }
