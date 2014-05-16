@@ -94,7 +94,10 @@
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
+    <Compile Include="MessageClient\DeclaredMessageTypeCodeCache.cs" />
+    <Compile Include="MessageClient\IMessageTypeCodeCache.cs" />
     <Compile Include="MessageClient\MessageTypeCodeCache.cs" />
+    <Compile Include="MessageClient\MessageTypeCodeRegistration.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />

@@ -9,26 +9,23 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public class MessageTypeCodeCache
+    public class MessageTypeCodeCache : IMessageTypeCodeCache
     {
         private Dictionary<Type, int> typeCodeByType;
-        private Dictionary<int, Type> typeByTypeCode;
 
         ReaderWriterLockSlim rwLock;
 
         public MessageTypeCodeCache()
         {
             typeCodeByType = new Dictionary<Type, int>();
-            typeByTypeCode = new Dictionary<int, Type>();
 
             rwLock = new ReaderWriterLockSlim();
 
         }
 
-        public void PreLoadTypesFromAssembly<T>()
+        public void PreLoadTypesFromAssemblyOfType<T>()
         {
             var codeByTypeLocal = new Dictionary<Type, int>();
-            var typeByCodeLocal = new Dictionary<int, Type>();
 
             foreach (var t in typeof(T).Assembly.GetTypes()
                                        .Where(t => !t.IsInterface)
@@ -39,7 +36,6 @@ namespace Stacks
                 if (attr != null)
                 {
                     codeByTypeLocal[t] = attr.TypeCode;
-                    typeByCodeLocal[attr.TypeCode] = t;
                 }
             }
                               
@@ -50,11 +46,6 @@ namespace Stacks
                 foreach (var kv in codeByTypeLocal)
                 {
                     typeCodeByType[kv.Key] = kv.Value;
-                }
-
-                foreach (var kv in typeByCodeLocal)
-                {
-                    typeByTypeCode[kv.Key] = kv.Value;
                 }
             }
             finally
@@ -95,7 +86,6 @@ namespace Stacks
                         rwLock.EnterWriteLock();
 
                         typeCodeByType[t] = attribute.TypeCode;
-                        typeByTypeCode[attribute.TypeCode] = t;
 
                         return attribute.TypeCode;
                     }
@@ -123,7 +113,6 @@ namespace Stacks
                 {
                     rwLock.EnterWriteLock();
 
-                    typeByTypeCode[attr.TypeCode] = t;
                     typeCodeByType[t] = attr.TypeCode;
                 }
                 finally

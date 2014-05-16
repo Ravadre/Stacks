@@ -66,7 +66,7 @@ namespace Stacks.Tests
             {
                 var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
 
-                c.PreLoadTypesFromAssembly<TestData>();
+                c.PreLoadTypesFromAssemblyOfType<TestData>();
 
                 serializer.Setup(s => s.Serialize(It.IsAny<TestData>(), It.IsAny<MemoryStream>()))
                           .Callback((TestData d, MemoryStream ms) =>
@@ -96,6 +96,46 @@ namespace Stacks.Tests
                 Assert.Throws(typeof(InvalidDataException), () =>
                     {
                         c.Send(new TestDataWithoutTypeCode());
+                    });
+            }
+
+
+            [Fact]
+            public void Sending_message_should_succeed_if_message_was_declared_imperatively()
+            {
+                var c = new MessageClient(framedClient, serializer.Object, new Mock<TestDataWithoutTypeCodeHandler>().Object,
+                    MessageTypeCodeRegistration.RegisterTypes()
+                        .RegisterMessage<TestDataWithoutTypeCode>(3));
+           
+                serializer.Setup(s => s.Serialize(It.IsAny<TestDataWithoutTypeCode>(), It.IsAny<MemoryStream>()))
+                         .Callback((TestDataWithoutTypeCode d, MemoryStream ms) =>
+                         {
+                             ms.Write(new byte[] { 0, 1, 2, 3, 4 }, 0, 5);
+                         });
+
+                rawClient.Setup(rc => rc.Send(It.IsAny<byte[]>())).Callback((byte[] b) =>
+                {
+                    var length = BitConverter.ToInt32(b, 0);
+                    var typeCode = BitConverter.ToInt32(b, 4);
+
+                    Assert.Equal(4 + 4 + 5, length);
+                    Assert.Equal(4 + 4 + 5, b.Length);
+                    Assert.Equal(3, typeCode);
+                    Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
+                });
+
+                c.Send(new TestDataWithoutTypeCode());
+            }
+
+            [Fact]
+            public void Sending_message_should_fail_if_message_handler_has_more_messages_than_registered_imperatively()
+            {
+                Assert.Throws(typeof(InvalidOperationException), () =>
+                    {
+                        var c = new MessageClient(framedClient, serializer.Object,
+                                        new Mock<BrokenTestDataWithoutTypeCodeHandler>().Object,
+                                        MessageTypeCodeRegistration.RegisterTypes()
+                                        .RegisterMessage<TestDataWithoutTypeCode>(2));
                     });
             }
         }
@@ -132,6 +172,17 @@ namespace Stacks.Tests
 
         public abstract class TestDataHandler : IMessageHandler
         {
+            public abstract void HandleTestData(IMessageClient client, TestData data);
+        }
+
+        public abstract class TestDataWithoutTypeCodeHandler : IMessageHandler
+        {
+            public abstract void HandleTestData(IMessageClient client, TestDataWithoutTypeCode data);
+        }
+
+        public abstract class BrokenTestDataWithoutTypeCodeHandler : IMessageHandler
+        {
+            public abstract void HandleTestData(IMessageClient client, TestDataWithoutTypeCode data);
             public abstract void HandleTestData(IMessageClient client, TestData data);
         }
     }

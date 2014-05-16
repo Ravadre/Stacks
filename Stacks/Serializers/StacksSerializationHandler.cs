@@ -13,14 +13,14 @@ namespace Stacks
     {
         private Dictionary<int, Action<MemoryStream>> serializerHandlerByTypeCode;
 
-        private MessageTypeCodeCache typeCodeCache;
+        private IMessageTypeCodeCache typeCodeCache;
 
         private IMessageHandler messageHandler;
         private IStacksSerializer serializer;
         private IMessageClient client;
 
         public StacksSerializationHandler(
-                    MessageTypeCodeCache typeCodeCache,
+                    IMessageTypeCodeCache typeCodeCache,
                     IMessageClient client, 
                     IStacksSerializer serializer, 
                     IMessageHandler messageHandler)

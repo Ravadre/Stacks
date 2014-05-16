@@ -14,7 +14,7 @@ namespace Stacks.Tcp
         private IFramedClient framedClient;
         private StacksSerializationHandler packetSerializer;
 
-        private MessageTypeCodeCache typeCodeCache;
+        private IMessageTypeCodeCache typeCodeCache;
 
         public IExecutor Executor
         {
@@ -43,17 +43,36 @@ namespace Stacks.Tcp
             remove { this.framedClient.Sent -= value; }
         }
 
+        public MessageClient(IFramedClient framedClient,
+                             IStacksSerializer packetSerializer,
+                             IMessageHandler messageHandler,
+                             MessageTypeCodeRegistration registration)
+            : this(registration.CreateCache(), 
+                   framedClient, packetSerializer, messageHandler)
+        {
+        }
+
         public MessageClient(IFramedClient framedClient, 
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler)
+            : this(new MessageTypeCodeCache(),
+                   framedClient, packetSerializer, messageHandler)
         {
-            this.typeCodeCache = new MessageTypeCodeCache();
+        }
+
+        private MessageClient(IMessageTypeCodeCache typeCodeCache, 
+                              IFramedClient framedClient,
+                              IStacksSerializer packetSerializer,
+                              IMessageHandler messageHandler)
+        {
+
+            this.typeCodeCache = typeCodeCache;
 
             this.framedClient = framedClient;
             this.packetSerializer = new StacksSerializationHandler(
-                                            typeCodeCache, 
-                                            this, 
-                                            packetSerializer, 
+                                            typeCodeCache,
+                                            this,
+                                            packetSerializer,
                                             messageHandler);
 
             this.framedClient.Received += PacketReceived;
@@ -99,9 +118,9 @@ namespace Stacks.Tcp
             }
         }
 
-        public void PreLoadTypesFromAssembly<T>()
+        public void PreLoadTypesFromAssemblyOfType<T>()
         {
-            typeCodeCache.PreLoadTypesFromAssembly<T>();
+            typeCodeCache.PreLoadTypesFromAssemblyOfType<T>();
         }
 
         public void PreLoadType<T>()
