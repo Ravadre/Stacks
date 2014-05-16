@@ -60,6 +60,33 @@ namespace Stacks.Tests
 
                 c.Send(CreateSampleTestData());
             }
+
+            [Fact]
+            public void Sending_message_should_succeed_when_packet_types_are_preloaded()
+            {
+                var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
+
+                c.PreLoadTypesFromAssembly<TestData>();
+
+                serializer.Setup(s => s.Serialize(It.IsAny<TestData>(), It.IsAny<MemoryStream>()))
+                          .Callback((TestData d, MemoryStream ms) =>
+                          {
+                              ms.Write(new byte[] { 0, 1, 2, 3, 4 }, 0, 5);
+                          });
+
+                rawClient.Setup(rc => rc.Send(It.IsAny<byte[]>())).Callback((byte[] b) =>
+                {
+                    var length = BitConverter.ToInt32(b, 0);
+                    var typeCode = BitConverter.ToInt32(b, 4);
+
+                    Assert.Equal(4 + 4 + 5, length);
+                    Assert.Equal(4 + 4 + 5, b.Length);
+                    Assert.Equal(3, typeCode);
+                    Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
+                });
+
+                c.Send(CreateSampleTestData());
+            }
         }
 
         public class Receive : Base

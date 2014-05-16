@@ -13,6 +13,9 @@ namespace Stacks
 
         void Send<T>(T obj);
 
+        void PreLoadTypesFromAssembly<T>();
+        void PreLoadType<T>();
+
         void Close();
     }
 }

@@ -14,7 +14,7 @@ namespace Stacks.Tcp
         private IFramedClient framedClient;
         private StacksSerializationHandler packetSerializer;
 
-        private Dictionary<Type, int> typeCodeByType;
+        private MessageTypeCodeCache typeCodeCache;
 
         public IExecutor Executor
         {
@@ -47,7 +47,7 @@ namespace Stacks.Tcp
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler)
         {
-            this.typeCodeByType = new Dictionary<Type, int>();
+            this.typeCodeCache = new MessageTypeCodeCache();
 
             this.framedClient = framedClient;
             this.packetSerializer = new StacksSerializationHandler(this, packetSerializer, messageHandler);
@@ -74,7 +74,7 @@ namespace Stacks.Tcp
 
         public unsafe void Send<T>(T obj)
         {
-            var typeCode = GetTypeCode<T>();
+            var typeCode = typeCodeCache.GetTypeCode<T>();
 
             using (var ms = new MemoryStream())
             {
@@ -95,28 +95,16 @@ namespace Stacks.Tcp
             }
         }
 
-        private int GetTypeCode<T>()
+        public void PreLoadTypesFromAssembly<T>()
         {
-            int typeCode;
-            if (typeCodeByType.TryGetValue(typeof(T), out typeCode))
-            {
-                return typeCode;
-            }
-            else
-            {
-                var attribute = typeof(T).GetCustomAttribute<StacksMessageAttribute>();
-
-                if (attribute == null)
-                {
-                    throw new InvalidDataException(string.Format("Cannot resolve type id for type {0}. " +
-                    "It has no {1} attribute and it wasn't declared imperatively",
-                        typeof(T).Name, typeof(StacksMessageAttribute).Name));
-                }
-
-                typeCodeByType[typeof(T)] = attribute.TypeId;
-                return attribute.TypeId;
-            }
+            typeCodeCache.PreLoadTypesFromAssembly<T>();
         }
+
+        public void PreLoadType<T>()
+        {
+            typeCodeCache.PreLoadType<T>();
+        }
+
 
         public void Close()
         {
