@@ -39,8 +39,8 @@ let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile =
     let mainDllWithPath = srcDir @@ mainDll 
 
     CleanDir tmp
-    ensureDirectory (tmp @@ "lib/net451")
-    CopyFiles (tmp @@ "lib/net451") dllsWithPath
+    ensureDirectory (tmp @@ "lib/net45")
+    CopyFiles (tmp @@ "lib/net45") dllsWithPath
     NuGet (fun p ->
             { p with
                 OutputPath = "./"
