@@ -132,7 +132,6 @@ namespace Stacks.Tests
 
         public abstract class TestDataHandler : IMessageHandler
         {
-            [MessageHandler(3)]
             public abstract void HandleTestData(IMessageClient client, TestData data);
         }
     }

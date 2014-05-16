@@ -50,7 +50,11 @@ namespace Stacks.Tcp
             this.typeCodeCache = new MessageTypeCodeCache();
 
             this.framedClient = framedClient;
-            this.packetSerializer = new StacksSerializationHandler(this, packetSerializer, messageHandler);
+            this.packetSerializer = new StacksSerializationHandler(
+                                            typeCodeCache, 
+                                            this, 
+                                            packetSerializer, 
+                                            messageHandler);
 
             this.framedClient.Received += PacketReceived;
         }

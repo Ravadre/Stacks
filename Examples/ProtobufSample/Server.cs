@@ -66,7 +66,6 @@ namespace ProtobufSample
             this.service = service;
         }
 
-        [MessageHandler(1)]
         public async void HandleTemperatureRequest(IMessageClient client, TemperatureRequest request)
         {
             await Context;

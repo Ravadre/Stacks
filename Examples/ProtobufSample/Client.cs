@@ -38,14 +38,12 @@ namespace ProtobufSample
 
     public class ClientMessageHandler : IMessageHandler
     {
-        [MessageHandler(2)]
         public void HandleTemperatureResponse(IMessageClient client, TemperatureResponse response)
         {
             Console.WriteLine("Received temperature response: " + 
                 response.City + " = " + response.Temperature.ToString("F2") + "\u00b0C");
         }
 
-        [MessageHandler(3)]
         public void HandleTemperatureChanged(IMessageClient client, TemperatureChanged tempChanged)
         {
             Console.WriteLine("Temperature changed: " +

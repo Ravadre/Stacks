@@ -13,16 +13,24 @@ namespace Stacks
     {
         private Dictionary<int, Action<MemoryStream>> serializerHandlerByTypeCode;
 
+        private MessageTypeCodeCache typeCodeCache;
+
         private IMessageHandler messageHandler;
         private IStacksSerializer serializer;
         private IMessageClient client;
 
-        public StacksSerializationHandler(IMessageClient client, IStacksSerializer serializer, IMessageHandler messageHandler)
+        public StacksSerializationHandler(
+                    MessageTypeCodeCache typeCodeCache,
+                    IMessageClient client, 
+                    IStacksSerializer serializer, 
+                    IMessageHandler messageHandler)
         {
+            Ensure.IsNotNull(typeCodeCache, "typeCodeCache");
             Ensure.IsNotNull(client, "client");
             Ensure.IsNotNull(serializer, "serializer");
             Ensure.IsNotNull(messageHandler, "messageHandler");
 
+            this.typeCodeCache = typeCodeCache;
             this.client = client;
             this.serializerHandlerByTypeCode = new Dictionary<int, Action<MemoryStream>>();
             this.messageHandler = messageHandler;
@@ -57,19 +65,23 @@ namespace Stacks
 
         private void ParseMessageHandler()
         {
-            this.serializerHandlerByTypeCode = messageHandler.GetType()
-                          .GetMethods(BindingFlags.Instance | BindingFlags.Public)
-                          .Where(IsValidMessageHandlerMethod)
-                          .Select(mi => Tuple.Create(GetTypeCode(mi), GetMessageHandlerParameterType(mi), mi))
-                          .Select(t => Tuple.Create(t.Item1, CreateSerializerForType(t.Item2, t.Item3)))
-                          .ToDictionary(t => t.Item1, t => t.Item2);
+            this.serializerHandlerByTypeCode = new Dictionary<int,Action<MemoryStream>>();
+
+            foreach (var mi in messageHandler.GetType()
+                                             .GetMethods(BindingFlags.Instance | BindingFlags.Public)
+                                             .Where(IsValidMessageHandlerMethod))
+            {
+                var paramType = mi.GetParameters()[1].ParameterType;
+                typeCodeCache.PreLoadType(paramType);
+
+                var serializer = CreateSerializerForType(paramType, mi);
+
+                this.serializerHandlerByTypeCode[typeCodeCache.GetTypeCode(paramType)] = serializer;
+            }
         }
 
         private static bool IsValidMessageHandlerMethod(MethodInfo mi)
         {
-            if (!HasMessageHandlerAttribute(mi))
-                return false;
-
             if (mi.ReturnType != typeof(void))
                 return false;
 
@@ -83,21 +95,6 @@ namespace Stacks
                 return false;
 
             return true;
-        }
-
-        private static bool HasMessageHandlerAttribute(MethodInfo mi)
-        {
-            return mi.GetCustomAttribute<MessageHandlerAttribute>(true) != null;
-        }
-
-        private static int GetTypeCode(MethodInfo mi)
-        {
-            return mi.GetCustomAttribute<MessageHandlerAttribute>().TypeCode;
-        }
-
-        private static Type GetMessageHandlerParameterType(MethodInfo mi)
-        {
-            return mi.GetParameters()[1].ParameterType;
         }
 
         private Action<MemoryStream> CreateSerializerForType(Type type, MethodInfo mi)

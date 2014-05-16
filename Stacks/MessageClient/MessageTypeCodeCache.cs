@@ -65,32 +65,37 @@ namespace Stacks
 
         public int GetTypeCode<T>()
         {
+            return GetTypeCode(typeof(T));
+        }
+
+        public int GetTypeCode(Type t)
+        {
             try
             {
                 rwLock.EnterUpgradeableReadLock();
 
                 int typeCode;
-                if (typeCodeByType.TryGetValue(typeof(T), out typeCode))
+                if (typeCodeByType.TryGetValue(t, out typeCode))
                 {
                     return typeCode;
                 }
                 else
                 {
-                    var attribute = typeof(T).GetCustomAttribute<StacksMessageAttribute>();
+                    var attribute = t.GetCustomAttribute<StacksMessageAttribute>();
 
                     if (attribute == null)
                     {
                         throw new InvalidDataException(string.Format("Cannot resolve type id for type {0}. " +
                         "It has no {1} attribute and it wasn't declared imperatively",
-                            typeof(T).Name, typeof(StacksMessageAttribute).Name));
+                            t.Name, typeof(StacksMessageAttribute).Name));
                     }
 
                     try
                     {
                         rwLock.EnterWriteLock();
 
-                        typeCodeByType[typeof(T)] = attribute.TypeCode;
-                        typeByTypeCode[attribute.TypeCode] = typeof(T);
+                        typeCodeByType[t] = attribute.TypeCode;
+                        typeByTypeCode[attribute.TypeCode] = t;
 
                         return attribute.TypeCode;
                     }
@@ -103,10 +108,13 @@ namespace Stacks
             }
         }
 
-
         public void PreLoadType<T>()
         {
-            Type t = typeof(T);
+            PreLoadType(typeof(T));
+        }
+
+        public void PreLoadType(Type t)
+        {
             var attr = t.GetCustomAttribute<StacksMessageAttribute>();
 
             if (attr != null)
@@ -123,7 +131,6 @@ namespace Stacks
                     rwLock.ExitWriteLock();
                 }
             }
-            
         }
     }
 }
