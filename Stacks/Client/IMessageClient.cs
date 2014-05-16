@@ -11,7 +11,7 @@ namespace Stacks
         event Action<int> Sent;
         event Action<Exception> Disconnected;
 
-        void Send<T>(int typeCode, T obj);
+        void Send<T>(T obj);
 
         void Close();
     }

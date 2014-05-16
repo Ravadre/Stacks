@@ -58,7 +58,7 @@ namespace Stacks.Tests
                     Assert.Equal(new byte[] { 0, 1, 2, 3, 4 }, new ArraySegment<byte>(b, 8, 5));
                 });
 
-                c.Send(3, CreateSampleTestData());
+                c.Send(CreateSampleTestData());
             }
         }
 
@@ -80,7 +80,7 @@ namespace Stacks.Tests
 
 
 
-        
+        [StacksMessage(3)]
         public class TestData
         {
             public int Foo { get; set; }

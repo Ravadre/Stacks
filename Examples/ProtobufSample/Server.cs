@@ -40,7 +40,7 @@ namespace ProtobufSample
         {
             if (this.client != null)
             {
-                this.client.Send(3, new TemperatureChanged
+                this.client.Send(new TemperatureChanged
                 {
                     City = city,
                     Temperature = temp
@@ -73,7 +73,7 @@ namespace ProtobufSample
 
             var temp = await service.GetTemperature(request.City);
 
-            client.Send(2, new TemperatureResponse
+            client.Send(new TemperatureResponse
             {
                 City = request.City,
                 Temperature = temp,

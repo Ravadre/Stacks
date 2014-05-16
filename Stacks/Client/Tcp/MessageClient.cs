@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,6 +13,8 @@ namespace Stacks.Tcp
     {
         private IFramedClient framedClient;
         private StacksSerializationHandler packetSerializer;
+
+        private Dictionary<Type, int> typeCodeByType;
 
         public IExecutor Executor
         {
@@ -44,6 +47,8 @@ namespace Stacks.Tcp
                              IStacksSerializer packetSerializer,
                              IMessageHandler messageHandler)
         {
+            this.typeCodeByType = new Dictionary<Type, int>();
+
             this.framedClient = framedClient;
             this.packetSerializer = new StacksSerializationHandler(this, packetSerializer, messageHandler);
 
@@ -67,8 +72,10 @@ namespace Stacks.Tcp
             }
         }
 
-        public unsafe void Send<T>(int typeCode, T obj)
+        public unsafe void Send<T>(T obj)
         {
+            var typeCode = GetTypeCode<T>();
+
             using (var ms = new MemoryStream())
             {
                 ms.SetLength(4);
@@ -85,6 +92,29 @@ namespace Stacks.Tcp
                 }
 
                 this.framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
+            }
+        }
+
+        private int GetTypeCode<T>()
+        {
+            int typeCode;
+            if (typeCodeByType.TryGetValue(typeof(T), out typeCode))
+            {
+                return typeCode;
+            }
+            else
+            {
+                var attribute = typeof(T).GetCustomAttribute<StacksMessageAttribute>();
+
+                if (attribute == null)
+                {
+                    throw new InvalidDataException(string.Format("Cannot resolve type id for type {0}. " +
+                    "It has no {1} attribute and it wasn't declared imperatively",
+                        typeof(T).Name, typeof(StacksMessageAttribute).Name));
+                }
+
+                typeCodeByType[typeof(T)] = attribute.TypeId;
+                return attribute.TypeId;
             }
         }
 

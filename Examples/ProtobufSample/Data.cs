@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProtoBuf;
+using Stacks;
 
 namespace ProtobufSample
 {
     [ProtoContract]
+    [StacksMessage(3)]
     public class TemperatureChanged
     {
         [ProtoMember(1)]
@@ -17,6 +19,7 @@ namespace ProtobufSample
     }
 
     [ProtoContract]
+    [StacksMessage(1)]
     public class TemperatureRequest
     {
         [ProtoMember(1)]
@@ -24,6 +27,7 @@ namespace ProtobufSample
     }
 
     [ProtoContract]
+    [StacksMessage(2)]
     public class TemperatureResponse
     {
         [ProtoMember(1)]

@@ -29,9 +29,9 @@ namespace ProtobufSample
                   .ContinueWith(t =>
                   {
                       Console.WriteLine("Querying for temperature in London, Warsaw, Madrid");
-                      client.Send(1, new TemperatureRequest { City = "London" });
-                      client.Send(1, new TemperatureRequest { City = "Warsaw" });
-                      client.Send(1, new TemperatureRequest { City = "Madrid" });
+                      client.Send(new TemperatureRequest { City = "London" });
+                      client.Send(new TemperatureRequest { City = "Warsaw" });
+                      client.Send(new TemperatureRequest { City = "Madrid" });
                   });
         }
     }

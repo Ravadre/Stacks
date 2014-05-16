@@ -101,6 +101,7 @@
     <Compile Include="Serializers\MessageHandlerAttribute.cs" />
     <Compile Include="Server\Tcp\SocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StacksMessageAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
