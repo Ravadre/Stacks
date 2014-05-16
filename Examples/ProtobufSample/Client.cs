@@ -25,6 +25,8 @@ namespace ProtobufSample
                      new ProtoBufStacksSerializer(),
                      new ClientMessageHandler());
 
+            client.PreLoadTypesFromAssemblyOfType<TemperatureResponse>();
+
             client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort))
                   .ContinueWith(t =>
                   {

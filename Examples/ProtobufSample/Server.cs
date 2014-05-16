@@ -54,6 +54,8 @@ namespace ProtobufSample
                             new FramedClient(client),
                             new ProtoBufStacksSerializer(),
                             new ServerMessageHandler(service));
+
+            this.client.PreLoadTypesFromAssemblyOfType<TemperatureChanged>();
         }
     }
 
