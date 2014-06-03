@@ -1,6 +1,7 @@
 Stacks - Actor based networking library
 ===================================
 --------------------------------------
+[![Build status](https://ci.appveyor.com/api/projects/status/uxi69l39gcl63tsn)](https://ci.appveyor.com/project/Ravadre/stacks)
 
 Stacks is a small networking library. With Stacks it is very easy to create a high performance socket client or server without worrying about synchronization or threading. Stacks is highly configurable, features like tls/ssl, framing or serialization can be composed together easily.
 
