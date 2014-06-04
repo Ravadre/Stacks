@@ -99,6 +99,7 @@ namespace Stacks.Tcp
                         {
                             var sc = CreateSocketClient(e.AcceptSocket);
                             OnConnected(sc);
+                            sc.ScheduleStartReceiving();
 
                             StartAccepting();
                             break;

@@ -60,8 +60,7 @@ namespace Stacks.Tcp
 
             EnsureSocketIsConnected();
          
-            InitialiseConnectedSocket();
-            executor.Enqueue(StartReceiving);
+            InitialiseConnectedSocket();           
         }
 
         private void EnsureSocketIsConnected()
@@ -146,6 +145,11 @@ namespace Stacks.Tcp
             isSending = false;
 
             CopyEndPoints();
+        }
+
+        internal void ScheduleStartReceiving()
+        {
+            executor.Enqueue(StartReceiving);
         }
 
         private void StartReceiving()
