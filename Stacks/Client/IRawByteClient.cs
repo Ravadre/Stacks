@@ -10,11 +10,8 @@ namespace Stacks
     {
         IObservable<ArraySegment<byte>> Received { get; }
         IObservable<int> Sent { get; }
-        IObservable<Exception> Disconnected { get; }
 
         void Send(byte[] buffer);
         void Send(ArraySegment<byte> buffer);
-
-        void Close();
     }
 }

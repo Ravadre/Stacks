@@ -14,7 +14,9 @@ namespace Stacks
         bool IsConnected { get; }
 
         IObservable<Unit> Connected { get; }
+        IObservable<Exception> Disconnected { get; }
 
         IObservable<Unit> Connect(IPEndPoint remoteEndPoint);
+        void Close();
     }
 }

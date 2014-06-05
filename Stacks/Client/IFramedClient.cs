@@ -8,7 +8,6 @@ namespace Stacks
 {
     public interface IFramedClient : ISocketClient
     {
-        IObservable<Exception> Disconnected { get; }
         IObservable<int> Sent { get; }
         IObservable<ArraySegment<byte>> Received { get; }
 
@@ -16,7 +15,5 @@ namespace Stacks
         void SendPacket(ArraySegment<byte> packet);
         void SendPacket(FramedClientBuffer packet);
         FramedClientBuffer PreparePacketBuffer(int packetBytes);
-
-        void Close();
     }
 }
