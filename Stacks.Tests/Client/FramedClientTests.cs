@@ -69,11 +69,11 @@ namespace Stacks.Tests
                 rawClient.Setup(s => s.Received).Returns(bytesRecv);
 
                 var c = new FramedClient(rawClient.Object);
-                c.Received += bs =>
+                c.Received.Subscribe(bs =>
                 {
                     called = true;
                     recvAsserts(bs);
-                };
+                });
 
 
                 bytesRecv.OnNext(recvBytes);
@@ -97,10 +97,10 @@ namespace Stacks.Tests
                 rawClient.Setup(s => s.Received).Returns(bytesRecv);
 
                 var c = new FramedClient(rawClient.Object);
-                c.Received += bs =>
+                c.Received.Subscribe(bs =>
                 {
                     recvAsserts(idx++, bs);
-                };
+                });
 
                 foreach (var recv in recvBytes)
                 {

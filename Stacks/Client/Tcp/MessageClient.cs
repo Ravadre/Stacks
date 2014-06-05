@@ -74,7 +74,7 @@ namespace Stacks.Tcp
                                             packetSerializer,
                                             messageHandler);
 
-            this.framedClient.Received += PacketReceived;
+            this.framedClient.Received.Subscribe(PacketReceived);
         }
 
         public IObservable<Unit> Connect(IPEndPoint endPoint)

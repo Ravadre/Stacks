@@ -58,7 +58,7 @@ namespace RawStreamPerfTest
             Action<int> sent = (t) => Console.WriteLine("Sent ");
 
             fc1.Sent.Subscribe(sent);
-            fc2.Received += recv;
+            var recvSub = fc2.Received.Subscribe(recv);
 
             for (int i = 0; i < l; ++i)
             {
@@ -67,7 +67,7 @@ namespace RawStreamPerfTest
 
             received.Wait();
 
-            fc2.Received -= recv;
+            recvSub.Dispose();
 
             var elapsed = sw.Elapsed.TotalSeconds;
             GC.Collect();
