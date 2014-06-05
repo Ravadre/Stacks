@@ -22,7 +22,7 @@ namespace PingPong
             SocketServer server;
             server = new SocketServer(new IPEndPoint(IPAddress.Loopback, 0));
 
-            server.Connected += c =>
+            server.Connected.Subscribe(c =>
                 {
                     serverClient = new FramedClient(c);
 
@@ -34,7 +34,7 @@ namespace PingPong
                             msg = "Hello, " + msg + "!";
                             serverClient.SendPacket(encoding.GetBytes(msg));
                         });
-                };
+                });
 
             server.Start();
             HandleClient(server.BindEndPoint.Port);

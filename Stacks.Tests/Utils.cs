@@ -57,22 +57,22 @@ namespace Stacks.Tests
             SocketClient lClient = null;
             SocketClient sClient = null;
 
-            s.Connected += c =>
+            s.Connected.Subscribe(c =>
             {
                 sClient = c;
                 connected2.Set();
-            };
+            });
 
-            s.Started += () =>
+            s.Started.Subscribe(_ =>
             {
                 var c = new SocketClient(ex);
-                c.Connected.Subscribe(_ =>
+                c.Connected.Subscribe(u =>
                 {
                     lClient = c;
                     connected1.Set();
                 });
                 c.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
-            };
+            });
 
             s.Start();
 
@@ -103,7 +103,7 @@ namespace Stacks.Tests
                                           .GetManifestResourceStream("Stacks.Tests.StacksTest.pfx");
             var certBytes = new BinaryReader(certBytesStream).ReadBytes((int)certBytesStream.Length);
 
-            s.Connected += c =>
+            s.Connected.Subscribe(c =>
             {
                 sClient = new SslClient(c, new X509Certificate2(certBytes));
 
@@ -113,19 +113,19 @@ namespace Stacks.Tests
                     });
 
                 sClient.EstablishSsl();
-            };
+            });
 
-            s.Started += () =>
+            s.Started.Subscribe(_ =>
             {
                 lClient = new SslClient(new SocketClient(ex), "Stacks Test", true);
 
-                lClient.Connected.Subscribe(_ =>
+                lClient.Connected.Subscribe(__ =>
                 {
                     connected1.Set();
                 });
 
                 lClient.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
-            };
+            });
 
             s.Start();
 
@@ -143,10 +143,10 @@ namespace Stacks.Tests
         public static void StopAndAssertStopped(this SocketServer server)
         {
             var stopped = new ManualResetEventSlim(false);
-            server.Stopped += () =>
+            server.Stopped.Subscribe(_ =>
             {
                 stopped.Set();
-            };
+            });
             server.Stop();
             stopped.AssertWaitFor(3000);
         }

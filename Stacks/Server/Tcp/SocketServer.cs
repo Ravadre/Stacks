@@ -7,6 +7,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using NLog;
+using System.Reactive;
+using System.Reactive.Subjects;
+using System.Reactive.Linq;
 
 namespace Stacks.Tcp
 {
@@ -21,9 +24,13 @@ namespace Stacks.Tcp
 
         public IPEndPoint BindEndPoint { get { return bindEndPoint; } }
 
-        public event Action Started;
-        public event Action Stopped;
-        public event Action<SocketClient> Connected;
+        private AsyncSubject<Unit> started;
+        private AsyncSubject<Unit> stopped;
+        private Subject<SocketClient> connected;
+
+        public IObservable<Unit> Started { get { return started.AsObservable(); } }
+        public IObservable<Unit> Stopped { get { return stopped.AsObservable(); } }
+        public IObservable<SocketClient> Connected { get { return connected.AsObservable(); } }
 
         private IExecutor executor;
 
@@ -39,6 +46,10 @@ namespace Stacks.Tcp
             Ensure.IsNotNull(bindEndPoint, "bindEndPoint");
 
             this.executor = executor;
+
+            this.started = new AsyncSubject<Unit>();
+            this.stopped = new AsyncSubject<Unit>();
+            this.connected = new Subject<SocketClient>();
 
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
@@ -132,29 +143,28 @@ namespace Stacks.Tcp
 
         private void OnStarted()
         {
-            var h = Started;
-            if (h != null)
-            {
-                executor.Enqueue(h);
-            }
+            executor.Enqueue(() =>
+                {
+                    this.started.OnNext(Unit.Default);
+                    this.started.OnCompleted();
+                });
         }
 
         private void OnStopped()
         {
-            var h = Stopped;
-            if (h != null)
-            {
-                executor.Enqueue(h);
-            }
+            executor.Enqueue(() =>
+                {
+                    this.stopped.OnNext(Unit.Default);
+                    this.stopped.OnCompleted();
+                });
         }
 
         private void OnConnected(SocketClient client)
         {
-            var h = Connected;
-            if (h != null)
-            {
-                executor.Enqueue(() => h(client));
-            }
+            executor.Enqueue(() =>
+                {
+                    this.connected.OnNext(client);
+                });
         }
     }
 }

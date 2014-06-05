@@ -23,12 +23,12 @@ namespace Stacks.Tests
             var ex = ServerHelpers.CreateExecutor();
             var server = ServerHelpers.CreateServer();
 
-            server.Connected += client =>
+            server.Connected.Subscribe(client =>
                 {
                     connected1.Set();
-                };
+                });
 
-            server.Started += () =>
+            server.Started.Subscribe(u => 
             {
                 var client = new SocketClient(ex);
                 client.Connected.Subscribe( _ =>
@@ -40,7 +40,7 @@ namespace Stacks.Tests
                         throw exn;
                     });
                 client.Connect(new IPEndPoint(IPAddress.Loopback, server.BindEndPoint.Port));
-            };
+            });
 
             server.Start();
 
@@ -57,7 +57,7 @@ namespace Stacks.Tests
             var executor = ServerHelpers.CreateExecutor();
             var server = ServerHelpers.CreateServer(executor);
 
-            server.Started += () =>
+            server.Started.Subscribe(_ =>
             {
                 Assert.Throws(typeof(InvalidOperationException),
                     () =>
@@ -67,7 +67,7 @@ namespace Stacks.Tests
                         hasConnected.Set();
                         client.Connect(server.BindEndPoint);
                     });
-            };
+            });
 
             server.Start();
 
