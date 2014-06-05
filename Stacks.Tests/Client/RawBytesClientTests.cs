@@ -35,10 +35,10 @@ namespace Stacks.Tests
                     {
                         connected2.Set();
                     });
-                client.Disconnected += exc =>
+                client.Disconnected.Subscribe(exn =>
                     {
-                        throw exc;
-                    };
+                        throw exn;
+                    });
                 client.Connect(new IPEndPoint(IPAddress.Loopback, server.BindEndPoint.Port));
             };
 
@@ -112,12 +112,12 @@ namespace Stacks.Tests
             var executor = ServerHelpers.CreateExecutor();
             var client = new SocketClient(executor);
 
-            client.Disconnected += exn =>
+            client.Disconnected.Subscribe(exn =>
                 {
                     Assert.IsType(typeof(SocketException), exn);
                     Assert.Equal((int)SocketError.ConnectionRefused, ((SocketException)exn).ErrorCode);
                     disconnectedCalled.Set();
-                };
+                });
 
             client.Connect(new IPEndPoint(IPAddress.Loopback, 45232));
             disconnectedCalled.AssertWaitFor();
@@ -133,17 +133,17 @@ namespace Stacks.Tests
 
             ServerHelpers.CreateServerAndConnectedClient(out server, out serverClient, out remoteClient);
 
-            remoteClient.Disconnected += exn =>
+            remoteClient.Disconnected.Subscribe(exn =>
             {
                 Assert.IsType(typeof(SocketException), exn);
                 Assert.Equal((int)SocketError.Disconnecting, ((SocketException)exn).ErrorCode);
                 disconnectedCalled.Set();
-            };
+            });
             
-            serverClient.Disconnected += exn =>
+            serverClient.Disconnected.Subscribe(exn =>
                 {
                   
-                };
+                });
             server.Stop();
             serverClient.Close();
             

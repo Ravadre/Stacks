@@ -32,11 +32,11 @@ namespace Stacks.Tcp
             get { return this.framedClient.Connected; }
         }
 
-        public event Action<Exception> Disconnected
+        public IObservable<Exception> Disconnected
         {
-            add { this.framedClient.Disconnected += value; }
-            remove { this.framedClient.Disconnected -= value; }
+            get { return this.framedClient.Disconnected; }
         }
+
         public event Action<int> Sent
         {
             add { this.framedClient.Sent += value; }

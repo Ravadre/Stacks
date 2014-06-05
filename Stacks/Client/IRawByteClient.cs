@@ -10,7 +10,7 @@ namespace Stacks
     {
         event Action<ArraySegment<byte>> Received;
         event Action<int> Sent;
-        event Action<Exception> Disconnected;
+        IObservable<Exception> Disconnected { get; }
 
         void Send(byte[] buffer);
         void Send(ArraySegment<byte> buffer);

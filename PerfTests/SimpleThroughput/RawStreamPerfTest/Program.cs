@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Stacks.Tcp;
 
@@ -21,8 +22,8 @@ namespace RawStreamPerfTest
             
             ServerHelpers.CreateServerAndConnectedClient(out s, out c1, out c2);
 
-            c1.Disconnected += exn => { Console.WriteLine("C1 d/c " + exn); };
-            c2.Disconnected += exn => { Console.WriteLine("C2 d/c " + exn); };
+            c1.Disconnected.Subscribe(exn => { Console.WriteLine("C1 d/c " + exn); });
+            c2.Disconnected.Subscribe(exn => { Console.WriteLine("C2 d/c " + exn); });
             
             Measure(8192, 8192);
             Console.ReadLine();

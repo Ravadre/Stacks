@@ -17,7 +17,7 @@ namespace Stacks.Tcp
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        private readonly IExecutor executor;
+        private IExecutor executor;
 
         private readonly Socket socket;
 
@@ -36,11 +36,11 @@ namespace Stacks.Tcp
         private SocketAsyncEventArgs connectArgs;
 
         private AsyncSubject<Unit> connected;
+        private AsyncSubject<Exception> disconnected;
 
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+        public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
 
-        //public event Action Connected;
-        public event Action<Exception> Disconnected;
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
 
@@ -60,10 +60,8 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor, Socket socket)
         {
-            this.connected = new AsyncSubject<Unit>();
+            InitialiseCommon(executor);
 
-            this.connectedTcs = new TaskCompletionSource<int>();
-            this.executor = executor;
             this.socket = socket;
             this.wasConnected = true;
 
@@ -84,14 +82,21 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor)
         {
-            this.connected = new AsyncSubject<Unit>();
-
-            this.connectedTcs = new TaskCompletionSource<int>();
-            this.executor = executor;
+            InitialiseCommon(executor);
+            
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
             this.wasConnected = false;
+        }
+
+        private void InitialiseCommon(IExecutor executor)
+        {
+            this.connected = new AsyncSubject<Unit>();
+            this.disconnected = new AsyncSubject<Exception>();
+
+            this.executor = executor;
+            this.connectedTcs = new TaskCompletionSource<int>();
         }
 
         public Task Connect(IPEndPoint remoteEndPoint)
@@ -365,13 +370,8 @@ namespace Stacks.Tcp
         {
             NotifyConnectedTask(e);
 
-            var h = Disconnected;
-
-            if (h != null)
-            {
-                try { h(e); }
-                catch { }
-            }
+            disconnected.OnNext(e);
+            disconnected.OnCompleted();
         }
 
         private void OnDataSent(int transferred)

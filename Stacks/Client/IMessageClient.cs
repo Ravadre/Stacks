@@ -9,7 +9,7 @@ namespace Stacks
     public interface IMessageClient : ISocketClient
     {
         event Action<int> Sent;
-        event Action<Exception> Disconnected;
+        IObservable<Exception> Disconnected { get; }
 
         void Send<T>(T obj);
 

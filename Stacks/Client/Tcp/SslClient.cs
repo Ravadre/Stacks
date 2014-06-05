@@ -19,12 +19,12 @@ namespace Stacks.Tcp
     {
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
-        public event Action<Exception> Disconnected;
-        //public event Action Connected;
 
         private AsyncSubject<Unit> connected;
+        private AsyncSubject<Exception> disconnected;
 
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+        public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
 
         private TaskCompletionSource<int> connectedTcs;
 
@@ -133,15 +133,15 @@ namespace Stacks.Tcp
                                 bool isClient)
         {
             this.connected = new AsyncSubject<Unit>();
+            this.disconnected = new AsyncSubject<Exception>();
 
             this.connectedTcs = new TaskCompletionSource<int>();
             this.isClient = isClient;
             this.disconnectCalled = false;
             this.client = client;
 
-            this.client.Disconnected += ClientDisconnected;
+            this.client.Disconnected.Subscribe(ClientDisconnected);
             this.client.Connected.Subscribe(_ => ClientConnected());
-            //this.client.Connected += ClientConnected;
             this.client.Sent += ClientSentData;
         }
 
@@ -325,13 +325,8 @@ namespace Stacks.Tcp
         {
             NotifyConnectedTask(exn);
 
-            var handler = this.Disconnected;
-
-            if (handler != null)
-            {
-                try { handler(exn); }
-                catch { }
-            }
+            disconnected.OnNext(exn);
+            disconnected.OnCompleted();
         }
 
         private void OnSent(int count)
