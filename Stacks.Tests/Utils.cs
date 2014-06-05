@@ -160,13 +160,13 @@ namespace Stacks.Tests
             var ev = new ManualResetEventSlim();
             var buffer = new List<byte>();
 
-            client.Received += bs =>
+            client.Received.Subscribe(bs =>
                 {
                     lock (buffer)
                     {
                         buffer.AddRange(bs);
                     }
-                };
+                });
 
             sendAction();
 

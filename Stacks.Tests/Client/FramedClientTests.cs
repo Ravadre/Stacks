@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Xunit;
 using Moq;
 using Stacks.Tcp;
+using System.Reactive.Subjects;
+using System.Reactive.Linq;
 
 namespace Stacks.Tests
 {
@@ -18,6 +20,7 @@ namespace Stacks.Tests
             public Base()
             {
                 rawClient = new Mock<IRawByteClient>();
+                rawClient.Setup(r => r.Received).Returns(Observable.Empty<ArraySegment<byte>>());
             }
 
             protected ArraySegment<byte> CreateBuffer(params byte[] bs)
@@ -62,6 +65,9 @@ namespace Stacks.Tests
                 ArraySegment<byte> recvBytes)
             {
                 bool called = false;
+                var bytesRecv = new Subject<ArraySegment<byte>>();
+                rawClient.Setup(s => s.Received).Returns(bytesRecv);
+
                 var c = new FramedClient(rawClient.Object);
                 c.Received += bs =>
                 {
@@ -69,8 +75,8 @@ namespace Stacks.Tests
                     recvAsserts(bs);
                 };
 
-                rawClient.Raise(r => r.Received += null,
-                    recvBytes);
+
+                bytesRecv.OnNext(recvBytes);
 
                 Assert.True(called);
             }
@@ -86,6 +92,10 @@ namespace Stacks.Tests
                 IEnumerable<ArraySegment<byte>> recvBytes)
             {
                 int idx = 0;
+                
+                var bytesRecv = new Subject<ArraySegment<byte>>();
+                rawClient.Setup(s => s.Received).Returns(bytesRecv);
+
                 var c = new FramedClient(rawClient.Object);
                 c.Received += bs =>
                 {
@@ -94,8 +104,7 @@ namespace Stacks.Tests
 
                 foreach (var recv in recvBytes)
                 {
-                    rawClient.Raise(r => r.Received += null,
-                        recv);
+                    bytesRecv.OnNext(recv);
                 }
             }
         }

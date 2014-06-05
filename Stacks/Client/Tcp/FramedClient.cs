@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace Stacks.Tcp
 {
@@ -34,7 +35,7 @@ namespace Stacks.Tcp
             this.client = client;
             this.recvBuffer = new ResizableCyclicBuffer(4096);
 
-            this.client.Received += ClientReceivedData;
+            this.client.Received.Subscribe(ClientReceivedData);
         }
 
         private void ClientReceivedData(ArraySegment<byte> data)

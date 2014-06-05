@@ -38,11 +38,12 @@ namespace Stacks.Tcp
         private AsyncSubject<Unit> connected;
         private AsyncSubject<Exception> disconnected;
         private Subject<int> sent;
+        private Subject<ArraySegment<byte>> received;
 
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
         public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
         public IObservable<int> Sent { get { return sent.AsObservable(); } }
-        public event Action<ArraySegment<byte>> Received;
+        public IObservable<ArraySegment<byte>> Received { get { return received.AsObservable(); } }
 
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
@@ -93,6 +94,7 @@ namespace Stacks.Tcp
             this.connected = new AsyncSubject<Unit>();
             this.disconnected = new AsyncSubject<Exception>();
             this.sent = new Subject<int>();
+            this.received = new Subject<ArraySegment<byte>>();
 
             this.executor = executor;
         }
@@ -334,15 +336,7 @@ namespace Stacks.Tcp
 
         private void OnDataReceived()
         {
-            var h = Received;
-            if (h != null)
-            {
-                try
-                {
-                    h(new ArraySegment<byte>(recvArgs.Buffer, 0, recvArgs.BytesTransferred));
-                }
-                catch { }
-            }
+            received.OnNext(new ArraySegment<byte>(recvArgs.Buffer, 0, recvArgs.BytesTransferred));
         }
 
         private void HandleDisconnection(Exception exc)

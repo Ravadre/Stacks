@@ -53,7 +53,7 @@ namespace RawStreamPerfTest
             Action<int> sent = (t) => Console.WriteLine("Sent ");
 
             c1.Sent.Subscribe(sent);
-            c2.Received += recv;
+            var recvHandle = c2.Received.Subscribe(recv);
            
 
             for (int i = 0; i < l; ++i)
@@ -63,7 +63,7 @@ namespace RawStreamPerfTest
 
             received.Wait();
 
-            c2.Received -= recv;
+            recvHandle.Dispose();
 
             var elapsed = sw.Elapsed.TotalSeconds;
             GC.Collect();
