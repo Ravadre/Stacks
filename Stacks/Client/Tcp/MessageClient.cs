@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,10 +27,9 @@ namespace Stacks.Tcp
             get { return framedClient.IsConnected; }
         }
 
-        public event Action Connected
+        public IObservable<Unit> Connected
         {
-            add { this.framedClient.Connected += value; }
-            remove { this.framedClient.Connected -= value; }
+            get { return this.framedClient.Connected; }
         }
 
         public event Action<Exception> Disconnected

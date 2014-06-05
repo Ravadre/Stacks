@@ -5,10 +5,13 @@ using System.Linq;
 using System.Net;
 using System.Net.Security;
 using System.Net.Sockets;
+using System.Reactive;
+using System.Reactive.Subjects;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace Stacks.Tcp
 {
@@ -17,7 +20,11 @@ namespace Stacks.Tcp
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
         public event Action<Exception> Disconnected;
-        public event Action Connected;
+        //public event Action Connected;
+
+        private AsyncSubject<Unit> connected;
+
+        public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
 
         private TaskCompletionSource<int> connectedTcs;
 
@@ -125,13 +132,16 @@ namespace Stacks.Tcp
         private void InitializeCommon(IRawByteClient client,
                                 bool isClient)
         {
+            this.connected = new AsyncSubject<Unit>();
+
             this.connectedTcs = new TaskCompletionSource<int>();
             this.isClient = isClient;
             this.disconnectCalled = false;
             this.client = client;
 
             this.client.Disconnected += ClientDisconnected;
-            this.client.Connected += ClientConnected;
+            this.client.Connected.Subscribe(_ => ClientConnected());
+            //this.client.Connected += ClientConnected;
             this.client.Sent += ClientSentData;
         }
 
@@ -307,13 +317,8 @@ namespace Stacks.Tcp
         {
             NotifyConnectedTask(null);
 
-            var handler = this.Connected;
-
-            if (handler != null)
-            {
-                try { handler(); }
-                catch { }
-            }
+            connected.OnNext(Unit.Default);
+            connected.OnCompleted();
         }
 
         private void OnDisconnected(Exception exn)

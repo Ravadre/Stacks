@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reactive;
+using System.Reactive.Subjects;
+using System.Reactive.Linq; 
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +35,11 @@ namespace Stacks.Tcp
 
         private SocketAsyncEventArgs connectArgs;
 
-        public event Action Connected;
+        private AsyncSubject<Unit> connected;
+
+        public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+
+        //public event Action Connected;
         public event Action<Exception> Disconnected;
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
@@ -53,6 +60,8 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor, Socket socket)
         {
+            this.connected = new AsyncSubject<Unit>();
+
             this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = socket;
@@ -75,6 +84,8 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor)
         {
+            this.connected = new AsyncSubject<Unit>();
+
             this.connectedTcs = new TaskCompletionSource<int>();
             this.executor = executor;
             this.socket = new Socket(AddressFamily.InterNetwork,
@@ -378,13 +389,8 @@ namespace Stacks.Tcp
         {
             NotifyConnectedTask(null);
 
-            var h = Connected;
-
-            if (h != null)
-            {
-                try { h(); }
-                catch { }
-            }
+            connected.OnNext(Unit.Default);
+            connected.OnCompleted();
         }
 
         private void NotifyConnectedTask(Exception error)

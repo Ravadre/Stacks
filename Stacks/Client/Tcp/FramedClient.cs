@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,10 +24,9 @@ namespace Stacks.Tcp
             remove { this.client.Sent -= value; }
         }
 
-        public event Action Connected
+        public IObservable<Unit> Connected
         {
-            add { this.client.Connected += value; }
-            remove { this.client.Connected -= value; }
+            get { return client.Connected; }
         }
 
         public event Action<ArraySegment<byte>> Received;

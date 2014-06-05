@@ -45,7 +45,7 @@ namespace Stacks.Tests
             return new ActionBlockExecutor("", new ActionBlockExecutorSettings());
         }
 
-        public static void CreateServerAndConnectedClient(out SocketServer server, 
+        public static void CreateServerAndConnectedClient(out SocketServer server,
             out SocketClient client1, out SocketClient client2)
         {
             var connected1 = new ManualResetEventSlim(false);
@@ -66,11 +66,11 @@ namespace Stacks.Tests
             s.Started += () =>
             {
                 var c = new SocketClient(ex);
-                c.Connected += () =>
+                c.Connected.Subscribe(_ =>
                 {
                     lClient = c;
                     connected1.Set();
-                };
+                });
                 c.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
             };
 
@@ -107,10 +107,10 @@ namespace Stacks.Tests
             {
                 sClient = new SslClient(c, new X509Certificate2(certBytes));
 
-                sClient.Connected += () =>
+                sClient.Connected.Subscribe(_ =>
                     {
                         connected2.Set();
-                    };
+                    });
 
                 sClient.EstablishSsl();
             };
@@ -119,10 +119,10 @@ namespace Stacks.Tests
             {
                 lClient = new SslClient(new SocketClient(ex), "Stacks Test", true);
 
-                lClient.Connected += () =>
+                lClient.Connected.Subscribe(_ =>
                 {
                     connected1.Set();
-                };
+                });
 
                 lClient.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
             };
@@ -169,11 +169,11 @@ namespace Stacks.Tests
                 };
 
             sendAction();
-            
+
             var sw = Stopwatch.StartNew();
-            while(true)
+            while (true)
             {
-                lock(buffer)
+                lock (buffer)
                 {
                     if (buffer.Count == totalExpectedBytes)
                         break;
@@ -185,7 +185,7 @@ namespace Stacks.Tests
                     throw new TimeoutException();
             }
 
-            lock(buffer)
+            lock (buffer)
             {
                 return buffer.ToArray();
             }

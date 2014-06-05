@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Tcp;
+using System.Reactive.Linq;
 using Xunit;
 
 namespace Stacks.Tests
@@ -30,10 +31,10 @@ namespace Stacks.Tests
             server.Started += () =>
             {
                 var client = new SocketClient(ex);
-                client.Connected += () =>
+                client.Connected.Subscribe( _ =>
                     {
                         connected2.Set();
-                    };
+                    });
                 client.Disconnected += exc =>
                     {
                         throw exc;
@@ -43,8 +44,8 @@ namespace Stacks.Tests
 
             server.Start();
 
-            connected1.AssertWaitFor(3000);
-            connected2.AssertWaitFor(3000);
+            connected1.AssertWaitFor(30000);
+            connected2.AssertWaitFor(30000);
 
             server.StopAndAssertStopped();
         }
