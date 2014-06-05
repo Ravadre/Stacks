@@ -37,12 +37,12 @@ namespace Stacks.Tcp
 
         private AsyncSubject<Unit> connected;
         private AsyncSubject<Exception> disconnected;
+        private Subject<int> sent;
 
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
         public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
-
+        public IObservable<int> Sent { get { return sent.AsObservable(); } }
         public event Action<ArraySegment<byte>> Received;
-        public event Action<int> Sent;
 
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
@@ -92,6 +92,7 @@ namespace Stacks.Tcp
         {
             this.connected = new AsyncSubject<Unit>();
             this.disconnected = new AsyncSubject<Exception>();
+            this.sent = new Subject<int>();
 
             this.executor = executor;
         }
@@ -373,13 +374,7 @@ namespace Stacks.Tcp
 
         private void OnDataSent(int transferred)
         {
-            var h = Sent;
-
-            if (h != null)
-            {
-                try { h(transferred); }
-                catch { }
-            }
+            this.sent.OnNext(transferred);
         }
 
         private void OnConnected()

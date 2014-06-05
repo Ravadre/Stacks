@@ -57,7 +57,7 @@ namespace RawStreamPerfTest
             };
             Action<int> sent = (t) => Console.WriteLine("Sent ");
 
-            fc1.Sent += sent;
+            fc1.Sent.Subscribe(sent);
             fc2.Received += recv;
 
             for (int i = 0; i < l; ++i)

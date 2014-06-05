@@ -12,12 +12,6 @@ namespace Stacks.Tcp
         private IRawByteClient client;
         private ResizableCyclicBuffer recvBuffer;
 
-        public event Action<int> Sent
-        {
-            add { this.client.Sent += value; }
-            remove { this.client.Sent -= value; }
-        }
-
         public IObservable<Unit> Connected
         {
             get { return client.Connected; }
@@ -26,6 +20,11 @@ namespace Stacks.Tcp
         public IObservable<Exception> Disconnected
         {
             get { return client.Disconnected; }
+        }
+
+        public IObservable<int> Sent
+        {
+            get { return client.Sent; }
         }
 
         public event Action<ArraySegment<byte>> Received;

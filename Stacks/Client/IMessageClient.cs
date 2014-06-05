@@ -8,7 +8,7 @@ namespace Stacks
 {
     public interface IMessageClient : ISocketClient
     {
-        event Action<int> Sent;
+        IObservable<int> Sent { get; }
         IObservable<Exception> Disconnected { get; }
 
         void Send<T>(T obj);

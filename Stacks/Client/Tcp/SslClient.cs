@@ -18,13 +18,14 @@ namespace Stacks.Tcp
     public class SslClient : IRawByteClient
     {
         public event Action<ArraySegment<byte>> Received;
-        public event Action<int> Sent;
 
         private AsyncSubject<Unit> connected;
         private AsyncSubject<Exception> disconnected;
+        private Subject<int> sent;
 
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
         public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
+        public IObservable<int> Sent { get { return sent.AsObservable(); } }
 
         private IRawByteClient client;
         private SslStream sslStream;
@@ -132,6 +133,7 @@ namespace Stacks.Tcp
         {
             this.connected = new AsyncSubject<Unit>();
             this.disconnected = new AsyncSubject<Exception>();
+            this.sent = new Subject<int>();
 
             this.isClient = isClient;
             this.disconnectCalled = false;
@@ -139,7 +141,7 @@ namespace Stacks.Tcp
 
             this.client.Disconnected.Subscribe(ClientDisconnected);
             this.client.Connected.Subscribe(_ => ClientConnected());
-            this.client.Sent += ClientSentData;
+            this.client.Sent.Subscribe(ClientSentData);
         }
 
         private void ClientSentData(int count)
@@ -326,13 +328,7 @@ namespace Stacks.Tcp
 
         private void OnSent(int count)
         {
-            var handler = this.Sent;
-
-            if (handler != null)
-            {
-                try { handler(count); }
-                catch { }
-            }
+            this.sent.OnNext(count);
         }
     }
 }

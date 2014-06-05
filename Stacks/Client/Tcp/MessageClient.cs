@@ -37,10 +37,9 @@ namespace Stacks.Tcp
             get { return this.framedClient.Disconnected; }
         }
 
-        public event Action<int> Sent
+        public IObservable<int> Sent
         {
-            add { this.framedClient.Sent += value; }
-            remove { this.framedClient.Sent -= value; }
+            get { return this.framedClient.Sent; }
         }
 
         public MessageClient(IFramedClient framedClient,

@@ -52,7 +52,7 @@ namespace RawStreamPerfTest
                 };
             Action<int> sent = (t) => Console.WriteLine("Sent ");
 
-            c1.Sent += sent;
+            c1.Sent.Subscribe(sent);
             c2.Received += recv;
            
 

@@ -9,7 +9,7 @@ namespace Stacks
     public interface IRawByteClient : ISocketClient
     {
         event Action<ArraySegment<byte>> Received;
-        event Action<int> Sent;
+        IObservable<int> Sent { get; }
         IObservable<Exception> Disconnected { get; }
 
         void Send(byte[] buffer);
