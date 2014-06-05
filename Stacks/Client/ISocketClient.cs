@@ -15,6 +15,6 @@ namespace Stacks
 
         IObservable<Unit> Connected { get; }
 
-        Task Connect(IPEndPoint remoteEndPoint);
+        IObservable<Unit> Connect(IPEndPoint remoteEndPoint);
     }
 }

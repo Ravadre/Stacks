@@ -44,8 +44,6 @@ namespace Stacks.Tcp
         public event Action<ArraySegment<byte>> Received;
         public event Action<int> Sent;
 
-        private TaskCompletionSource<int> connectedTcs;
-
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
@@ -96,10 +94,9 @@ namespace Stacks.Tcp
             this.disconnected = new AsyncSubject<Exception>();
 
             this.executor = executor;
-            this.connectedTcs = new TaskCompletionSource<int>();
         }
 
-        public Task Connect(IPEndPoint remoteEndPoint)
+        public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
                 throw new InvalidOperationException("Socket was already in connected state");
@@ -114,7 +111,7 @@ namespace Stacks.Tcp
             if (!isPending)
                 ConnectedCapture(this, this.connectArgs);
 
-            return connectedTcs.Task;
+            return Connected;
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
@@ -368,10 +365,10 @@ namespace Stacks.Tcp
 
         private void OnDisconnected(Exception e)
         {
-            NotifyConnectedTask(e);
-
             disconnected.OnNext(e);
             disconnected.OnCompleted();
+
+            connected.OnError(e);
         }
 
         private void OnDataSent(int transferred)
@@ -387,18 +384,8 @@ namespace Stacks.Tcp
 
         private void OnConnected()
         {
-            NotifyConnectedTask(null);
-
             connected.OnNext(Unit.Default);
             connected.OnCompleted();
-        }
-
-        private void NotifyConnectedTask(Exception error)
-        {
-            if (error == null)
-                connectedTcs.SetResult(0);
-            else
-                connectedTcs.SetException(error);
         }
     }
 }

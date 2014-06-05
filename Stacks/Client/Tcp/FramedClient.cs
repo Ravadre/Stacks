@@ -98,7 +98,7 @@ namespace Stacks.Tcp
             get { return client.IsConnected; }
         }
 
-        public Task Connect(System.Net.IPEndPoint remoteEndPoint)
+        public IObservable<Unit> Connect(System.Net.IPEndPoint remoteEndPoint)
         {
             return client.Connect(remoteEndPoint);
         }

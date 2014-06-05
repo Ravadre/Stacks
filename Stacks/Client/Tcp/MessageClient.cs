@@ -78,7 +78,7 @@ namespace Stacks.Tcp
             this.framedClient.Received += PacketReceived;
         }
 
-        public Task Connect(IPEndPoint endPoint)
+        public IObservable<Unit> Connect(IPEndPoint endPoint)
         {
             return framedClient.Connect(endPoint);
         }

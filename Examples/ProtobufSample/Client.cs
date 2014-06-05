@@ -28,7 +28,7 @@ namespace ProtobufSample
             client.PreLoadTypesFromAssemblyOfType<TemperatureResponse>();
 
             client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort))
-                  .ContinueWith(t =>
+                  .Subscribe(_ =>
                   {
                       Console.WriteLine("Querying for temperature in London, Warsaw, Madrid");
                       client.Send(new TemperatureRequest { City = "London" });

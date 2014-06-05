@@ -26,8 +26,6 @@ namespace Stacks.Tcp
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
         public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
 
-        private TaskCompletionSource<int> connectedTcs;
-
         private IRawByteClient client;
         private SslStream sslStream;
         private RawByteClientStream clientStreamWrapper;
@@ -135,7 +133,6 @@ namespace Stacks.Tcp
             this.connected = new AsyncSubject<Unit>();
             this.disconnected = new AsyncSubject<Exception>();
 
-            this.connectedTcs = new TaskCompletionSource<int>();
             this.isClient = isClient;
             this.disconnectCalled = false;
             this.client = client;
@@ -155,13 +152,13 @@ namespace Stacks.Tcp
         /// and ssl stream are both established.
         /// </summary>
         /// <param name="remoteEndPoint"></param>
-        public Task Connect(IPEndPoint remoteEndPoint)
+        public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             Ensure.IsNotNull(remoteEndPoint, "remoteEndPoint");
 
             this.client.Connect(remoteEndPoint);
 
-            return connectedTcs.Task;
+            return this.Connected;
         }
 
         /// <summary>
@@ -169,11 +166,11 @@ namespace Stacks.Tcp
         /// with already connected socket. In this case, this method will
         /// establish ssl and call Connected event.
         /// </summary>
-        public Task EstablishSsl()
+        public IObservable<Unit> EstablishSsl()
         {
             this.Executor.Enqueue(() => ClientConnected());
 
-            return connectedTcs.Task;
+            return this.Connected;
         }
 
         private async void ClientConnected()
@@ -315,18 +312,16 @@ namespace Stacks.Tcp
 
         private void OnConnected()
         {
-            NotifyConnectedTask(null);
-
             connected.OnNext(Unit.Default);
             connected.OnCompleted();
         }
 
         private void OnDisconnected(Exception exn)
         {
-            NotifyConnectedTask(exn);
-
             disconnected.OnNext(exn);
             disconnected.OnCompleted();
+
+            connected.OnError(exn);
         }
 
         private void OnSent(int count)
@@ -338,14 +333,6 @@ namespace Stacks.Tcp
                 try { handler(count); }
                 catch { }
             }
-        }
-
-        private void NotifyConnectedTask(Exception error)
-        {
-            if (error == null)
-                connectedTcs.SetResult(0);
-            else
-                connectedTcs.SetException(error);
         }
     }
 }
