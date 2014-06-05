@@ -116,9 +116,8 @@ namespace Stacks.Tests
             {
                 ReceiveBytesAndAssertPacket(bs =>
                     {
-                        Assert.Equal(8, bs.Count);
-                        Assert.Equal(8, ToInt(bs, 0));
-                        Assert.Equal(1234, ToInt(bs, 4));
+                        Assert.Equal(4, bs.Count);
+                        Assert.Equal(1234, ToInt(bs, 0));
                     }, CreateBufferInt(8, 1234));
             }
 
@@ -129,7 +128,7 @@ namespace Stacks.Tests
                 ReceiveBytesAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx + 1, ToInt(bs, 4));
+                        Assert.Equal(idx + 1, ToInt(bs, 0));
                     }, CreateBufferInt(8, 1, 8, 2));
 
                 Assert.Equal(2, calls);
@@ -142,7 +141,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                 {
                     ++calls;
-                    Assert.Equal(idx + 1, ToInt(bs, 4));
+                    Assert.Equal(idx + 1, ToInt(bs, 0));
                 }, Split(CreateBufferInt(8, 1, 8, 2), 1, 3, 5, 7, 13));
 
                 Assert.Equal(2, calls);
@@ -155,7 +154,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx * 2, ToInt(bs, 4));
+                        Assert.Equal(idx * 2, ToInt(bs, 0));
                     }, new[] 
                     {
                         CreateBufferInt(8, 0, 12, 2, 1),
@@ -172,7 +171,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx * 5, ToInt(bs, 4));
+                        Assert.Equal(idx * 5, ToInt(bs, 0));
                     }, new[]
                     {
                         CreateBuffer(8,  0, 0, 0,
@@ -184,7 +183,7 @@ namespace Stacks.Tests
                                      5,  6, 7, 8,
                                      8),
                         CreateBuffer(    0, 0, 0, 
-                                     15, 0, 0, 0)
+                                     10, 0, 0, 0)
                     });
 
                 Assert.Equal(3, calls);
