@@ -45,7 +45,7 @@ class Formatter : Actor
 
 ### Protocol layers ###
 
-In Stacks, choosing socket behavior and features is done by composing different functionalities by chaining layers on top of themselves, just like on stack. For example, to enable framing one should create `FramedClient` on top of `SockeClient`. To enable ssl, `SslClient` should be inserted between those two layers.
+In Stacks, choosing socket behavior and features is done by composing different functionalities by chaining layers on top of themselves, just like on stack. For example, to enable framing one should create `FramedClient` on top of `SocketClient`. To enable ssl, `SslClient` should be inserted between those two layers.
 
 Once layers are set up, only the highest layer can be used to interact with sockets, every event will be bubbled up from lower layers. Because everything is done in actor context, packet handling should not be processed directly in events. Instead, data should be passed for processing, for example to a different actor.
 
