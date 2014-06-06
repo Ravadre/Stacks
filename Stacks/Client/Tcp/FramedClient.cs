@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 
 namespace Stacks.Tcp
 {
@@ -10,33 +13,35 @@ namespace Stacks.Tcp
     {
         private IRawByteClient client;
         private ResizableCyclicBuffer recvBuffer;
+        private Subject<ArraySegment<byte>> received;
 
-        public event Action<Exception> Disconnected
+        public IObservable<Unit> Connected
         {
-            add { this.client.Disconnected += value; }
-            remove { this.client.Disconnected -= value; }
+            get { return client.Connected; }
         }
 
-        public event Action<int> Sent
+        public IObservable<Exception> Disconnected
         {
-            add { this.client.Sent += value; }
-            remove { this.client.Sent -= value; }
+            get { return client.Disconnected; }
         }
 
-        public event Action Connected
+        public IObservable<int> Sent
         {
-            add { this.client.Connected += value; }
-            remove { this.client.Connected -= value; }
+            get { return client.Sent; }
         }
 
-        public event Action<ArraySegment<byte>> Received;
+        public IObservable<ArraySegment<byte>> Received
+        {
+            get { return received; }
+        }
 
         public FramedClient(IRawByteClient client)
         {
+            this.received = new Subject<ArraySegment<byte>>();
             this.client = client;
             this.recvBuffer = new ResizableCyclicBuffer(4096);
 
-            this.client.Received += ClientReceivedData;
+            this.client.Received.Subscribe(ClientReceivedData);
         }
 
         private void ClientReceivedData(ArraySegment<byte> data)
@@ -81,12 +86,7 @@ namespace Stacks.Tcp
 
         private void OnReceived(ArraySegment<byte> data)
         {
-            var h = Received;
-            if (h != null)
-            {
-                try { h(data); }
-                catch { }
-            }
+            received.OnNext(data);
         }
 
         public IExecutor Executor
@@ -99,7 +99,7 @@ namespace Stacks.Tcp
             get { return client.IsConnected; }
         }
 
-        public Task Connect(System.Net.IPEndPoint remoteEndPoint)
+        public IObservable<Unit> Connect(System.Net.IPEndPoint remoteEndPoint)
         {
             return client.Connect(remoteEndPoint);
         }

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Xunit;
 using Moq;
 using Stacks.Tcp;
+using System.Reactive.Subjects;
+using System.Reactive.Linq;
 
 namespace Stacks.Tests
 {
@@ -18,6 +20,7 @@ namespace Stacks.Tests
             public Base()
             {
                 rawClient = new Mock<IRawByteClient>();
+                rawClient.Setup(r => r.Received).Returns(Observable.Empty<ArraySegment<byte>>());
             }
 
             protected ArraySegment<byte> CreateBuffer(params byte[] bs)
@@ -62,15 +65,18 @@ namespace Stacks.Tests
                 ArraySegment<byte> recvBytes)
             {
                 bool called = false;
+                var bytesRecv = new Subject<ArraySegment<byte>>();
+                rawClient.Setup(s => s.Received).Returns(bytesRecv);
+
                 var c = new FramedClient(rawClient.Object);
-                c.Received += bs =>
+                c.Received.Subscribe(bs =>
                 {
                     called = true;
                     recvAsserts(bs);
-                };
+                });
 
-                rawClient.Raise(r => r.Received += null,
-                    recvBytes);
+
+                bytesRecv.OnNext(recvBytes);
 
                 Assert.True(called);
             }
@@ -86,16 +92,19 @@ namespace Stacks.Tests
                 IEnumerable<ArraySegment<byte>> recvBytes)
             {
                 int idx = 0;
+                
+                var bytesRecv = new Subject<ArraySegment<byte>>();
+                rawClient.Setup(s => s.Received).Returns(bytesRecv);
+
                 var c = new FramedClient(rawClient.Object);
-                c.Received += bs =>
+                c.Received.Subscribe(bs =>
                 {
                     recvAsserts(idx++, bs);
-                };
+                });
 
                 foreach (var recv in recvBytes)
                 {
-                    rawClient.Raise(r => r.Received += null,
-                        recv);
+                    bytesRecv.OnNext(recv);
                 }
             }
         }
@@ -107,9 +116,8 @@ namespace Stacks.Tests
             {
                 ReceiveBytesAndAssertPacket(bs =>
                     {
-                        Assert.Equal(8, bs.Count);
-                        Assert.Equal(8, ToInt(bs, 0));
-                        Assert.Equal(1234, ToInt(bs, 4));
+                        Assert.Equal(4, bs.Count);
+                        Assert.Equal(1234, ToInt(bs, 0));
                     }, CreateBufferInt(8, 1234));
             }
 
@@ -120,7 +128,7 @@ namespace Stacks.Tests
                 ReceiveBytesAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx + 1, ToInt(bs, 4));
+                        Assert.Equal(idx + 1, ToInt(bs, 0));
                     }, CreateBufferInt(8, 1, 8, 2));
 
                 Assert.Equal(2, calls);
@@ -133,7 +141,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                 {
                     ++calls;
-                    Assert.Equal(idx + 1, ToInt(bs, 4));
+                    Assert.Equal(idx + 1, ToInt(bs, 0));
                 }, Split(CreateBufferInt(8, 1, 8, 2), 1, 3, 5, 7, 13));
 
                 Assert.Equal(2, calls);
@@ -146,7 +154,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx * 2, ToInt(bs, 4));
+                        Assert.Equal(idx * 2, ToInt(bs, 0));
                     }, new[] 
                     {
                         CreateBufferInt(8, 0, 12, 2, 1),
@@ -163,7 +171,7 @@ namespace Stacks.Tests
                 ReceiveBytesSegmentsAndAssertPackets((idx, bs) =>
                     {
                         ++calls;
-                        Assert.Equal(idx * 5, ToInt(bs, 4));
+                        Assert.Equal(idx * 5, ToInt(bs, 0));
                     }, new[]
                     {
                         CreateBuffer(8,  0, 0, 0,
@@ -175,7 +183,7 @@ namespace Stacks.Tests
                                      5,  6, 7, 8,
                                      8),
                         CreateBuffer(    0, 0, 0, 
-                                     15, 0, 0, 0)
+                                     10, 0, 0, 0)
                     });
 
                 Assert.Equal(3, calls);

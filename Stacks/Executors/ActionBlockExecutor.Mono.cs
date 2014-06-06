@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 
 namespace Stacks
 {
@@ -132,6 +134,31 @@ namespace Stacks
         {
             return "ActionBlock Executor " +
                 (name == null ? "" : string.Format("({0})", name));
+        }
+
+        DateTimeOffset IScheduler.Now
+        {
+            get { return DateTimeOffset.UtcNow; }
+        }
+
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
+        {
+            Enqueue(() =>
+            {
+                action(this, state);
+            });
+
+            return Disposable.Empty;
         }
     }
 #endif

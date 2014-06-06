@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
 using Stacks;
 using Stacks.Actors;
 using Stacks.Tcp;
@@ -28,7 +29,7 @@ namespace ProtobufSample
             service = new TemperatureService();
             server = new SocketServer(new IPEndPoint(IPAddress.Loopback, 0));
 
-            server.Connected += ClientConnected;
+            server.Connected.Subscribe(ClientConnected);
 
             server.Start();
             this.ServerPort = server.BindEndPoint.Port;

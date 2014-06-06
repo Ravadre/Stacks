@@ -8,14 +8,11 @@ namespace Stacks
 {
     public interface IMessageClient : ISocketClient
     {
-        event Action<int> Sent;
-        event Action<Exception> Disconnected;
+        IObservable<int> Sent { get; }
 
         void Send<T>(T obj);
 
         void PreLoadTypesFromAssemblyOfType<T>();
         void PreLoadType<T>();
-
-        void Close();
     }
 }

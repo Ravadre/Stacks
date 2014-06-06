@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace Stacks
 {
@@ -21,7 +22,7 @@ namespace Stacks
             this.hasDataEvent = new ManualResetEventSlim();
             this.client = client;
             this.buffer = new ResizableCyclicBuffer(4096);
-            this.client.Received += DataReceived;
+            this.client.Received.Subscribe(DataReceived);
         }
 
         public override bool CanRead

@@ -8,15 +8,12 @@ namespace Stacks
 {
     public interface IFramedClient : ISocketClient
     {
-        event Action<Exception> Disconnected;
-        event Action<int> Sent;
-        event Action<ArraySegment<byte>> Received;
+        IObservable<int> Sent { get; }
+        IObservable<ArraySegment<byte>> Received { get; }
 
         void SendPacket(byte[] packet);
         void SendPacket(ArraySegment<byte> packet);
         void SendPacket(FramedClientBuffer packet);
         FramedClientBuffer PreparePacketBuffer(int packetBytes);
-
-        void Close();
     }
 }

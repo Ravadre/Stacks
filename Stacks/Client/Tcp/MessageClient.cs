@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,21 +27,19 @@ namespace Stacks.Tcp
             get { return framedClient.IsConnected; }
         }
 
-        public event Action Connected
+        public IObservable<Unit> Connected
         {
-            add { this.framedClient.Connected += value; }
-            remove { this.framedClient.Connected -= value; }
+            get { return this.framedClient.Connected; }
         }
 
-        public event Action<Exception> Disconnected
+        public IObservable<Exception> Disconnected
         {
-            add { this.framedClient.Disconnected += value; }
-            remove { this.framedClient.Disconnected -= value; }
+            get { return this.framedClient.Disconnected; }
         }
-        public event Action<int> Sent
+
+        public IObservable<int> Sent
         {
-            add { this.framedClient.Sent += value; }
-            remove { this.framedClient.Sent -= value; }
+            get { return this.framedClient.Sent; }
         }
 
         public MessageClient(IFramedClient framedClient,
@@ -75,10 +74,10 @@ namespace Stacks.Tcp
                                             packetSerializer,
                                             messageHandler);
 
-            this.framedClient.Received += PacketReceived;
+            this.framedClient.Received.Subscribe(PacketReceived);
         }
 
-        public Task Connect(IPEndPoint endPoint)
+        public IObservable<Unit> Connect(IPEndPoint endPoint)
         {
             return framedClient.Connect(endPoint);
         }

@@ -45,7 +45,7 @@ class Formatter : Actor
 
 ### Protocol layers ###
 
-In Stacks, choosing socket behavior and features is done by composing different functionalities by chaining layers on top of themselves, just like on stack. For example, to enable framing one should create `FramedClient` on top of `SockeClient`. To enable ssl, `SslClient` should be inserted between those two layers.
+In Stacks, choosing socket behavior and features is done by composing different functionalities by chaining layers on top of themselves, just like on stack. For example, to enable framing one should create `FramedClient` on top of `SocketClient`. To enable ssl, `SslClient` should be inserted between those two layers.
 
 Once layers are set up, only the highest layer can be used to interact with sockets, every event will be bubbled up from lower layers. Because everything is done in actor context, packet handling should not be processed directly in events. Instead, data should be passed for processing, for example to a different actor.
 
@@ -53,30 +53,30 @@ Sample usage of framed client:
 
 ```cs
 // Server
-server.Connected += c =>
+server.Connected.Subscribe(c =>
     {
         serverClient = new FramedClient(c);
         
         // When received is called, bs will contain no more and no less
         // data than whole packet as sent from client.
-        serverClient.Received += bs =>
+        serverClient.Received.Subscribe(bs =>
             {
                 var msg = encoding.GetString(bs.Array, bs.Offset, bs.Count);
                 msg = "Hello, " + msg + "!";
                 serverClient.SendPacket(encoding.GetBytes(msg));
-            };
-    };
+            });
+    });
 server.Start();
 
 // Client
 client = new FramedClient(
             new SocketClient());
 
-client.Received += bs =>
+client.Received.Subscribe(bs =>
     {
         Console.WriteLine("Received: " + 
             encoding.GetString(bs.Array, bs.Offset, bs.Count));
-    };
+    });
 
 await client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort));
 client.SendPacket(encoding.GetBytes("Steve"));
@@ -131,6 +131,7 @@ public class ServerMessageHandler : Actor, IMessageHandler
 Building requires at least Mono 3.2, previous versions will crash during compilation.
 ```
 wget https://nuget.org/nuget.exe
+fsharpi Create-Mono.fsx
 mono nuget.exe restore Stacks-Mono.sln
 xbuild Stacks-Mono.sln
 ```
