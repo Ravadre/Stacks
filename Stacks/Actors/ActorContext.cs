@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -8,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class ActorContext : IActorContext, INotifyCompletion /* , ICriticalNotifyCompletion */
+    public class ActorContext : IActorContext, INotifyCompletion, IScheduler
     {
         private IExecutor executor;
         private string name;
@@ -81,5 +82,25 @@ namespace Stacks.Actors
             return new ActorContext(null, new CapturedContextExecutor(null, context));
         }
 
+
+        DateTimeOffset IScheduler.Now
+        {
+            get { return DateTimeOffset.UtcNow; }
+        }
+
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            throw new NotSupportedException();
+        }
+
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            throw new NotSupportedException();
+        }
+
+        public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
+        {
+            return executor.Schedule(state, action);
+        }
     }
 }

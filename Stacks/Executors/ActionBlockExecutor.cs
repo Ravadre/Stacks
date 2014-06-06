@@ -137,12 +137,12 @@ namespace Stacks
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)

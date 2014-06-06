@@ -110,12 +110,12 @@ namespace Stacks
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
 
         public IDisposable Schedule<TState>(TState state, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
