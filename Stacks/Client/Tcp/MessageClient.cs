@@ -10,37 +10,9 @@ using System.Threading.Tasks;
 
 namespace Stacks.Tcp
 {
-    public class MessageClient : IMessageClient
+    public class MessageClient : MessageClientBase
     {
-        private IFramedClient framedClient;
-        private StacksSerializationHandler packetSerializer;
-
-        private IMessageIdCache messageIdCache;
-
-        public IExecutor Executor
-        {
-            get { return framedClient.Executor; }
-        }
-
-        public bool IsConnected
-        {
-            get { return framedClient.IsConnected; }
-        }
-
-        public IObservable<Unit> Connected
-        {
-            get { return this.framedClient.Connected; }
-        }
-
-        public IObservable<Exception> Disconnected
-        {
-            get { return this.framedClient.Disconnected; }
-        }
-
-        public IObservable<int> Sent
-        {
-            get { return this.framedClient.Sent; }
-        }
+        private StacksSerializationHandler packetSerializationHandler;
 
         public MessageClient(IFramedClient framedClient,
                              IStacksSerializer packetSerializer,
@@ -63,23 +35,16 @@ namespace Stacks.Tcp
                               IFramedClient framedClient,
                               IStacksSerializer packetSerializer,
                               IMessageHandler messageHandler)
+            : base(framedClient, messageIdCache, packetSerializer)
         {
 
-            this.messageIdCache = messageIdCache;
-
-            this.framedClient = framedClient;
-            this.packetSerializer = new StacksSerializationHandler(
+            this.packetSerializationHandler = new StacksSerializationHandler(
                                             messageIdCache,
                                             this,
                                             packetSerializer,
                                             messageHandler);
 
             this.framedClient.Received.Subscribe(PacketReceived);
-        }
-
-        public IObservable<Unit> Connect(IPEndPoint endPoint)
-        {
-            return framedClient.Connect(endPoint);
         }
 
         private unsafe void PacketReceived(ArraySegment<byte> buffer)
@@ -89,49 +54,9 @@ namespace Stacks.Tcp
                 int messageId = *((int*)b);
                 using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 4, buffer.Count - 4))
                 {
-                    this.packetSerializer.Deserialize(messageId, ms);
+                    this.packetSerializationHandler.Deserialize(messageId, ms);
                 }
             }
         }
-
-        public unsafe void Send<T>(T obj)
-        {
-            var messageId = messageIdCache.GetMessageId<T>();
-
-            using (var ms = new MemoryStream())
-            {
-                ms.SetLength(4);
-                ms.Position = 4;
-                this.packetSerializer.Serialize(obj, ms);
-                ms.Position = 0;
-                
-                var buffer = ms.GetBuffer();
-
-                fixed (byte* buf = buffer)
-                {
-                    int* iBuf = (int*)buf;
-                    *iBuf = messageId;
-                }
-
-                this.framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
-            }
-        }
-
-        public void PreLoadTypesFromAssemblyOfType<T>()
-        {
-            messageIdCache.PreLoadTypesFromAssemblyOfType<T>();
-        }
-
-        public void PreLoadType<T>()
-        {
-            messageIdCache.PreLoadType<T>();
-        }
-
-
-        public void Close()
-        {
-            this.framedClient.Close();
-        }
-
     }
 }

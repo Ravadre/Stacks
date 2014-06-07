@@ -97,6 +97,8 @@
     <Compile Include="Client\ISocketClient.cs" />
     <Compile Include="Client\Tcp\MessageClient.cs" />
     <Compile Include="Client\RawByteClientStream.cs" />
+    <Compile Include="Client\Tcp\MessageClientBase.cs" />
+    <Compile Include="Client\Tcp\ReactiveMessageClient.cs" />
     <Compile Include="Client\Tcp\SocketClient.cs" />
     <Compile Include="Client\Tcp\SslClient.cs" />
     <Compile Include="Ensure.cs" />
