@@ -137,12 +137,20 @@ namespace Stacks
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            var due = dueTime - DateTimeOffset.UtcNow;
+            
+            return Schedule(state, due, action);
         }
 
         public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotImplementedException();
+            Task.Delay(dueTime)
+                .ContinueWith(t =>
+                {
+                    Schedule(state, action);
+                });
+
+            return Disposable.Empty;
         }
 
         public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)

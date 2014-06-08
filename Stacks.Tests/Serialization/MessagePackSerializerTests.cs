@@ -46,7 +46,7 @@ namespace Stacks.Tests.Serialization
 
                 var serializer = new MessagePackStacksSerializer();
                 serializer.Initialize();
-                var recv = serializer.CreateDeserializer<TestData>()(obj);
+                var recv = serializer.Deserialize<TestData>(obj);
 
                 Assert.Equal(test.Foo, recv.Foo);
                 Assert.Equal(test.Bar, recv.Bar);
@@ -68,7 +68,7 @@ namespace Stacks.Tests.Serialization
 
                 serializer.Serialize(test, ms);
                 ms.Position = 0;
-                var data = serializer.CreateDeserializer<TestData>()(ms);
+                var data = serializer.Deserialize<TestData>(ms);
 
                 Assert.Equal(test.Bar, data.Bar);
                 Assert.Equal(test.Foo, data.Foo);

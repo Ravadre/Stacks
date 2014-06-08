@@ -97,6 +97,8 @@
     <Compile Include="Client\ISocketClient.cs" />
     <Compile Include="Client\Tcp\MessageClient.cs" />
     <Compile Include="Client\RawByteClientStream.cs" />
+    <Compile Include="Client\Tcp\MessageClientBase.cs" />
+    <Compile Include="Client\Tcp\ReactiveMessageClient.cs" />
     <Compile Include="Client\Tcp\SocketClient.cs" />
     <Compile Include="Client\Tcp\SslClient.cs" />
     <Compile Include="Ensure.cs" />
@@ -111,6 +113,7 @@
     <Compile Include="MessageClient\IMessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdRegistration.cs" />
+    <Compile Include="MessageClient\ReactiveMessageReceiverCreator.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />

@@ -9,7 +9,7 @@ namespace Stacks
 {
     public class Executor
     {
-        public static bool IsInExecutorContext()
+        public static bool IsInContext()
         {
             var ctx = SynchronizationContext.Current;
 
@@ -22,7 +22,7 @@ namespace Stacks
             return false;
         }
 
-        public static string GetCurrentExecutorName()
+        public static string GetCurrentName()
         {
             var ctx = SynchronizationContext.Current;
 

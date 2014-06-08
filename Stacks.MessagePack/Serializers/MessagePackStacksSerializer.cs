@@ -24,10 +24,10 @@ namespace Stacks
             this.context = new SerializationContext();
         }
 
-        public Func<MemoryStream, T> CreateDeserializer<T>()
+        public T Deserialize<T>(MemoryStream ms)
         {
             var d = MessagePackSerializer.Create<T>(this.context);
-            return ms => d.Unpack(ms);
+            return d.Unpack(ms);
         }
 
         public void Serialize<T>(T obj, MemoryStream ms)
