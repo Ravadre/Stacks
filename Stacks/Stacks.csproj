@@ -113,6 +113,7 @@
     <Compile Include="MessageClient\IMessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdRegistration.cs" />
+    <Compile Include="MessageClient\ReactiveMessageReceiverCreator.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />
