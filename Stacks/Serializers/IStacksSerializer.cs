@@ -11,7 +11,8 @@ namespace Stacks
     {
         void Initialize();
 
-        Func<MemoryStream, T> CreateDeserializer<T>();
+        //Func<MemoryStream, T> CreateDeserializer<T>();
+        T Deserialize<T>(MemoryStream ms);
         void Serialize<T>(T obj, MemoryStream ms);
 
         void PrepareSerializerForType<T>();

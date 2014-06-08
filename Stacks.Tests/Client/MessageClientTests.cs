@@ -149,7 +149,7 @@ namespace Stacks.Tests
             [Fact]
             public void Receiving_packet_should_be_deserialized_properly()
             {
-                serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns((MemoryStream ms) => new TestData());
+                serializer.Setup(s => s.Deserialize<TestData>(It.IsAny<MemoryStream>())).Returns(new TestData());
 
                 var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
 

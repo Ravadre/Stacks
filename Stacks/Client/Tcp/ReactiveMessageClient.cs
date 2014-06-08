@@ -120,11 +120,9 @@ namespace Stacks.Tcp
 
         private void SetupDeserializeAction<V>(int messageId, Subject<V> subject)
         {
-            var deserializer = base.packetSerializer.CreateDeserializer<V>();
-
             this.deserializeByMessageId[messageId] = ms =>
                 {
-                    var t = deserializer(ms);
+                    var t = base.packetSerializer.Deserialize<V>(ms);
                     subject.OnNext(t);
                 };
         }
