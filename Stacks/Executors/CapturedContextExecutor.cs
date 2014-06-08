@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,6 +64,40 @@ namespace Stacks
         {
             return "CapturedContext Executor" +
                 (name == null ? "" : string.Format("({0})", name));
+        }
+
+
+        DateTimeOffset IScheduler.Now
+        {
+            get { return DateTimeOffset.UtcNow; }
+        }
+
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            var due = dueTime - DateTimeOffset.UtcNow;
+
+            return Schedule(state, due, action);
+        }
+
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            Task.Delay(dueTime)
+                .ContinueWith(t =>
+                {
+                    Schedule(state, action);
+                });
+
+            return Disposable.Empty;
+        }
+
+        public IDisposable Schedule<TState>(TState state, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
+        {
+            Enqueue(() =>
+            {
+                action(this, state);
+            });
+
+            return Disposable.Empty;
         }
     }
 }

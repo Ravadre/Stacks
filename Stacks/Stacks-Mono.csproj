@@ -13,6 +13,7 @@
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <RestorePackages>true</RestorePackages>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -59,6 +60,18 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Reactive.Core">
+      <HintPath>..\packages\Rx-Core.2.2.4\lib\net45\System.Reactive.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces">
+      <HintPath>..\packages\Rx-Interfaces.2.2.4\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.Linq">
+      <HintPath>..\packages\Rx-Linq.2.2.4\lib\net45\System.Reactive.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.4\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+    </Reference>
     <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.14.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.14\lib\portable-net45+win8\System.Threading.Tasks.Dataflow.dll</HintPath>
@@ -84,6 +97,8 @@
     <Compile Include="Client\ISocketClient.cs" />
     <Compile Include="Client\Tcp\MessageClient.cs" />
     <Compile Include="Client\RawByteClientStream.cs" />
+    <Compile Include="Client\Tcp\MessageClientBase.cs" />
+    <Compile Include="Client\Tcp\ReactiveMessageClient.cs" />
     <Compile Include="Client\Tcp\SocketClient.cs" />
     <Compile Include="Client\Tcp\SslClient.cs" />
     <Compile Include="Ensure.cs" />
@@ -94,13 +109,18 @@
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\IExecutor.cs" />
+    <Compile Include="MessageClient\ImperativeMessageIdCache.cs" />
+    <Compile Include="MessageClient\IMessageIdCache.cs" />
+    <Compile Include="MessageClient\MessageIdCache.cs" />
+    <Compile Include="MessageClient\MessageIdRegistration.cs" />
+    <Compile Include="MessageClient\ReactiveMessageReceiverCreator.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />
     <Compile Include="Serializers\IStacksSerializer.cs" />
-    <Compile Include="Serializers\MessageHandlerAttribute.cs" />
     <Compile Include="Server\Tcp\SocketServer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="MessageClient\StacksMessageAttribute.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

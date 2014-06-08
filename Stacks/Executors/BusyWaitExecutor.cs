@@ -5,6 +5,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using System.Reactive.Disposables;
+using System.Reactive.Concurrency;
 
 namespace Stacks
 {
@@ -29,7 +31,7 @@ namespace Stacks
         private void Run()
         {
             Action a;
-            
+
             while (true)
             {
                 if (this.isStopping && col.Count == 0)
@@ -99,6 +101,39 @@ namespace Stacks
         public SynchronizationContext Context
         {
             get { return this; }
+        }
+
+        DateTimeOffset IScheduler.Now
+        {
+            get { return DateTimeOffset.UtcNow; }
+        }
+
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            var due = dueTime - DateTimeOffset.UtcNow;
+
+            return Schedule(state, due, action);
+        }
+
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            Task.Delay(dueTime)
+                .ContinueWith(t =>
+                {
+                    Schedule(state, action);
+                });
+
+            return Disposable.Empty;
+        }
+
+        public IDisposable Schedule<TState>(TState state, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
+        {
+            Enqueue(() =>
+            {
+                action(this, state);
+            });
+
+            return Disposable.Empty;
         }
     }
 }

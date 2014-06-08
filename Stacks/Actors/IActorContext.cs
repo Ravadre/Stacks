@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public interface IActorContext : INotifyCompletion
+    public interface IActorContext : INotifyCompletion, IScheduler
     {
         bool IsCompleted { get; }
 

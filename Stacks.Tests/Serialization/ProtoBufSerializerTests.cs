@@ -39,7 +39,7 @@ namespace Stacks.Tests.Serialization
                 Console.WriteLine(new ArraySegment<byte>(obj.GetBuffer(), 0, (int)obj.Length).ToBinaryString());
 
                 var serializer = new ProtoBufStacksSerializer();
-                var data = serializer.CreateDeserializer<TestData>()(obj);
+                var data = serializer.Deserialize<TestData>(obj);
 
                 Assert.Equal(test.Bar, data.Bar);
                 Assert.Equal(test.Foo, data.Foo);
@@ -61,7 +61,7 @@ namespace Stacks.Tests.Serialization
 
                 serializer.Serialize(test, ms);
                 ms.Position = 0;
-                var data = serializer.CreateDeserializer<TestData>()(ms);
+                var data = serializer.Deserialize<TestData>(ms);
 
                 Assert.Equal(test.Bar, data.Bar);
                 Assert.Equal(test.Foo, data.Foo);

@@ -52,9 +52,9 @@ namespace Stacks.Tests.Serialization
         {
             var h = new Mock<MultiTestDataHandler>();
             var data = CreateSampleTestData2();
-            serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns(ms => CreateSampleTestData());
-            serializer.Setup(s => s.CreateDeserializer<TestData2>()).Returns(ms => CreateSampleTestData2());
-            serializer.Setup(s => s.CreateDeserializer<TestData3>()).Returns(ms => new TestData3());
+            serializer.Setup(s => s.Deserialize<TestData>(It.IsAny<MemoryStream>())).Returns(CreateSampleTestData());
+            serializer.Setup(s => s.Deserialize<TestData2>(It.IsAny<MemoryStream>())).Returns(CreateSampleTestData2());
+            serializer.Setup(s => s.Deserialize<TestData3>(It.IsAny<MemoryStream>())).Returns(new TestData3());
 
             h.Setup(m => m.HandleTestData2(It.IsAny<IMessageClient>(), It.IsAny<TestData2>())).Callback((IMessageClient _, TestData2 c) =>
                 {
@@ -72,7 +72,7 @@ namespace Stacks.Tests.Serialization
         public void Deserialize_should_throw_exception_when_trying_to_deserialize_packet_without_handler()
         {
             var h = new Mock<TestDataHandler>();
-            serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns(ms => CreateSampleTestData());
+            serializer.Setup(s => s.Deserialize<TestData>(It.IsAny<MemoryStream>())).Returns(CreateSampleTestData());
 
             var ser = new StacksSerializationHandler(new MessageIdCache(), 
                             messageClient.Object, serializer.Object, h.Object);

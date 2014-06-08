@@ -117,11 +117,9 @@ namespace Stacks
         {
             var handler = (Action<T, Y>)Delegate.CreateDelegate(typeof(Action<T, Y>), messageHandler, mi);
 
-            var deserializer = this.serializer.CreateDeserializer<Y>();
-
             return ms =>
             {
-                var obj = deserializer(ms);
+                var obj = this.serializer.Deserialize<Y>(ms);
                 handler((T)client, obj);
             };
         }

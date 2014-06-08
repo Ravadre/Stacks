@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.30324.0
+VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks", "Stacks\Stacks-Mono.csproj", "{9E0D5C52-AD78-4A5E-82AD-289D272A111D}"
 EndProject
@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{F4ED655C
 		Build.fsx = Build.fsx
 		Create-Mono.fsx = Create-Mono.fsx
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveSample", "Examples\ReactiveSample\ReactiveSample-Mono.csproj", "{326727DF-7109-4711-81BC-511B757ED602}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -158,6 +160,12 @@ Global
 		{36E76069-E5AA-4D43-9EA8-864A58BE9E66}.Release|Any CPU.Build.0 = Release|Any CPU
 		{36E76069-E5AA-4D43-9EA8-864A58BE9E66}.Release|x64.ActiveCfg = Release|x64
 		{36E76069-E5AA-4D43-9EA8-864A58BE9E66}.Release|x64.Build.0 = Release|x64
+		{326727DF-7109-4711-81BC-511B757ED602}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{326727DF-7109-4711-81BC-511B757ED602}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{326727DF-7109-4711-81BC-511B757ED602}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{326727DF-7109-4711-81BC-511B757ED602}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{326727DF-7109-4711-81BC-511B757ED602}.Release|Any CPU.Build.0 = Release|Any CPU
+		{326727DF-7109-4711-81BC-511B757ED602}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -172,5 +180,6 @@ Global
 		{2961BCD8-1814-4F1E-993E-003F831FA085} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 		{1E1371B8-1F03-465A-BAEF-EEB1ED31B43C} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 		{36E76069-E5AA-4D43-9EA8-864A58BE9E66} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
+		{326727DF-7109-4711-81BC-511B757ED602} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 	EndGlobalSection
 EndGlobal

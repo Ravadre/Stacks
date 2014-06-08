@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,8 +13,10 @@ namespace Stacks
         IExecutor Executor { get; }
         bool IsConnected { get; }
 
-        event Action Connected;
+        IObservable<Unit> Connected { get; }
+        IObservable<Exception> Disconnected { get; }
 
-        Task Connect(IPEndPoint remoteEndPoint);
+        IObservable<Unit> Connect(IPEndPoint remoteEndPoint);
+        void Close();
     }
 }

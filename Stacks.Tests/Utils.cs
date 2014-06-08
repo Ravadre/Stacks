@@ -45,7 +45,7 @@ namespace Stacks.Tests
             return new ActionBlockExecutor("", new ActionBlockExecutorSettings());
         }
 
-        public static void CreateServerAndConnectedClient(out SocketServer server, 
+        public static void CreateServerAndConnectedClient(out SocketServer server,
             out SocketClient client1, out SocketClient client2)
         {
             var connected1 = new ManualResetEventSlim(false);
@@ -57,22 +57,22 @@ namespace Stacks.Tests
             SocketClient lClient = null;
             SocketClient sClient = null;
 
-            s.Connected += c =>
+            s.Connected.Subscribe(c =>
             {
                 sClient = c;
                 connected2.Set();
-            };
+            });
 
-            s.Started += () =>
+            s.Started.Subscribe(_ =>
             {
                 var c = new SocketClient(ex);
-                c.Connected += () =>
+                c.Connected.Subscribe(u =>
                 {
                     lClient = c;
                     connected1.Set();
-                };
+                });
                 c.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
-            };
+            });
 
             s.Start();
 
@@ -103,29 +103,29 @@ namespace Stacks.Tests
                                           .GetManifestResourceStream("Stacks.Tests.StacksTest.pfx");
             var certBytes = new BinaryReader(certBytesStream).ReadBytes((int)certBytesStream.Length);
 
-            s.Connected += c =>
+            s.Connected.Subscribe(c =>
             {
                 sClient = new SslClient(c, new X509Certificate2(certBytes));
 
-                sClient.Connected += () =>
+                sClient.Connected.Subscribe(_ =>
                     {
                         connected2.Set();
-                    };
+                    });
 
                 sClient.EstablishSsl();
-            };
+            });
 
-            s.Started += () =>
+            s.Started.Subscribe(_ =>
             {
                 lClient = new SslClient(new SocketClient(ex), "Stacks Test", true);
 
-                lClient.Connected += () =>
+                lClient.Connected.Subscribe(__ =>
                 {
                     connected1.Set();
-                };
+                });
 
                 lClient.Connect(new IPEndPoint(IPAddress.Loopback, s.BindEndPoint.Port));
-            };
+            });
 
             s.Start();
 
@@ -143,10 +143,10 @@ namespace Stacks.Tests
         public static void StopAndAssertStopped(this SocketServer server)
         {
             var stopped = new ManualResetEventSlim(false);
-            server.Stopped += () =>
+            server.Stopped.Subscribe(_ =>
             {
                 stopped.Set();
-            };
+            });
             server.Stop();
             stopped.AssertWaitFor(3000);
         }
@@ -160,20 +160,20 @@ namespace Stacks.Tests
             var ev = new ManualResetEventSlim();
             var buffer = new List<byte>();
 
-            client.Received += bs =>
+            client.Received.Subscribe(bs =>
                 {
                     lock (buffer)
                     {
                         buffer.AddRange(bs);
                     }
-                };
+                });
 
             sendAction();
-            
+
             var sw = Stopwatch.StartNew();
-            while(true)
+            while (true)
             {
-                lock(buffer)
+                lock (buffer)
                 {
                     if (buffer.Count == totalExpectedBytes)
                         break;
@@ -185,7 +185,7 @@ namespace Stacks.Tests
                     throw new TimeoutException();
             }
 
-            lock(buffer)
+            lock (buffer)
             {
                 return buffer.ToArray();
             }

@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reactive;
+using System.Reactive.Subjects;
+using System.Reactive.Linq; 
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +17,7 @@ namespace Stacks.Tcp
     {
         private static readonly Logger log = LogManager.GetCurrentClassLogger();
 
-        private readonly IExecutor executor;
+        private IExecutor executor;
 
         private readonly Socket socket;
 
@@ -32,12 +35,15 @@ namespace Stacks.Tcp
 
         private SocketAsyncEventArgs connectArgs;
 
-        public event Action Connected;
-        public event Action<Exception> Disconnected;
-        public event Action<ArraySegment<byte>> Received;
-        public event Action<int> Sent;
+        private AsyncSubject<Unit> connected;
+        private AsyncSubject<Exception> disconnected;
+        private Subject<int> sent;
+        private Subject<ArraySegment<byte>> received;
 
-        private TaskCompletionSource<int> connectedTcs;
+        public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+        public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
+        public IObservable<int> Sent { get { return sent.AsObservable(); } }
+        public IObservable<ArraySegment<byte>> Received { get { return received.AsObservable(); } }
 
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
@@ -53,15 +59,14 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor, Socket socket)
         {
-            this.connectedTcs = new TaskCompletionSource<int>();
-            this.executor = executor;
+            InitialiseCommon(executor);
+
             this.socket = socket;
             this.wasConnected = true;
 
             EnsureSocketIsConnected();
          
-            InitialiseConnectedSocket();
-            executor.Enqueue(StartReceiving);
+            InitialiseConnectedSocket();           
         }
 
         private void EnsureSocketIsConnected()
@@ -76,15 +81,25 @@ namespace Stacks.Tcp
 
         public SocketClient(IExecutor executor)
         {
-            this.connectedTcs = new TaskCompletionSource<int>();
-            this.executor = executor;
+            InitialiseCommon(executor);
+            
             this.socket = new Socket(AddressFamily.InterNetwork,
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
             this.wasConnected = false;
         }
 
-        public Task Connect(IPEndPoint remoteEndPoint)
+        private void InitialiseCommon(IExecutor executor)
+        {
+            this.connected = new AsyncSubject<Unit>();
+            this.disconnected = new AsyncSubject<Exception>();
+            this.sent = new Subject<int>();
+            this.received = new Subject<ArraySegment<byte>>();
+
+            this.executor = executor;
+        }
+
+        public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
                 throw new InvalidOperationException("Socket was already in connected state");
@@ -99,7 +114,7 @@ namespace Stacks.Tcp
             if (!isPending)
                 ConnectedCapture(this, this.connectArgs);
 
-            return connectedTcs.Task;
+            return Connected;
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
@@ -146,6 +161,11 @@ namespace Stacks.Tcp
             isSending = false;
 
             CopyEndPoints();
+        }
+
+        internal void ScheduleStartReceiving()
+        {
+            executor.Enqueue(StartReceiving);
         }
 
         private void StartReceiving()
@@ -316,15 +336,7 @@ namespace Stacks.Tcp
 
         private void OnDataReceived()
         {
-            var h = Received;
-            if (h != null)
-            {
-                try
-                {
-                    h(new ArraySegment<byte>(recvArgs.Buffer, 0, recvArgs.BytesTransferred));
-                }
-                catch { }
-            }
+            received.OnNext(new ArraySegment<byte>(recvArgs.Buffer, 0, recvArgs.BytesTransferred));
         }
 
         private void HandleDisconnection(Exception exc)
@@ -348,47 +360,21 @@ namespace Stacks.Tcp
 
         private void OnDisconnected(Exception e)
         {
-            NotifyConnectedTask(e);
+            disconnected.OnNext(e);
+            disconnected.OnCompleted();
 
-            var h = Disconnected;
-
-            if (h != null)
-            {
-                try { h(e); }
-                catch { }
-            }
+            connected.OnError(e);
         }
 
         private void OnDataSent(int transferred)
         {
-            var h = Sent;
-
-            if (h != null)
-            {
-                try { h(transferred); }
-                catch { }
-            }
+            this.sent.OnNext(transferred);
         }
 
         private void OnConnected()
         {
-            NotifyConnectedTask(null);
-
-            var h = Connected;
-
-            if (h != null)
-            {
-                try { h(); }
-                catch { }
-            }
-        }
-
-        private void NotifyConnectedTask(Exception error)
-        {
-            if (error == null)
-                connectedTcs.SetResult(0);
-            else
-                connectedTcs.SetException(error);
+            connected.OnNext(Unit.Default);
+            connected.OnCompleted();
         }
     }
 }

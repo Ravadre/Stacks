@@ -20,9 +20,9 @@ namespace Stacks
         {
         }
 
-        public Func<MemoryStream, T> CreateDeserializer<T>()
+        public T Deserialize<T>(MemoryStream ms)
         {
-            return ms => ProtoBuf.Serializer.Deserialize<T>(ms);
+            return ProtoBuf.Serializer.Deserialize<T>(ms);
         }
 
         public void Serialize<T>(T obj, MemoryStream ms)

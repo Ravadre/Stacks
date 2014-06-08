@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using Stacks.Tcp;
+using System.Reactive.Subjects;
 
 namespace Stacks.Tests
 {
@@ -20,9 +21,14 @@ namespace Stacks.Tests
             protected Mock<IStacksSerializer> serializer;
             protected Mock<TestDataHandler> messageHandler;
 
+            protected Subject<ArraySegment<byte>> rawClientReceived;
+
             public Base()
             {
+                rawClientReceived = new Subject<ArraySegment<byte>>();
                 rawClient = new Mock<IRawByteClient>();
+                rawClient.Setup(r => r.Received).Returns(rawClientReceived);
+
                 framedClient = new FramedClient(rawClient.Object);
                 serializer = new Mock<IStacksSerializer>();
                 messageHandler = new Mock<TestDataHandler>();
@@ -143,11 +149,11 @@ namespace Stacks.Tests
             [Fact]
             public void Receiving_packet_should_be_deserialized_properly()
             {
-                serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns((MemoryStream ms) => new TestData());
+                serializer.Setup(s => s.Deserialize<TestData>(It.IsAny<MemoryStream>())).Returns(new TestData());
 
                 var c = new MessageClient(framedClient, serializer.Object, messageHandler.Object);
 
-                rawClient.Raise(r => r.Received += delegate { }, new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0 }));
+                rawClientReceived.OnNext(new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0 }));
 
                 messageHandler.Verify(m => m.HandleTestData(It.IsAny<IMessageClient>(), It.IsAny<TestData>()), Times.Once());
 

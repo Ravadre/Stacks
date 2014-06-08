@@ -33,7 +33,7 @@ namespace Stacks.Tests
                 var started = new ManualResetEventSlim();
                 var server = ServerHelpers.CreateServer();
 
-                server.Started += () => { started.Set(); };
+                server.Started.Subscribe(u => { started.Set(); });
                 server.Start();
 
                 started.AssertWaitFor(2000);
@@ -48,8 +48,8 @@ namespace Stacks.Tests
                 var stopped = new ManualResetEventSlim();
                 var server = ServerHelpers.CreateServer();
 
-                server.Started += () => { started.Set(); };
-                server.Stopped += () => { stopped.Set(); };
+                server.Started.Subscribe(_ => { started.Set(); });
+                server.Stopped.Subscribe(_ => { stopped.Set(); });
 
                 server.Start();
                 server.Stop();
@@ -67,7 +67,7 @@ namespace Stacks.Tests
                 var server = ServerHelpers.CreateServer(exec);
 
                 exec.Error += exc => { Assert.Equal("abcdef", exc.Message); errOccured.Set(); };
-                server.Started += () => { throw new Exception("abcdef"); };
+                server.Started.Subscribe(_ => { throw new Exception("abcdef"); });
                 
                 server.Start();
 
