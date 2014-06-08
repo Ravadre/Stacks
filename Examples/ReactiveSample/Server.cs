@@ -14,7 +14,6 @@ namespace ReactiveSample
     public class Server
     {
         SocketServer server;
-        
         MarketService service;
 
         public int ServerPort { get; private set; }
@@ -38,6 +37,11 @@ namespace ReactiveSample
                                     new ProtoBufStacksSerializer());
                     client.PreLoadTypesFromAssemblyOfType<Price>();
 
+                    // Here is the subscription to all the packets.
+                    // `.Packets` is an implementation of interface
+                    // given when message client was defined, so
+                    // every packet has a strongly typed `IObservable<TPacket>`
+                    // to subscribe to.
                     client.Packets.RegisterSymbol.Subscribe(req =>
                         {
                             if (req.Register)
@@ -47,10 +51,14 @@ namespace ReactiveSample
                         });
                 });
 
+            // Service will only report registered price changes.
+            // In this sample, this observer should not run 
+            // for 4 seconds after application start.
             service.PricesChanged.Subscribe(prices =>
                 {
                     Console.WriteLine("Services reported that prices changed");
 
+                    // Send new prices to client.
                     foreach (var p in prices)
                     {
                         if (client != null)
@@ -83,6 +91,14 @@ namespace ReactiveSample
             registeredSymbols = new HashSet<string>();
             rng = new Random();
 
+            // Service starts with an Observable, which will be automatically
+            // scheduled on service's actor context (thanks to passing `Context` to
+            // Intervalmethod). 
+            // One can use composition operators, like Do, Select, Where to
+            // implement pipeline.
+            // In this example, state modification is made (which is safe, because it is
+            // done on actor's context) and then, if there are changed, they are
+            // published by publicly accessible PricesChanged property.
             PricesChanged = Observable.Interval(TimeSpan.FromSeconds(1.0), Context)
                                 .Do(_ =>
                                     {
