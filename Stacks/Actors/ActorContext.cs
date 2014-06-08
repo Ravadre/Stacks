@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class ActorContext : IActorContext, INotifyCompletion, IScheduler
+    public class ActorContext : IActorContext, INotifyCompletion
     {
         private IExecutor executor;
         private string name;
@@ -90,12 +90,12 @@ namespace Stacks.Actors
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotSupportedException();
+            return executor.Schedule(state, dueTime, action);
         }
 
         public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotSupportedException();
+            return executor.Schedule(state, dueTime, action);
         }
 
         public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
