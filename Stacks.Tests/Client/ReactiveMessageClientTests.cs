@@ -51,6 +51,24 @@ namespace Stacks.Tests
 
                 Assert.False(observable.GetType().GetGenericTypeDefinition() == typeof(Subject<>));
             }
+
+            [Fact]
+            public void Setting_up_interface_with_IObservables_with_invalid_classes_should_throw()
+            {
+                Assert.Throws(typeof(InvalidOperationException), () =>
+                    {
+                        var client = new ReactiveMessageClient<IMessageHandlerWithInvalidObservable>(framedClient, serializer.Object);
+                    });
+            }
+
+            [Fact]
+            public void Setting_up_interface_with_property_other_than_IObservable_properties_should_throw()
+            {
+                Assert.Throws(typeof(InvalidOperationException), () =>
+                {
+                    var client = new ReactiveMessageClient<IMessageHandlerWithMethod>(framedClient, serializer.Object);
+                });
+            }
         }
 
         public class Receive : Base
@@ -153,6 +171,21 @@ namespace Stacks.Tests
         {
             IObservable<TestData> TestPackets { get; }
         }
+
+        public interface IMessageHandlerWithInvalidObservable
+        {
+
+            IObservable<TestData> TestPackets { get; }
+            IObservable<MemoryStream> TestPackets3 { get; }
+        }
+
+        public interface IMessageHandlerWithMethod
+        {
+
+            IObservable<TestData> TestPackets { get; }
+            IObservable<MemoryStream> TestPackets3();
+        }
+
 
         public interface IComplexTestMessageHandler
         {

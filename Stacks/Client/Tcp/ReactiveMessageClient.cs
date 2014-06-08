@@ -24,6 +24,9 @@ namespace Stacks.Tcp
                                      IStacksSerializer packetSerializer)
             : base(framedClient, new MessageIdCache(), packetSerializer)
         {
+            Ensure.IsNotNull(framedClient, "framedClient");
+            Ensure.IsNotNull(packetSerializer, "packetSerializer");
+
             this.messageReceiverCreator = new ReactiveMessageReceiverCreator<T>(base.messageIdCache, packetSerializer);
             
             this.Packets = this.messageReceiverCreator.CreateReceiverImplementation(out deserializeByMessageId);
