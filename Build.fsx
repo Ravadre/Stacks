@@ -59,7 +59,8 @@ Target "Nuget" (fun _ ->
                  ["Stacks.dll"] 
                  "Stacks.dll"  
                  [ ("NLog", "2.1.0");
-                   ("Microsoft.Tpl.Dataflow", "4.5.14" )]
+                   ("Microsoft.Tpl.Dataflow", "4.5.14" );
+                   ("Rx-Main", "2.2.4")]
                  "Stacks/stacks.nuspec"
 
     BuildPackage "Stacks.ProtoBuf"

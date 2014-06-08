@@ -1,4 +1,4 @@
 @echo off
 cls
-.nuget\nuget.exe install FAKE -OutputDirectory tools\ -ExcludeVersion
+.\tools\NuGet\nuget.exe install FAKE -OutputDirectory tools\ -ExcludeVersion
 .\tools\FAKE\tools\Fake.exe Build.fsx "All"
