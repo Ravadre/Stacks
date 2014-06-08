@@ -37,7 +37,7 @@ namespace ReactiveSample
             client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort))
                   .Subscribe(async _ =>
                   {
-                      await Task.Delay(4000);
+                      await Task.Delay(2000);
                       client.Send(new RegisterSymbolRequest() { Symbol = "EURUSD", Register = true });
                       client.Send(new RegisterSymbolRequest() { Symbol = "GBPLN", Register = true });
                   });

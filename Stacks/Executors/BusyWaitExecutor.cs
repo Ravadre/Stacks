@@ -108,14 +108,22 @@ namespace Stacks
             get { return DateTimeOffset.UtcNow; }
         }
 
-        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotSupportedException();
+            var due = dueTime - DateTimeOffset.UtcNow;
+
+            return Schedule(state, due, action);
         }
 
-        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
-            throw new NotSupportedException();
+            Task.Delay(dueTime)
+                .ContinueWith(t =>
+                {
+                    Schedule(state, action);
+                });
+
+            return Disposable.Empty;
         }
 
         public IDisposable Schedule<TState>(TState state, Func<System.Reactive.Concurrency.IScheduler, TState, IDisposable> action)
