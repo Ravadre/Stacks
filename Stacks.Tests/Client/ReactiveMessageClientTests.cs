@@ -1,14 +1,15 @@
-﻿using Moq;
-using MsgPack.Serialization;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
-using Xunit;
+using Moq;
+using MsgPack.Serialization;
 using Stacks.Tcp;
-using System.Reactive.Subjects;
+using Xunit;
 
 namespace Stacks.Tests
 {
@@ -43,10 +44,18 @@ namespace Stacks.Tests
             [Fact]
             public void Receiving_packet_should_be_deserialized_properly()
             {
+                bool received = false;
                 serializer.Setup(s => s.CreateDeserializer<TestData>()).Returns((MemoryStream ms) => new TestData());
 
                 var c = new ReactiveMessageClient<ITestMessageHandler>(framedClient, serializer.Object);
+                c.Packets.TestPackets.Subscribe(p =>
+                    {
+                        received = true;
+                    });
 
+                rawClientReceived.OnNext(new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0 }));
+
+                Assert.True(received);
             }
         }
 
@@ -61,16 +70,7 @@ namespace Stacks.Tests
 
         public interface ITestMessageHandler
         {
-            IObservable<TestData> Packet1 { get; }
+            IObservable<TestData> TestPackets { get; }
         }
-
-        public class TestImpl : ITestMessageHandler
-        {
-            public IObservable<TestData> Packet1
-            {
-                get { return null; }
-            }
-        }
-
     }
 }
