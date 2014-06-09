@@ -54,13 +54,6 @@ namespace Stacks.Actors
             executor.Enqueue(continuation);
         }
 
-        /*
-        public void UnsafeOnCompleted(Action continuation)
-        {
-            executor.Enqueue(continuation);
-        }
-        */
-
         public void GetResult() { }
 
         public SynchronizationContext Context { get { return executor.Context; } }
