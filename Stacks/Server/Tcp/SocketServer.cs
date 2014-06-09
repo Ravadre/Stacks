@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using NLog;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
@@ -15,8 +14,6 @@ namespace Stacks.Tcp
 {
     public class SocketServer
     {
-        private static readonly Logger log = LogManager.GetCurrentClassLogger();
-
         private Socket socket;
         private SocketAsyncEventArgs acceptArgs;
 
@@ -102,7 +99,6 @@ namespace Stacks.Tcp
                 {
                     case SocketError.ConnectionAborted:
                         {
-                            log.Info("Server stopped");
                             OnStopped();
                             break;
                         }
@@ -117,13 +113,11 @@ namespace Stacks.Tcp
                         }
                     case SocketError.ConnectionReset:
                         {
-                            log.Warn("Potential half-open SYN scan occured");
                             StartAccepting();
                             break;
                         }
                     default:
                         {
-                            log.Error("Error occured while connecting new client: " + e.SocketError);
                             StartAccepting();
                             break;
                         }
@@ -131,7 +125,6 @@ namespace Stacks.Tcp
             }
             catch (Exception exc)
             {
-                log.Error("Exception occured in SocketAccepted. Exc: " + exc);
                 OnStopped();
             }
         }

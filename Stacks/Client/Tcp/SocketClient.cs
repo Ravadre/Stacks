@@ -9,14 +9,11 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using NLog;
 
 namespace Stacks.Tcp
 {
     public class SocketClient : IRawByteClient
     {
-        private static readonly Logger log = LogManager.GetCurrentClassLogger();
-
         private IExecutor executor;
 
         private readonly Socket socket;
@@ -344,15 +341,6 @@ namespace Stacks.Tcp
             if (disconnectionNotified)
                 return;
             disconnectionNotified = true;
-            
-            if (exc != null)
-            {
-                log.Info("Client disconnected. " + exc.Message);
-            }
-            else
-            {
-                log.Info("Client disconnected (gracefully).");
-            }
 
             SafeCloseSocket();
             OnDisconnected(exc);
