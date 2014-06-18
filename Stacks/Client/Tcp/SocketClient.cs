@@ -73,14 +73,24 @@ namespace Stacks.Tcp
         }
 
         public SocketClient()
-            : this(new ActionBlockExecutor())
+            : this(new ActionBlockExecutor(), false)
+        { }
+
+        public SocketClient(bool useIPv6)
+            : this(new ActionBlockExecutor(), useIPv6)
         { }
 
         public SocketClient(IExecutor executor)
+            : this(executor, false)
+        { }
+
+        public SocketClient(IExecutor executor, bool useIPv6)
         {
             InitialiseCommon(executor);
+
+            var family = useIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
             
-            this.socket = new Socket(AddressFamily.InterNetwork,
+            this.socket = new Socket(family,
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
             this.wasConnected = false;
@@ -221,9 +231,15 @@ namespace Stacks.Tcp
 
         private void CopyEndPoints()
         {
-            this.remoteEndPoint = new IPEndPoint(0, 0);
+            IPAddress ip;
+            if (this.socket.AddressFamily == AddressFamily.InterNetworkV6)
+                ip = IPAddress.IPv6Any;
+            else
+                ip = IPAddress.Any;
+
+            this.remoteEndPoint = new IPEndPoint(ip, 0);
             this.remoteEndPoint = (IPEndPoint)this.remoteEndPoint.Create(socket.RemoteEndPoint.Serialize());
-            this.localEndPoint = new IPEndPoint(0, 0);
+            this.localEndPoint = new IPEndPoint(ip, 0);
             this.localEndPoint = (IPEndPoint)this.localEndPoint.Create(socket.LocalEndPoint.Serialize());
         }
 

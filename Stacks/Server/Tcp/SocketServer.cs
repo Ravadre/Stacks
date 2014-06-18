@@ -37,6 +37,18 @@ namespace Stacks.Tcp
             : this(new ActionBlockExecutor(), bindEndPoint)
         { }
 
+
+        private static bool IsWinVistaOrHigher()
+        {
+            OperatingSystem OS = Environment.OSVersion;
+            return (OS.Platform == PlatformID.Win32NT) && (OS.Version.Major >= 6);
+        }
+
+        private static bool IsNotWindows()
+        {
+            return Environment.OSVersion.Platform != PlatformID.Win32NT;
+        }
+
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {
             Ensure.IsNotNull(executor, "executor");
@@ -48,9 +60,27 @@ namespace Stacks.Tcp
             this.stopped = new AsyncSubject<Unit>();
             this.connected = new Subject<SocketClient>();
 
-            this.socket = new Socket(AddressFamily.InterNetwork,
-                                     SocketType.Stream,
-                                     ProtocolType.Tcp);
+            if (bindEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                if (!Socket.OSSupportsIPv6)
+                {
+                    throw new InvalidOperationException("OS does not support IPv6");
+                }
+
+                this.socket = new Socket(AddressFamily.InterNetworkV6,
+                                         SocketType.Stream,
+                                         ProtocolType.Tcp);
+                if (IsWinVistaOrHigher() || IsNotWindows())
+                {
+                    this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                }
+            }
+            else
+            {
+                this.socket = new Socket(AddressFamily.InterNetwork,
+                                         SocketType.Stream,
+                                         ProtocolType.Tcp);
+            }
             this.acceptArgs = new SocketAsyncEventArgs();
             this.bindEndPoint = bindEndPoint;
 
@@ -123,7 +153,7 @@ namespace Stacks.Tcp
                         }
                 }
             }
-            catch (Exception exc)
+            catch (Exception)
             {
                 OnStopped();
             }

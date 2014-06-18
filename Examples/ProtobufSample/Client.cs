@@ -21,13 +21,13 @@ namespace ProtobufSample
         public void Run(int serverPort)
         {
             client = new MessageClient(
-                     new FramedClient(new SocketClient()),
+                     new FramedClient(new SocketClient(useIPv6: true)),
                      new ProtoBufStacksSerializer(),
                      new ClientMessageHandler());
 
             client.PreLoadTypesFromAssemblyOfType<TemperatureResponse>();
 
-            client.Connect(new IPEndPoint(IPAddress.Loopback, serverPort))
+            client.Connect(new IPEndPoint(IPAddress.IPv6Loopback, serverPort))
                   .Subscribe(_ =>
                   {
                       Console.WriteLine("Querying for temperature in London, Warsaw, Madrid");
