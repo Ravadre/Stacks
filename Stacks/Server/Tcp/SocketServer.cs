@@ -72,7 +72,11 @@ namespace Stacks.Tcp
                                          ProtocolType.Tcp);
                 if (IsWinVistaOrHigher() || IsNotWindows())
                 {
-                    this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                    try
+                    {
+                        this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                    }
+                    catch { }
                 }
             }
             else
