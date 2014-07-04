@@ -114,6 +114,16 @@ namespace Stacks
                 col.Add(action);
         }
 
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return ExecutorHelper.PostTask(this, action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return ExecutorHelper.PostTask(this, func);
+        }
+
         public Task Stop()
         {
             isStopping = true;

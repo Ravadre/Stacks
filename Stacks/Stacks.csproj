@@ -106,6 +106,7 @@
     <Compile Include="Executors\BusyWaitExecutor.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
+    <Compile Include="Executors\ExecutorHelper.cs" />
     <Compile Include="Executors\IExecutor.cs" />
     <Compile Include="MessageClient\ImperativeMessageIdCache.cs" />
     <Compile Include="MessageClient\IMessageIdCache.cs" />

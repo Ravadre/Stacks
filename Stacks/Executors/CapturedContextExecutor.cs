@@ -60,6 +60,16 @@ namespace Stacks
             throw new NotSupportedException();
         }
 
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return ExecutorHelper.PostTask(this, action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return ExecutorHelper.PostTask(this, func);
+        }
+
         public override string ToString()
         {
             return "CapturedContext Executor" +

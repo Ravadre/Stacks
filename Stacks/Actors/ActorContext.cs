@@ -41,6 +41,17 @@ namespace Stacks.Actors
         {
             executor.Enqueue(action);
         }
+        
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return executor.PostTask(action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return executor.PostTask(func);
+        }
+
 
         public IActorContext GetAwaiter() { return this; }
 

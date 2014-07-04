@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public class Executor
+    public static class Executor
     {
         public static bool IsInContext()
         {
