@@ -16,6 +16,9 @@ namespace Stacks
         IObservable<Unit> Connected { get; }
         IObservable<Exception> Disconnected { get; }
 
+        IPEndPoint RemoteEndPoint { get; }
+        IPEndPoint LocalEndPoint { get; }
+
         IObservable<Unit> Connect(IPEndPoint remoteEndPoint);
         void Close();
     }

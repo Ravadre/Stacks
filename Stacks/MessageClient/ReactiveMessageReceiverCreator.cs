@@ -18,12 +18,14 @@ namespace Stacks
 
         private readonly IMessageIdCache messageIdCache;
         private readonly IStacksSerializer packetSerializer;
+        private readonly ReactiveClientModelBuilder<T> mb;
 
         public ReactiveMessageReceiverCreator(IMessageIdCache messageIdCache,
-            IStacksSerializer packetSerializer)
+            IStacksSerializer packetSerializer, ReactiveClientModelBuilder<T> mb)
         {
             this.messageIdCache = messageIdCache;
             this.packetSerializer = packetSerializer;
+            this.mb = mb;
         }
 
         public T CreateReceiverImplementation(out Dictionary<int, Action<MemoryStream>> deserializeByMessageId)
@@ -64,7 +66,12 @@ namespace Stacks
         private void ParseProperty(PropertyInfo property, Dictionary<int, Action<MemoryStream>> deserializeByMessageId)
         {
             var packetType = property.PropertyType.GetGenericArguments().First();
-            int messageId = this.messageIdCache.GetMessageId(packetType);
+            int? msgId = this.mb.TryGetMapping(property.Name);
+            int messageId = 0;
+            if (msgId.HasValue)
+                messageId = msgId.Value;
+            else
+                messageId = this.messageIdCache.GetMessageId(packetType);
 
             var subjectType = typeof(Subject<>).MakeGenericType(packetType);
             var subject = Activator.CreateInstance(subjectType);
@@ -162,7 +169,8 @@ namespace Stacks
 
             var intType = genericTypes[0];
 
-            if (intType.GetCustomAttribute<StacksMessageAttribute>() == null)
+            if (intType.GetCustomAttribute<StacksMessageAttribute>() == null &&
+                !mb.HasMapping(property.Name))
             {
                 throw new InvalidOperationException(
                     string.Format(

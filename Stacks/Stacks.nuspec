@@ -2,6 +2,7 @@
 <package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <metadata xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">    
     <id>Stacks</id>
+	<title>Stacks</title>
     <version>@build.number@</version>
     <authors>Marcin Deptuła</authors>
     <owners>Marcin Deptuła</owners>
@@ -9,9 +10,9 @@
     <licenseUrl>https://raw.githubusercontent.com/Ravadre/Stacks/master/LICENSE</licenseUrl>
     <projectUrl>https://github.com/Ravadre/Stacks</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Stacks - actor/network library</description>
+    <description>Stacks - reactive actor/network library</description>
     <copyright>Copyright Marcin Deptuła</copyright>    
-    <tags>C# Socket Network Actor</tags>
+    <tags>C# Socket Network Actor Reactive</tags>
     @dependencies@
   </metadata>
 </package>

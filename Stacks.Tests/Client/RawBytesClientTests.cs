@@ -44,8 +44,44 @@ namespace Stacks.Tests
 
             server.Start();
 
-            connected1.AssertWaitFor(30000);
-            connected2.AssertWaitFor(30000);
+            connected1.AssertWaitFor(5000);
+            connected2.AssertWaitFor(5000);
+
+            server.StopAndAssertStopped();
+        }
+
+        [Fact]
+        public void Client_with_ipv6_should_connect_to_server_and_signal_appropriate_callbacks()
+        {
+            var connected1 = new ManualResetEventSlim(false);
+            var connected2 = new ManualResetEventSlim(false);
+
+            var ex = ServerHelpers.CreateExecutor();
+            var server = ServerHelpers.CreateServerIPv6();
+
+            server.Connected.Subscribe(client =>
+            {
+                connected1.Set();
+            });
+
+            server.Started.Subscribe(u =>
+            {
+                var client = new SocketClient(ex, true);
+                client.Connected.Subscribe(_ =>
+                {
+                    connected2.Set();
+                });
+                client.Disconnected.Subscribe(exn =>
+                {
+                    throw exn;
+                });
+                client.Connect(new IPEndPoint(IPAddress.IPv6Loopback, server.BindEndPoint.Port));
+            });
+
+            server.Start();
+
+            connected1.AssertWaitFor(5000);
+            connected2.AssertWaitFor(5000);
 
             server.StopAndAssertStopped();
         }

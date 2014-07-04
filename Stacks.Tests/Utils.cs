@@ -40,6 +40,12 @@ namespace Stacks.Tests
                                     new IPEndPoint(IPAddress.Any, 0));
         }
 
+        public static SocketServer CreateServerIPv6()
+        {
+            return new SocketServer(new ActionBlockExecutor("", new ActionBlockExecutorSettings()),
+                                    new IPEndPoint(IPAddress.IPv6Any, 0));
+        }
+
         public static IExecutor CreateExecutor()
         {
             return new ActionBlockExecutor("", new ActionBlockExecutorSettings());

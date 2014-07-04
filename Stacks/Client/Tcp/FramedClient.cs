@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Net;
 
 namespace Stacks.Tcp
 {
@@ -33,6 +34,16 @@ namespace Stacks.Tcp
         public IObservable<ArraySegment<byte>> Received
         {
             get { return received; }
+        }
+
+        public IPEndPoint LocalEndPoint
+        {
+            get { return client.LocalEndPoint; }
+        }
+
+        public IPEndPoint RemoteEndPoint
+        {
+            get { return client.RemoteEndPoint; }
         }
 
         public FramedClient(IRawByteClient client)

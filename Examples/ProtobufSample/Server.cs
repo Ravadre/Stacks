@@ -27,7 +27,7 @@ namespace ProtobufSample
         public void Run()
         {
             service = new TemperatureService();
-            server = new SocketServer(new IPEndPoint(IPAddress.Loopback, 0));
+            server = new SocketServer(new IPEndPoint(IPAddress.IPv6Any, 0));
 
             server.Connected.Subscribe(ClientConnected);
 

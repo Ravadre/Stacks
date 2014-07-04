@@ -143,6 +143,47 @@ namespace Stacks.Tests
                 Assert.True(validReceived);
                 Assert.False(invalidReceived);
             }
+
+            [Fact]
+            public void Using_model_builder_should_allow_to_fix_missing_packets()
+            {
+                bool received = false;
+                var client = new ReactiveMessageClient<IMessageHandlerWithInvalidObservable>(framedClient, serializer.Object,
+                    mb =>
+                    {
+                        mb.Packet(i => i.TestPackets3).HasId(3);
+                    });
+
+                client.Packets.TestPackets3.Subscribe(p =>
+                {
+                    received = true;
+                });
+
+                rawClientReceived.OnNext(new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0 }));
+
+                Assert.True(received);
+            }
+
+            [Fact]
+            public void Using_model_builder_it_should_be_possible_to_override_packet_id()
+            {
+                bool received = false;
+                serializer.Setup(s => s.Deserialize<TestData>(It.IsAny<MemoryStream>())).Returns(new TestData());
+
+                var c = new ReactiveMessageClient<ITestMessageHandler>(framedClient, serializer.Object,
+                    mb =>
+                    {
+                        mb.Packet(t => t.TestPackets).HasId(2);
+                    });
+                c.Packets.TestPackets.Subscribe(p =>
+                {
+                    received = true;
+                });
+
+                rawClientReceived.OnNext(new ArraySegment<byte>(new byte[] { 12, 0, 0, 0, 2, 0, 0, 0, 5, 0, 0, 0 }));
+
+                Assert.True(received);
+            }
         }
 
         [StacksMessage(3)]

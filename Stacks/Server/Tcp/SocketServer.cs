@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using NLog;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
@@ -15,8 +14,6 @@ namespace Stacks.Tcp
 {
     public class SocketServer
     {
-        private static readonly Logger log = LogManager.GetCurrentClassLogger();
-
         private Socket socket;
         private SocketAsyncEventArgs acceptArgs;
 
@@ -40,6 +37,18 @@ namespace Stacks.Tcp
             : this(new ActionBlockExecutor(), bindEndPoint)
         { }
 
+
+        private static bool IsWinVistaOrHigher()
+        {
+            OperatingSystem OS = Environment.OSVersion;
+            return (OS.Platform == PlatformID.Win32NT) && (OS.Version.Major >= 6);
+        }
+
+        private static bool IsNotWindows()
+        {
+            return Environment.OSVersion.Platform != PlatformID.Win32NT;
+        }
+
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)
         {
             Ensure.IsNotNull(executor, "executor");
@@ -51,9 +60,31 @@ namespace Stacks.Tcp
             this.stopped = new AsyncSubject<Unit>();
             this.connected = new Subject<SocketClient>();
 
-            this.socket = new Socket(AddressFamily.InterNetwork,
-                                     SocketType.Stream,
-                                     ProtocolType.Tcp);
+            if (bindEndPoint.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                if (!Socket.OSSupportsIPv6)
+                {
+                    throw new InvalidOperationException("OS does not support IPv6");
+                }
+
+                this.socket = new Socket(AddressFamily.InterNetworkV6,
+                                         SocketType.Stream,
+                                         ProtocolType.Tcp);
+                if (IsWinVistaOrHigher() || IsNotWindows())
+                {
+                    try
+                    {
+                        this.socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
+                    }
+                    catch { }
+                }
+            }
+            else
+            {
+                this.socket = new Socket(AddressFamily.InterNetwork,
+                                         SocketType.Stream,
+                                         ProtocolType.Tcp);
+            }
             this.acceptArgs = new SocketAsyncEventArgs();
             this.bindEndPoint = bindEndPoint;
 
@@ -102,7 +133,6 @@ namespace Stacks.Tcp
                 {
                     case SocketError.ConnectionAborted:
                         {
-                            log.Info("Server stopped");
                             OnStopped();
                             break;
                         }
@@ -117,21 +147,18 @@ namespace Stacks.Tcp
                         }
                     case SocketError.ConnectionReset:
                         {
-                            log.Warn("Potential half-open SYN scan occured");
                             StartAccepting();
                             break;
                         }
                     default:
                         {
-                            log.Error("Error occured while connecting new client: " + e.SocketError);
                             StartAccepting();
                             break;
                         }
                 }
             }
-            catch (Exception exc)
+            catch (Exception)
             {
-                log.Error("Exception occured in SocketAccepted. Exc: " + exc);
                 OnStopped();
             }
         }

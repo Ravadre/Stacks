@@ -21,18 +21,30 @@ namespace Stacks.Tcp
 
 
         public ReactiveMessageClient(IFramedClient framedClient,
-                                     IStacksSerializer packetSerializer)
+                                     IStacksSerializer packetSerializer,
+                                     Action<ReactiveClientModelBuilder<T>> modelBuilder)
             : base(framedClient, new MessageIdCache(), packetSerializer)
         {
             Ensure.IsNotNull(framedClient, "framedClient");
             Ensure.IsNotNull(packetSerializer, "packetSerializer");
 
-            this.messageReceiverCreator = new ReactiveMessageReceiverCreator<T>(base.messageIdCache, packetSerializer);
-            
+            var mb = new ReactiveClientModelBuilder<T>();
+            if (modelBuilder != null)
+                modelBuilder(mb);
+
+            this.messageReceiverCreator = new ReactiveMessageReceiverCreator<T>(base.messageIdCache, packetSerializer, mb);
+
             this.Packets = this.messageReceiverCreator.CreateReceiverImplementation(out deserializeByMessageId);
 
             this.framedClient.Received.Subscribe(PacketReceived);
         }
+
+
+        public ReactiveMessageClient(IFramedClient framedClient,
+                                     IStacksSerializer packetSerializer)
+            : this(framedClient, packetSerializer, null)
+        { }
+
 
         private unsafe void PacketReceived(ArraySegment<byte> buffer)
         {

@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class Actor
+    public class Actor : IScheduler
     {
         private readonly ActorContext context;
         private readonly string name;
@@ -42,6 +43,26 @@ namespace Stacks.Actors
         protected SynchronizationContext GetActorSynchronizationContext()
         {
             return context.Context;
+        }
+
+        public DateTimeOffset Now
+        {
+            get { return ((IScheduler)context).Now; }
+        }
+
+        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            return context.Schedule(state, dueTime, action);
+        }
+
+        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        {
+            return context.Schedule(state, dueTime, action);
+        }
+
+        public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
+        {
+            return context.Schedule(state, action);
         }
     }
 
