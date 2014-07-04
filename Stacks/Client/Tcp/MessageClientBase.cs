@@ -41,6 +41,16 @@ namespace Stacks.Tcp
             get { return this.framedClient.Sent; }
         }
 
+        public IPEndPoint LocalEndPoint
+        {
+            get { return framedClient.LocalEndPoint; }
+        }
+
+        public IPEndPoint RemoteEndPoint
+        {
+            get { return framedClient.RemoteEndPoint; }
+        }
+
         public MessageClientBase(IFramedClient client, IMessageIdCache messageIdCache,
                                  IStacksSerializer packetSerializer)
         {

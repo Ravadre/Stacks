@@ -27,6 +27,16 @@ namespace Stacks.Tcp
         public IObservable<int> Sent { get { return sent.AsObservable(); } }
         public IObservable<ArraySegment<byte>> Received { get { return received.AsObservable(); } }
 
+        public IPEndPoint LocalEndPoint
+        {
+            get { return client.LocalEndPoint; }
+        }
+
+        public IPEndPoint RemoteEndPoint
+        {
+            get { return client.RemoteEndPoint; }
+        }
+
         private IRawByteClient client;
         private SslStream sslStream;
         private RawByteClientStream clientStreamWrapper;
