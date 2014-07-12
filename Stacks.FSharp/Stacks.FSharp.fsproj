@@ -49,8 +49,12 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.fs">
+      <Link>SharedAssemblyInfo.fs</Link>
+    </Compile>
     <Compile Include="Actors\ActorContext.fs" />
     <Compile Include="Actors\Executor.fs" />
+    <Compile Include="AssemblyInfo.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
