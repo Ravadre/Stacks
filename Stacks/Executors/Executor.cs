@@ -22,7 +22,7 @@ namespace Stacks
             return false;
         }
 
-        public static string GetCurrentName()
+        public static string GetCurrentFullName()
         {
             var ctx = SynchronizationContext.Current;
 
@@ -31,6 +31,19 @@ namespace Stacks
 
             if (ctx is IExecutor)
                 return ctx.ToString();
+
+            return string.Empty;
+        }
+
+        public static string GetCurrentName()
+        {
+            var ctx = SynchronizationContext.Current;
+
+            if (ctx == null)
+                return string.Empty;
+
+            if (ctx is IExecutor)
+                return ((IExecutor)ctx).Name;
 
             return string.Empty;
         }

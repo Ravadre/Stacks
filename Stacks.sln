@@ -55,6 +55,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ActorFSharpSample1", "Examp
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ActorFSharpSample2", "Examples\ActorFSharpSample2\ActorFSharpSample2.fsproj", "{A3A63570-A684-4773-9FA6-A573AF63CB98}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ActorFSharpSample3", "Examples\ActorFSharpSample3\ActorFSharpSample3.fsproj", "{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -193,6 +195,12 @@ Global
 		{A3A63570-A684-4773-9FA6-A573AF63CB98}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3A63570-A684-4773-9FA6-A573AF63CB98}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A3A63570-A684-4773-9FA6-A573AF63CB98}.Release|x64.ActiveCfg = Release|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC}.Release|x64.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -210,5 +218,6 @@ Global
 		{326727DF-7109-4711-81BC-511B757ED602} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 		{DEE716A9-5DD9-4A3A-8C47-61B0C81CB730} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 		{A3A63570-A684-4773-9FA6-A573AF63CB98} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
+		{9D10BCA1-4BD7-41CB-BDB8-DA963B22E6FC} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 	EndGlobalSection
 EndGlobal

@@ -12,6 +12,7 @@ namespace Stacks
 {
     public class BusyWaitExecutor : SynchronizationContext, IExecutor
     {
+        private string name;
         private BlockingCollection<Action> col;
         private TaskCompletionSource<int> tcs;
         private volatile bool isStopping;
@@ -19,8 +20,15 @@ namespace Stacks
 
         public event Action<Exception> Error;
 
+        public string Name { get { return name; } }
+
         public BusyWaitExecutor()
+            : this(null)
+        { }
+
+        public BusyWaitExecutor(string name)
         {
+            this.name = name == null ? string.Empty : name;
             col = new BlockingCollection<Action>();
             tcs = new TaskCompletionSource<int>();
             runner = new Thread(new ThreadStart(Run));
@@ -144,6 +152,12 @@ namespace Stacks
             });
 
             return Disposable.Empty;
+        }
+
+        public override string ToString()
+        {
+            return "BusyWait Executor " +
+                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
         }
     }
 }

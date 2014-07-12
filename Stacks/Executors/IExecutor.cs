@@ -11,6 +11,8 @@ namespace Stacks
 {
     public interface IExecutor : IScheduler
     {
+        string Name { get; }
+
         event Action<Exception> Error;
 
         void Enqueue(Action action);
