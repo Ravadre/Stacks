@@ -3,6 +3,7 @@ open System.Net.Http
 open Stacks.Actors
 open System.Xml.Linq
 open Stacks
+open Stacks.FSharp
 
 type Weather() = 
     let actor = ActorContext("Weather")
@@ -10,19 +11,18 @@ type Weather() =
 
     let xn s = XName.Get(s)
 
-    member this.GetTemperature(city: string) = async {
-        do! Async.SwitchToContext(actor.Context)
+    member this.GetTemperature(city: string) =
+        actor.RunAsync(async {
+            let! response = sprintf "http://api.openweathermap.org/data/2.5/\
+                                     weather?q=%s&mode=xml&units=metric" city
+                            |> httpClient.GetStringAsync
+                            |> Async.AwaitTask
 
-        let! response = sprintf "http://api.openweathermap.org/data/2.5/\
-                                 weather?q=%s&mode=xml&units=metric" city
-                        |> httpClient.GetStringAsync
-                        |> Async.AwaitTask
-
-        return double (XDocument.Parse(response)
-                                .Element(xn"current")
-                                .Element(xn"temperature")
-                                .Attribute(xn"value"))
-    }
+            return double (XDocument.Parse(response)
+                                    .Element(xn"current")
+                                    .Element(xn"temperature")
+                                    .Attribute(xn"value"))
+        })
 
 
 [<EntryPoint>]

@@ -1,5 +1,12 @@
 ﻿namespace Stacks.FSharp
 
 
-type Class1() = 
-    member this.X = "F#"
+[<AutoOpen>]
+module Actors = 
+    type Stacks.Actors.ActorContext with
+    
+        member this.RunAsync<'T>(wf: Async<'T>) = async {
+            do! Async.SwitchToContext(this.Context)
+
+            return! wf
+        }

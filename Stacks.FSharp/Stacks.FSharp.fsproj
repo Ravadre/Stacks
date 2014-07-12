@@ -50,6 +50,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="Actors\ActorContext.fs" />
+    <Compile Include="Actors\Executor.fs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
