@@ -89,6 +89,16 @@ namespace Stacks
             }
         }
 
+        public override void Send(SendOrPostCallback d, object state)
+        {
+            base.Send(d, state);
+        }
+
+        public override void Post(SendOrPostCallback d, object state)
+        {
+            Enqueue(() => d(state));
+        }
+
         public void Enqueue(Action action)
         {
             if (!isStopping)
