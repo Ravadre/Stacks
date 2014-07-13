@@ -84,7 +84,8 @@ Target "Nuget" (fun _ ->
                  "Stacks.MessagePack/stacks.messagepack.nuspec"
 
     BuildPackage "Stacks.FSharp"
-                 ["Stacks.FSharp.dll"]
+                 [ "Stacks.FSharp.dll";
+                   "Stacks.FSharp.xml" ]
                  "Stacks.FSharp.dll"
                  [ ("Stacks", stacksVer ) ]
                  "Stacks.FSharp/Stacks.FSharp.nuspec"
