@@ -23,6 +23,8 @@ namespace Stacks
 
         public event Action<Exception> Error;
           
+        public string Name { get { return name; } }
+
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
         { }
@@ -33,7 +35,7 @@ namespace Stacks
 
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
-            this.name = name;
+            this.name = name == null ? string.Empty : name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
          
             if (settings.QueueBoundedCapacity <= 0)

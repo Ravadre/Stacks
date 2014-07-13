@@ -8,6 +8,13 @@ let platform = getBuildParamOrDefault "buildPlatform" "Any CPU"
 let dir (project) = 
     project @@ "bin" @@ (if platform = "Any CPU" then "" else platform) @@ configuration
 
+let tryDelDir path = 
+    try
+        if System.IO.Directory.Exists(path) then
+            System.IO.Directory.Delete(path, true)
+    with
+    | _ -> ()
+
 let getVersion file = 
     System.Reflection.AssemblyName.GetAssemblyName(file).Version.ToString()
 
@@ -38,7 +45,7 @@ let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile =
     let dllsWithPath = dllsToCopy |> Seq.map(fun s -> srcDir @@ s)
     let mainDllWithPath = srcDir @@ mainDll 
 
-    CleanDir tmp
+    tryDelDir tmp
     ensureDirectory (tmp @@ "lib/net45")
     CopyFiles (tmp @@ "lib/net45") dllsWithPath
     NuGet (fun p ->
@@ -75,6 +82,13 @@ Target "Nuget" (fun _ ->
                  [ ("Stacks", stacksVer )
                    ("MsgPack.Cli", "0.4.3") ]
                  "Stacks.MessagePack/stacks.messagepack.nuspec"
+
+    BuildPackage "Stacks.FSharp"
+                 [ "Stacks.FSharp.dll";
+                   "Stacks.FSharp.xml" ]
+                 "Stacks.FSharp.dll"
+                 [ ("Stacks", stacksVer ) ]
+                 "Stacks.FSharp/Stacks.FSharp.nuspec"
 )
 
 Target "All" DoNothing

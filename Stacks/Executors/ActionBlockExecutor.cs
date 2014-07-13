@@ -24,6 +24,8 @@ namespace Stacks
 
         public event Action<Exception> Error;
 
+        public string Name { get { return name; } }
+
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
         { }
@@ -34,7 +36,7 @@ namespace Stacks
 
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
-            this.name = name;
+            this.name = name == null ? string.Empty : name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
@@ -137,7 +139,7 @@ namespace Stacks
         public override string ToString()
         {
             return "ActionBlock Executor " +
-                (name == null ? "" : string.Format("({0})", name));
+                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
         }
 
 
