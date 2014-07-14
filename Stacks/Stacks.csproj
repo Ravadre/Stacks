@@ -55,6 +55,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
@@ -84,7 +87,9 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Actors\Actor.cs" />
+    <Compile Include="Actors\ActorClientProxy.cs" />
     <Compile Include="Actors\ActorContext.cs" />
+    <Compile Include="Actors\ActorServerProxy.cs" />
     <Compile Include="Actors\IActorContext.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />

@@ -32,5 +32,15 @@ namespace Stacks
             if (string.IsNullOrWhiteSpace(s))
                 throw new ArgumentException("Argument can't consist of white spaces only", name);
         }
+
+        public static void IsInterface(Type type, string name, string message = null)
+        {
+            IsNotNull(type, name);
+
+            message = message == null ? "Given type must be an interface" : message;
+
+            if (!type.IsInterface)
+                throw new ArgumentException(message, name);
+        }
     }
 }

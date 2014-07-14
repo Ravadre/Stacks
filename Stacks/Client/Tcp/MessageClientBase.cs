@@ -97,6 +97,11 @@ namespace Stacks.Tcp
             messageIdCache.PreLoadType<T>();
         }
 
+        public void PreLoadType(Type type)
+        {
+            messageIdCache.PreLoadType(type);
+        }
+
         public void Close()
         {
             this.framedClient.Close();
