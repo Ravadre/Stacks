@@ -64,6 +64,11 @@ namespace Stacks.Tcp
             return framedClient.Connect(endPoint);
         }
 
+        public IObservable<Unit> Connect(string endPoint)
+        {
+            return Connect(IPHelpers.Parse(endPoint));
+        }
+
         public unsafe void Send<T>(T obj)
         {
             var messageId = messageIdCache.GetMessageId<T>();

@@ -117,6 +117,7 @@
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\ExecutorHelper.cs" />
     <Compile Include="Executors\IExecutor.cs" />
+    <Compile Include="IPHelpers.cs" />
     <Compile Include="MessageClient\ImperativeMessageIdCache.cs" />
     <Compile Include="MessageClient\IMessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdCache.cs" />

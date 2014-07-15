@@ -174,6 +174,11 @@ namespace Stacks.Tcp
             return this.Connected;
         }
 
+        public IObservable<Unit> Connect(string endPoint)
+        {
+            return Connect(IPHelpers.Parse(endPoint));
+        }
+
         /// <summary>
         /// This method should be called only if SslClient was created 
         /// with already connected socket. In this case, this method will

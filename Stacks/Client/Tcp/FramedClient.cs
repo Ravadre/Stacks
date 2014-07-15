@@ -114,5 +114,10 @@ namespace Stacks.Tcp
         {
             return client.Connect(remoteEndPoint);
         }
+
+        public IObservable<Unit> Connect(string endPoint)
+        {
+            return Connect(IPHelpers.Parse(endPoint));
+        }
     }
 }

@@ -106,6 +106,11 @@ namespace Stacks.Tcp
             this.executor = executor;
         }
 
+        public IObservable<Unit> Connect(string remoteEndPoint)
+        {
+            return Connect(IPHelpers.Parse(remoteEndPoint));
+        }
+
         public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
