@@ -92,25 +92,23 @@ namespace Stacks.Actors
 
         private void DefineMessageTypeForActorMethodParams(MethodInfo methodInfo)
         {
-            if (methodInfo.GetParameters().Length == 1)
-            {
-                var pType = methodInfo.GetParameters()[0].ParameterType;
+            //if (methodInfo.GetParameters().Length == 1)
+            //{
+            //    var pType = methodInfo.GetParameters()[0].ParameterType;
 
-                if (pType.GetCustomAttribute(typeof(ProtoBuf.ProtoContractAttribute)) != null)
-                {
-                    this.messageParamTypes[methodInfo.Name] = pType;
-                    return;
-                }
-            }
+            //    if (pType.GetCustomAttribute(typeof(ProtoBuf.ProtoContractAttribute)) != null)
+            //    {
+            //        this.messageParamTypes[methodInfo.Name] = pType;
+            //        return;
+            //    }
+            //}
 
 
             var messageTypeName = methodInfo.Name + "Message";
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
 
             // Empty ctor
-            var cb = typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, Type.EmptyTypes);
-            var cbIl = cb.GetILGenerator();
-            cbIl.Emit(OpCodes.Ret);
+            typeBuilder.DefineDefaultConstructor(MethodAttributes.Public | MethodAttributes.HideBySig);
 
             // Type attributes
             var protoContractCtor = typeof(ProtoBuf.ProtoContractAttribute).GetConstructor(Type.EmptyTypes);
@@ -138,16 +136,20 @@ namespace Stacks.Actors
 
         private void DefineMessageTypeForActorMethodReturn(MethodInfo methodInfo)
         {
+            Type returnType = null;
+
             var returnTypeTask = methodInfo.ReturnType;
             if (returnTypeTask == typeof(Task))
-                return;
+                returnType = typeof(System.Reactive.Unit);
+            else
+            {
+                var genArgs = returnTypeTask.GetGenericArguments();
 
-            var genArgs = returnTypeTask.GetGenericArguments();
+                if (genArgs.Length != 1)
+                    throw new InvalidOperationException("Return type of a method must be Task<T>");
 
-            if (genArgs.Length != 1)
-                throw new InvalidOperationException("Return type of a method must be Task<T>");
-
-            var returnType = genArgs[0];
+                returnType = genArgs[0];
+            }
 
             //if (returnType.GetCustomAttribute(typeof(ProtoBuf.ProtoContractAttribute)) != null)
             //{
@@ -156,7 +158,8 @@ namespace Stacks.Actors
             //}
 
             var messageTypeName = methodInfo.Name + "MessageReply";
-            var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
+            var replyInterfaceType = typeof(IReplyMessage<>).MakeGenericType(returnType);
+            var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public, null, new[] { replyInterfaceType });
 
             // Empty ctor
             var cb = typeBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig, CallingConventions.HasThis, Type.EmptyTypes);
@@ -171,6 +174,15 @@ namespace Stacks.Actors
             var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
             fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
 
+            var getResultMb = typeBuilder.DefineMethod("GetResult", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
+                CallingConventions.HasThis, returnType, Type.EmptyTypes);
+            var gril = getResultMb.GetILGenerator();
+            gril.Emit(OpCodes.Ldarg_0);
+            gril.Emit(OpCodes.Ldfld, fb);
+            gril.Emit(OpCodes.Ret);
+
+
+            //Keep at the end
             var createdType = typeBuilder.CreateType();
             this.messageReturnTypes[methodInfo.Name] = createdType;
         }
@@ -203,12 +215,66 @@ namespace Stacks.Actors
                 mb.SetReturnType(method.ReturnType);
                 mb.SetParameters(method.GetParameters().Select(p => p.ParameterType).ToArray());
 
-                var il = mb.GetILGenerator();
-                il.Emit(OpCodes.Ldnull);
-                il.Emit(OpCodes.Ret);
+                ImplementSendMethod(mb, method);
             }
 
             var actorImplType = actorImplBuilder.CreateType();
+        }
+
+        private FieldInfo GetFieldInfoFromProtobufMessage(Type t, int protoMessageIdx)
+        {
+            return t.GetFields()
+                    .First(fi =>
+                     {
+                         var a = fi.GetCustomAttribute<ProtoBuf.ProtoMemberAttribute>();
+                         if (a != null &&
+                             a.Tag == protoMessageIdx)
+                             return true;
+                         return false;
+                     });
+        }
+
+        private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod)
+        {
+            var il = mb.GetILGenerator();
+            var msgType = messageParamTypes[sendMethod.Name];
+            var msgReplyType = messageReturnTypes[sendMethod.Name];
+            var msgCtor = msgType.GetConstructor(Type.EmptyTypes);
+
+
+            
+
+            
+            //params packing
+            var msgLocal = il.DeclareLocal(msgType);
+            var sendParams = sendMethod.GetParameters();
+
+            il.Emit(OpCodes.Newobj, msgCtor);
+            il.Emit(OpCodes.Stloc_0);
+
+            for (int i = 1; i <= sendParams.Length; ++i)
+            {
+                var field = GetFieldInfoFromProtobufMessage(msgType, i);
+                il.Emit(OpCodes.Ldloc_0);
+                il.Emit(OpCodes.Ldarg, i);
+                il.Emit(OpCodes.Stfld, field);
+            }
+
+            //call base.SendMessage
+            var sendMethodTaskRet = sendMethod.ReturnType;
+            var sendMethodInnerRet = sendMethodTaskRet == typeof(Task) 
+                                        ? typeof(System.Reactive.Unit) 
+                                        : sendMethodTaskRet.GetGenericArguments()[0];
+
+            var sendMessageTemplate = typeof(ActorClientProxyTemplate).GetMethod("SendMessage",
+                                                                         BindingFlags.Instance | BindingFlags.NonPublic);
+            var sendMessage = sendMessageTemplate.MakeGenericMethod(msgType, sendMethodInnerRet, msgReplyType);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldstr, sendMethod.Name);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Call, sendMessage, null);
+            il.Emit(OpCodes.Ret);
         }
     }
 }

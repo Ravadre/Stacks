@@ -51,6 +51,9 @@ namespace RemoteActorsSample
         Task<RectangleInfo> GetRectData(Rectangle rect);
         Task<TriangleInfo> GetTriangleData(Triangle triangle);
         Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f);
+
+        Task PushInfo(double x);
+        Task Ping();
     }
 
     class Program
