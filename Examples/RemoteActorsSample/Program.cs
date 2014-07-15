@@ -62,7 +62,7 @@ namespace RemoteActorsSample
         {
             var server = new Server();
 
-            var calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:4632");
+            ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:4632");
             Console.WriteLine("Result is: " + calculator.Add(5, 4).Result);
 
             Console.ReadKey();
