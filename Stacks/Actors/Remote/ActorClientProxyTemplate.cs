@@ -41,7 +41,7 @@ namespace Stacks.Actors
             client.Connect(endPoint);
         }
 
-        private void MessageReceived(string msgName, long requestId, MemoryStream ms)
+        private void MessageReceived(long requestId, MemoryStream ms)
         {
             Action<MemoryStream, Exception> handler;
 

@@ -60,8 +60,10 @@ namespace RemoteActorsSample
     {
         static void Main(string[] args)
         {
-            var calculator = ActorClientProxy.Create<ICalculatorActor>(new IPEndPoint(IPAddress.Loopback, 4632));
-            Console.WriteLine(calculator.Add(5, 4).Result);
+            var server = new Server();
+
+            var calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:4632");
+            Console.WriteLine("Result is: " + calculator.Add(5, 4).Result);
 
             Console.ReadKey();
 

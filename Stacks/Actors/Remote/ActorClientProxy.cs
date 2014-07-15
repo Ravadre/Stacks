@@ -19,11 +19,21 @@ namespace Stacks.Actors
             return (T)Create(type, remoteEndPoint);
         }
 
+        public static T Create<T>(string endPoint)
+        {
+            return Create<T>(IPHelpers.Parse(endPoint));
+        }
+
         public static object Create(Type actorType, IPEndPoint remoteEndPoint)
         {
             var proxyCreator = new ActorClientProxy();
 
             return proxyCreator.AuxCreate(actorType, remoteEndPoint);
+        }
+
+        public static object Create(Type actorType, string endPoint)
+        {
+            return Create(actorType, IPHelpers.Parse(endPoint));
         }
 
 

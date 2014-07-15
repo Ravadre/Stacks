@@ -56,7 +56,7 @@ namespace Stacks.Actors
             return framedClient.Connect(endPoint);
         }
 
-        public event Action<string, long, MemoryStream> MessageReceived;
+        public event Action<long, MemoryStream> MessageReceived;
 
         public ActorRemoteMessageClient(IFramedClient client)
         {
@@ -73,21 +73,19 @@ namespace Stacks.Actors
             fixed (byte* b = &buffer.Array[buffer.Offset])
             {
                 long requestId = *((long*)b);
-                int headerSize = *((int*)(b + 8));
-                var msgName = new string((sbyte*)(b + 12), 0, headerSize);
-
-                using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12 + headerSize, buffer.Count - 12 - headerSize))
+               
+                using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
                 {
-                    OnMessageReceived(msgName, requestId, ms);
+                    OnMessageReceived(requestId, ms);
                 }
             }
         }
 
-        private void OnMessageReceived(string msgName, long requestId, MemoryStream ms)
+        private void OnMessageReceived(long requestId, MemoryStream ms)
         {
             var h = MessageReceived;
             if (h != null)
-                h(msgName, requestId, ms);
+                h(requestId, ms);
         }
 
         public unsafe void Send<T>(string msgName, long requestId, T obj)
