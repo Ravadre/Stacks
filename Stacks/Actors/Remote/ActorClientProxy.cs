@@ -28,6 +28,7 @@ namespace Stacks.Actors
 
 
         private Type actorType;
+        private Type actorImplType;
         private AssemblyBuilder asmBuilder;
         private ModuleBuilder moduleBuilder;
         private Dictionary<string, Type> messageParamTypes;
@@ -56,7 +57,7 @@ namespace Stacks.Actors
 
             asmBuilder.Save("ActorProxyModule_" + actorType.FullName + ".dll");
 
-            return null;
+            return Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
         }
 
         private void EnsureMethodNamesAreUnique(IEnumerable<MethodInfo> methods)
@@ -85,6 +86,7 @@ namespace Stacks.Actors
             var t = actorType;
             var asmName = new AssemblyName("ActorProxyModule_" + t.FullName);
 
+            //TODO: Change to RunAndCollect when more stable
             this.asmBuilder = AppDomain.CurrentDomain
                                        .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
@@ -182,7 +184,6 @@ namespace Stacks.Actors
             gril.Emit(OpCodes.Ret);
 
 
-            //Keep at the end
             var createdType = typeBuilder.CreateType();
             this.messageReturnTypes[methodInfo.Name] = createdType;
         }
@@ -218,7 +219,7 @@ namespace Stacks.Actors
                 ImplementSendMethod(mb, method);
             }
 
-            var actorImplType = actorImplBuilder.CreateType();
+            this.actorImplType = actorImplBuilder.CreateType();
         }
 
         private FieldInfo GetFieldInfoFromProtobufMessage(Type t, int protoMessageIdx)
@@ -240,9 +241,6 @@ namespace Stacks.Actors
             var msgType = messageParamTypes[sendMethod.Name];
             var msgReplyType = messageReturnTypes[sendMethod.Name];
             var msgCtor = msgType.GetConstructor(Type.EmptyTypes);
-
-
-            
 
             
             //params packing

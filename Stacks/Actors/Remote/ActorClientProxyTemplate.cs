@@ -20,10 +20,13 @@ namespace Stacks.Actors
 
         private Dictionary<long, Action<MemoryStream, Exception>> replyHandlersByRequest;
         private long requestId;
+        private bool disconnected;
+        private Exception disconnectedException;
 
         public ActorClientProxyTemplate(IPEndPoint endPoint)
         {
             this.endPoint = endPoint;
+            this.disconnected = false;
 
             serializer = new ProtoBufStacksSerializer();
             replyHandlersByRequest = new Dictionary<long, Action<MemoryStream, Exception>>();
@@ -57,6 +60,8 @@ namespace Stacks.Actors
                 h(null, exn);
             }
             replyHandlersByRequest.Clear();
+            this.disconnected = true;
+            this.disconnectedException = exn;
         }
 
         protected Task<R> SendMessage<T, R, P>(string msgName, T packet)
@@ -68,6 +73,12 @@ namespace Stacks.Actors
 
             exec.Enqueue(() =>
                 {
+                    if (disconnected)
+                    {
+                        tcs.SetException(disconnectedException);
+                        return;
+                    }
+
                     replyHandlersByRequest[reqId] = (ms, error) =>
                         {
                             if (error == null)
