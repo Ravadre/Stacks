@@ -87,10 +87,13 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Actors\Actor.cs" />
-    <Compile Include="Actors\ActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\ActorCallMessage.cs" />
+    <Compile Include="Actors\Remote\ActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\ActorServerProxy.cs" />
     <Compile Include="Actors\IActorContext.cs" />
+    <Compile Include="Actors\Remote\ActorRemoteMessageClient.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />
     <Compile Include="Client\IFramedClient.cs" />
@@ -119,6 +122,7 @@
     <Compile Include="MessageClient\MessageIdRegistration.cs" />
     <Compile Include="MessageClient\ReactiveMessageReceiverCreator.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
+    <Compile Include="Serializers\ProtobufStacksSerializer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />
     <Compile Include="Serializers\IStacksSerializer.cs" />
