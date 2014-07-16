@@ -94,6 +94,9 @@
     <Compile Include="Actors\ActorServerProxy.cs" />
     <Compile Include="Actors\IActorContext.cs" />
     <Compile Include="Actors\Remote\ActorRemoteMessageClient.cs" />
+    <Compile Include="Actors\Remote\CodeGen\ActorTypeBuilder.cs" />
+    <Compile Include="Actors\Remote\CodeGen\ClientActorTypeBuilder.cs" />
+    <Compile Include="Actors\Remote\CodeGen\Helpers.cs" />
     <Compile Include="Actors\Remote\IReplyMessage.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />
@@ -135,6 +138,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
