@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stacks;
+using System.Reactive.Linq;
 using Stacks.Tcp;
 
 namespace Stacks.Actors
@@ -37,8 +38,12 @@ namespace Stacks.Actors
 
             client.MessageReceived += MessageReceived;
             client.Disconnected.Subscribe(HandleDisconnection);
+        }
 
-            client.Connect(endPoint);
+        internal async Task<ActorClientProxyTemplate> Connect()
+        {
+            await client.Connect(endPoint);
+            return this;
         }
 
         private void MessageReceived(long requestId, MemoryStream ms)
@@ -99,6 +104,7 @@ namespace Stacks.Actors
                                 tcs.SetException(error);
                             }
                         };
+                    return;
                 });
 
             return tcs.Task;

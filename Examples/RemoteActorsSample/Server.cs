@@ -35,59 +35,46 @@ namespace RemoteActorsSample
         }
     }
 
-    public class Server
+    public class CalculatorActor: ICalculatorActor
     {
-        private SocketServer server;
-        private ProtoBufStacksSerializer serializer;
-
-        public Server()
+        public Task<double> Add(double x, double y)
         {
-            serializer = new ProtoBufStacksSerializer();
-            server = new SocketServer("tcp://*:4632");
-            server.Connected.Subscribe(sc =>
-                {
-                    var c = new FramedClient(sc);
+            throw new NotImplementedException();
+        }
 
-                    c.Received.Subscribe(bs =>
-                        {
-                            unsafe
-                            {
-                                fixed (byte* b = bs.Array)
-                                {
-                                    byte* s = (b + bs.Offset);
-                                    long reqId = *(long*)s;
-                                    int hSize = *(int*)(s + 8);
-                                    string msgName = Encoding.ASCII.GetString(bs.Array, bs.Offset + 12, hSize);
+        public Task<double> Subtract(double x, double y)
+        {
+            throw new NotImplementedException();
+        }
 
-                                    Console.WriteLine("Received packet. Request: {0}. Msg: {1}", reqId, msgName);
+        public Task<double> Increment(double x)
+        {
+            throw new NotImplementedException();
+        }
 
-                                    using (var ms = new MemoryStream(bs.Array, bs.Offset + 12 + hSize, bs.Count - 12 - hSize))
-                                    {
-                                        var addMsg = serializer.Deserialize<AddMessage>(ms);
-                                        var result = addMsg.x + addMsg.y;
+        public Task<RectangleInfo> GetRectData(Rectangle rect)
+        {
+            throw new NotImplementedException();
+        }
 
-                                        using (var resp = new MemoryStream())
-                                        {
-                                            resp.SetLength(8);
-                                            resp.Position = 8;
-                                            serializer.Serialize<AddMessageReply>(new AddMessageReply() { Return = result }, resp);
+        public Task<TriangleInfo> GetTriangleData(Triangle triangle)
+        {
+            throw new NotImplementedException();
+        }
 
-                                            resp.Position = 0;
-                                            resp.Write(BitConverter.GetBytes(reqId), 0, 8);
-                                            resp.Position = 0;
+        public Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f)
+        {
+            throw new NotImplementedException();
+        }
 
-                                            c.SendPacket(new ArraySegment<byte>(resp.GetBuffer(), 0, (int)resp.Length));
-                                        }
-                                    }
-                                }
-                            }
+        public Task PushInfo(double x)
+        {
+            throw new NotImplementedException();
+        }
 
-
-                        });
-                });
-
-            server.Start();
-            server.Started.Wait();
+        public Task Ping()
+        {
+            throw new NotImplementedException();
         }
     }
 }

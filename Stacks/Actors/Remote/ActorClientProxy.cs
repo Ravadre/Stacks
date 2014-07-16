@@ -15,51 +15,49 @@ namespace Stacks.Actors
 
     public class ActorClientProxy
     {
-        public static T Create<T>(IPEndPoint remoteEndPoint)
+        public static Task<T> Create<T>(IPEndPoint remoteEndPoint)
         {
             var type = typeof(T);
-            return (T)Create(type, remoteEndPoint);
+            return Create(type, remoteEndPoint).ContinueWith(t =>
+                {
+                    if (t.Exception == null)
+                        return (T)(object)t.Result;
+                    else
+                        throw t.Exception;
+                });
         }
 
-        public static T Create<T>(string endPoint)
+        public static Task<T> Create<T>(string endPoint)
         {
             return Create<T>(IPHelpers.Parse(endPoint));
         }
 
-        public static object Create(Type actorType, IPEndPoint remoteEndPoint)
+        public static Task<ActorClientProxyTemplate> Create(Type actorType, IPEndPoint remoteEndPoint)
         {
             var proxyCreator = new ActorClientProxy();
 
             return proxyCreator.AuxCreate(actorType, remoteEndPoint);
         }
 
-        public static object Create(Type actorType, string endPoint)
+        public static Task<ActorClientProxyTemplate> Create(Type actorType, string endPoint)
         {
             return Create(actorType, IPHelpers.Parse(endPoint));
         }
 
-
-        private Type actorType;
-        private Type actorImplType;
-      
         private ClientActorTypeBuilder tBuilder;
 
-
-        private object AuxCreate(Type actorType, IPEndPoint remoteEndPoint)
+        private Task<ActorClientProxyTemplate> AuxCreate(Type actorType, IPEndPoint remoteEndPoint)
         {
-           this.actorType = actorType;
-
             Ensure.IsInterface(actorType, "actorType", "Only interfaces can be used to create actor client proxy");
 
             tBuilder = new ClientActorTypeBuilder("ActorClientProxy_ " + actorType.FullName);
             tBuilder.DefineMessagesFromInterfaceType(actorType);
-            this.actorImplType = tBuilder.CreateActorType(actorType);
+            var actorImplType = tBuilder.CreateActorType(actorType);
 
             tBuilder.SaveToFile();
 
-            return Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
+            var actor = Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
+            return ((ActorClientProxyTemplate)actor).Connect();
         }
-
-
     }
 }

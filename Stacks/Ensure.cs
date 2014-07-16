@@ -42,5 +42,17 @@ namespace Stacks
             if (!type.IsInterface)
                 throw new ArgumentException(message, name);
         }
+
+        public static void IsClass(Type type, string name, string message = null)
+        {
+            IsNotNull(type, name);
+
+            message = message == null ? "Given type must be an instantiable class" : message;
+
+            if (!type.IsClass ||
+                type.IsAbstract)
+                throw new ArgumentException(message, name);
+
+        }
     }
 }
