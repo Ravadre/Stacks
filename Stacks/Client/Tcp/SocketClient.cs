@@ -274,11 +274,18 @@ namespace Stacks.Tcp
 
             executor.Enqueue(() =>
                 {
-                    AddBufferToBufferList(buffer);
-
-                    if (!isSending)
+                    try
                     {
-                        StartSending();
+                        AddBufferToBufferList(buffer);
+
+                        if (!isSending)
+                        {
+                            StartSending();
+                        }
+                    }
+                    catch (Exception exn)
+                    {
+                        HandleDisconnection(exn);
                     }
                 });
         }
