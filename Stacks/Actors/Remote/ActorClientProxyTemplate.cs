@@ -12,7 +12,7 @@ using Stacks.Tcp;
 
 namespace Stacks.Actors
 {
-    public abstract class ActorClientProxyTemplate
+    public abstract class ActorClientProxyTemplate : IActorClientProxy, IDisposable
     {
         private IPEndPoint endPoint;
         private ActorRemoteMessageClient client;
@@ -110,9 +110,20 @@ namespace Stacks.Actors
             return tcs.Task;
         }
 
+        public void Dispose()
+        {
+            Close();
+        }
+
+        public void Close()
+        {
+            client.Close();
+        }
+
         private long GetRequestId()
         {
             return Interlocked.Increment(ref requestId);
         }
+
     }
 }

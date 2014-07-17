@@ -76,5 +76,7 @@ namespace RemoteActorsSample
         {
             throw new NotImplementedException();
         }
+
+        public void Close() { }
     }
 }

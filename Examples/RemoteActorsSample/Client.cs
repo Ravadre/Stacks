@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using ProtoBuf;
+using Stacks.Actors;
 
 namespace RemoteActorsSample
 {
@@ -39,7 +40,7 @@ namespace RemoteActorsSample
         public double C { get; set; }
     }
 
-    public interface ICalculatorActor
+    public interface ICalculatorActor : IActorClientProxy
     {
         Task<double> Add(double x, double y);
         Task<double> Subtract(double x, double y);
