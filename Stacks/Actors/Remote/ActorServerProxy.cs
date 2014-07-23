@@ -14,58 +14,42 @@ namespace Stacks.Actors.Remote
 {
     public class ActorServerProxy
     {
-        public static ActorServerProxy Create<T>(IPEndPoint bindEndPoint)
+        public static ActorServerProxyTemplate Create<T>(IPEndPoint bindEndPoint)
+            where T: new()
         {
-            return Create(typeof(T), bindEndPoint);
+            return Create(bindEndPoint, () => new T());
         }
 
-        public static ActorServerProxy Create<T>(string bindEndPoint)
+        public static ActorServerProxyTemplate Create<T>(string bindEndPoint)
+            where T: new()
         {
-            return Create<T>(IPHelpers.Parse(bindEndPoint));
+            return Create<T>(IPHelpers.Parse(bindEndPoint), () => new T());
         }
 
-        private static ServerActorTypeBuilder typeBuilder;
-
-        public static ActorServerProxy Create(Type actorType, IPEndPoint bindEndPoint)
+        public static ActorServerProxyTemplate Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
         {
-            Ensure.IsClass(actorType, "actorType");
-
-            typeBuilder = new ServerActorTypeBuilder("ActorServerProxy_ " + actorType.FullName);
-
-            typeBuilder.DefineMessagesFromInterfaceType(actorType);
-
-            typeBuilder.SaveToFile();
-
-            return new ActorServerProxy(bindEndPoint);
+            return Create(factory(), bindEndPoint);
         }
 
-        protected SocketServer server;
-        protected List<FramedClient> clients;
-
-        protected ActorServerProxy(IPEndPoint bindEndPoint)
+        public static ActorServerProxyTemplate Create<T>(string bindEndPoint, Func<T> factory)
         {
-            clients = new List<FramedClient>();
-
-            server = new SocketServer(bindEndPoint);
-            server.Connected.Subscribe(ClientConnected);
-            server.Start();
+            return Create(factory(), IPHelpers.Parse(bindEndPoint));
         }
 
-        private void ClientConnected(SocketClient socketClient)
+        private static ServerActorTypeBuilder tBuilder;
+
+        private static ActorServerProxyTemplate Create(object actorImplementation, IPEndPoint bindEndPoint)
         {
-            var client = new FramedClient(socketClient);
+            var aType = actorImplementation.GetType();
+            tBuilder = new ServerActorTypeBuilder("ActorServerProxy_ " + aType.FullName);
 
-            client.Disconnected.Subscribe(exn =>
-                {
-                    clients.Remove(client);
-                });
+            tBuilder.DefineMessagesFromInterfaceType(aType);
 
-            client.Received.Subscribe(bs =>
-                {
+            var actorImplType = tBuilder.CreateActorType(aType);
+            tBuilder.SaveToFile();
 
-                });
-
-            clients.Add(client);
+            var actor = Activator.CreateInstance(actorImplType, new[] { actorImplementation, bindEndPoint });
+            return (ActorServerProxyTemplate)actor;
         }
     }
 }

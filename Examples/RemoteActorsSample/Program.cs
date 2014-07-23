@@ -20,8 +20,6 @@ namespace RemoteActorsSample
 
             ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:4632").Result;
 
-            calculator.Close();
-
             Console.WriteLine("Result is: " + calculator.Add(5, 4).Result);
 
             Console.Write("Press any key to exit... ");
