@@ -9,5 +9,7 @@ namespace Stacks.Actors
     public interface IReplyMessage<T>
     {
         T GetResult();
+        void SetResult(T result);
+        void SetError(string error);
     }
 }

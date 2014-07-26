@@ -135,6 +135,8 @@ namespace Stacks.Actors.Remote.CodeGen
             var fb = typeBuilder.DefineField("@Return", returnType, FieldAttributes.Public);
             fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 2 }));
 
+
+            //GetResult()
             var getResultMb = typeBuilder.DefineMethod("GetResult", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
                 CallingConventions.HasThis, returnType, Type.EmptyTypes);
             var gril = getResultMb.GetILGenerator();
@@ -159,6 +161,27 @@ namespace Stacks.Actors.Remote.CodeGen
             gril.Emit(OpCodes.Ldarg_0);
             gril.Emit(OpCodes.Ldfld, fb);
             gril.Emit(OpCodes.Ret); 
+
+
+            //SetResult
+            var setResultMb = typeBuilder.DefineMethod("SetResult", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
+                CallingConventions.HasThis, typeof(void), new[] { returnType });
+            var sril = setResultMb.GetILGenerator();
+
+            sril.Emit(OpCodes.Ldarg_0);
+            sril.Emit(OpCodes.Ldarg_1);
+            sril.Emit(OpCodes.Stfld, fb);
+            sril.Emit(OpCodes.Ret); 
+
+            //SetError
+            var setErrorMb = typeBuilder.DefineMethod("SetError", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
+                CallingConventions.HasThis, typeof(void), new[] { typeof(string) });
+            var seil = setErrorMb.GetILGenerator();
+
+            seil.Emit(OpCodes.Ldarg_0);
+            seil.Emit(OpCodes.Ldarg_1);
+            seil.Emit(OpCodes.Stfld, errfb);
+            seil.Emit(OpCodes.Ret); 
 
 
             var createdType = typeBuilder.CreateType();

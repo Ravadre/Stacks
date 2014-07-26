@@ -14,12 +14,14 @@ namespace Stacks.Actors.Remote
         protected SocketServer server;
         protected List<FramedClient> clients;
         protected T actorImplementation;
-        protected Dictionary<string, Action<MemoryStream>> handlers;
+        protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
+        protected IStacksSerializer serializer;
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
+            this.serializer = new ProtoBufStacksSerializer();
             this.clients = new List<FramedClient>();
-            this.handlers = new Dictionary<string, Action<MemoryStream>>();
+            this.handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
             this.actorImplementation = actorImplementation;
 
             server = new SocketServer(bindEndPoint);
@@ -48,9 +50,9 @@ namespace Stacks.Actors.Remote
                             string msgName = new string((sbyte*)s, 12, headerLen);
                             int pOffset = 12 + headerLen;
 
-                            using (var ms = new MemoryStream(bs.Array, pOffset, bs.Count - 12 - headerLen))
+                            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - 12 - headerLen))
                             {
-                                HandleMessage(socketClient, reqId, msgName, ms);
+                                HandleMessage(client, reqId, msgName, ms);
                             }
 
                         }
@@ -60,9 +62,9 @@ namespace Stacks.Actors.Remote
             clients.Add(client);
         }
 
-        private void HandleMessage(SocketClient client, long reqId, string messageName, MemoryStream ms)
+        private void HandleMessage(FramedClient client, long reqId, string messageName, MemoryStream ms)
         {
-            Action<MemoryStream> handler;
+            Action<FramedClient, long, MemoryStream> handler;
 
             if (!handlers.TryGetValue(messageName, out handler))
             {
@@ -71,12 +73,50 @@ namespace Stacks.Actors.Remote
                     client.RemoteEndPoint, messageName));
             }
 
-            try
+            handler(client, reqId, ms);
+        }
+
+        protected void HandleResponse<R>(FramedClient client, long reqId, Task<R> actorResponse, IReplyMessage<R> msgToSend)
+        {
+            if (actorResponse == null)
             {
-                handler(ms);
+                Send(client, reqId, msgToSend);
             }
-            catch (Exception exc)
+            else
             {
+                actorResponse.ContinueWith(t =>
+                {
+                    try
+                    {
+                        msgToSend.SetResult(t.Result);
+                    }
+                    catch (Exception exc)
+                    {
+                        msgToSend.SetError(exc.Message);
+                    }
+
+                    Send(client, reqId, msgToSend);
+                });
+            }
+        }
+
+        private unsafe void Send<R>(FramedClient client, long requestId, IReplyMessage<R> packet)
+        {
+            using (var ms = new MemoryStream())
+            {
+                ms.SetLength(8);
+                ms.Position = 8;
+                serializer.Serialize<IReplyMessage<R>>(packet, ms);
+                ms.Position = 0;
+
+                var buffer = ms.GetBuffer();
+
+                fixed (byte* buf = buffer)
+                {
+                    *(long*)buf = requestId;
+                }
+
+                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
             }
         }
     }

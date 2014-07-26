@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Tcp;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
@@ -49,8 +50,8 @@ namespace Stacks.Actors.Remote.CodeGen
                     il.Emit(OpCodes.Ldstr, method.Name);
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldftn, newMethod);
-                    il.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
-                    il.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+                    il.Emit(OpCodes.Newobj, typeof(Action<FramedClient, long, MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    il.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<FramedClient, long, MemoryStream>>).GetMethod("set_Item"), null);
                 }
 
                 il.Emit(OpCodes.Ret);
@@ -64,37 +65,85 @@ namespace Stacks.Actors.Remote.CodeGen
 
         private MethodBuilder CreateHandlerMethod(MethodInfo method)
         {
+            var sendMethodTaskRet = method.ReturnType;
+            var sendMethodInnerRet = sendMethodTaskRet == typeof(Task)
+                                        ? typeof(System.Reactive.Unit)
+                                        : sendMethodTaskRet.GetGenericArguments()[0];
+
             var mb = actorImplBuilder.DefineMethod(method.Name + "Handler",
                                                  MethodAttributes.Private |
                                                  MethodAttributes.HideBySig,
                                                CallingConventions.HasThis,
                                                typeof(void),
-                                               new[] { typeof(MemoryStream) });
+                                               new[] { typeof(FramedClient), typeof(long), typeof(MemoryStream) });
             Type messageType = moduleBuilder.GetType("Messages." + method.Name + "Message");
-            var desMethod = typeof(ProtoBuf.Serializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+            Type replyMessageType = moduleBuilder.GetType("Messages." + method.Name + "MessageReply");
+            var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
 
             var il = mb.GetILGenerator();
 
             var messageLocal = il.DeclareLocal(messageType);
+            var endLabel = il.DefineLabel();
 
-            il.Emit(OpCodes.Ldarg_1);
-            il.EmitCall(OpCodes.Call, desMethod, null);
+            // try {
+            il.BeginExceptionBlock();
+
+            //var msg = base.serializer.Deserialize<P>(ms);
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, templateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
+            il.Emit(OpCodes.Ldarg_3);
+            il.EmitCall(OpCodes.Callvirt, desMethod, null);
             il.Emit(OpCodes.Stloc_0);
 
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
 
-            var sendParams = method.GetParameters();
-            for (int i = 1; i <= sendParams.Length; ++i)
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+
             {
-                var field = GetFieldInfoFromProtobufMessage(messageType, i);
-                il.Emit(OpCodes.Ldloc_0);
-                il.Emit(OpCodes.Ldfld, field);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+
+                //actorImplementation.[methodName](params);
+                var sendParams = method.GetParameters();
+                for (int i = 1; i <= sendParams.Length; ++i)
+                {
+                    var field = GetFieldInfoFromProtobufMessage(messageType, i);
+                    il.Emit(OpCodes.Ldloc_0);
+                    il.Emit(OpCodes.Ldfld, field);
+                }
+
+                il.Emit(OpCodes.Call, method);
             }
 
-            il.Emit(OpCodes.Call, method);
-            il.Emit(OpCodes.Pop);
+            il.Emit(OpCodes.Newobj, replyMessageType.GetConstructor(Type.EmptyTypes));
+            il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
+                                                  .MakeGenericMethod(sendMethodInnerRet), null);
 
+            // } catch (Exception e) {
+            il.BeginCatchBlock(typeof(Exception));
+            var excMsgLocal = il.DeclareLocal(typeof(string));
+            var replyMsgLocal = il.DeclareLocal(typeof(IReplyMessage<>).MakeGenericType(sendMethodInnerRet));
+            il.EmitCall(OpCodes.Call, typeof(Exception).GetProperty("Message").GetGetMethod(), null);
+            il.Emit(OpCodes.Stloc, excMsgLocal);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldnull);
+            il.Emit(OpCodes.Newobj, replyMessageType.GetConstructor(Type.EmptyTypes));
+            il.Emit(OpCodes.Stloc, replyMsgLocal);
+            il.Emit(OpCodes.Ldloc, replyMsgLocal);
+            il.Emit(OpCodes.Ldloc, excMsgLocal);
+            il.EmitCall(OpCodes.Callvirt, typeof(IReplyMessage<>).MakeGenericType(sendMethodInnerRet).GetMethod("SetError"), null);
+            il.Emit(OpCodes.Ldloc, replyMsgLocal);
+            il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
+                                                .MakeGenericMethod(sendMethodInnerRet), null);
+
+            // }
+            il.EndExceptionBlock();
+
+            il.MarkLabel(endLabel);
             il.Emit(OpCodes.Ret);
 
             return mb;

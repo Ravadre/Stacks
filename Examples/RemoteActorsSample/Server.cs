@@ -24,17 +24,6 @@ namespace RemoteActorsSample
         public double y;
     }
 
-    [ProtoContract]
-    public class AddMessageReply : IReplyMessage<double>
-    {
-        [ProtoMember(1)]
-        public double Return;
-        public double GetResult()
-        {
-            return this.Return;
-        }
-    }
-
     public class CalculatorActor: ICalculatorActor
     {
         public Task<double> Add(double x, double y)
