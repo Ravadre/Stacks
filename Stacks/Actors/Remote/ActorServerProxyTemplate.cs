@@ -9,14 +9,14 @@ using Stacks.Tcp;
 
 namespace Stacks.Actors.Remote
 {
-    public abstract class ActorServerProxyTemplate
-    {   
+    public abstract class ActorServerProxyTemplate<T>
+    {
         protected SocketServer server;
         protected List<FramedClient> clients;
-        protected object actorImplementation;
+        protected T actorImplementation;
         protected Dictionary<string, Action<MemoryStream>> handlers;
 
-        public ActorServerProxyTemplate(object actorImplementation, IPEndPoint bindEndPoint)
+        public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
             this.clients = new List<FramedClient>();
             this.handlers = new Dictionary<string, Action<MemoryStream>>();
@@ -40,7 +40,7 @@ namespace Stacks.Actors.Remote
                 {
                     unsafe
                     {
-                        fixed(byte* b = bs.Array)
+                        fixed (byte* b = bs.Array)
                         {
                             byte* s = b + bs.Offset;
                             long reqId = *(long*)s;
@@ -50,7 +50,7 @@ namespace Stacks.Actors.Remote
 
                             using (var ms = new MemoryStream(bs.Array, pOffset, bs.Count - 12 - headerLen))
                             {
-                                HandleMessage(msgName, ms);
+                                HandleMessage(socketClient, reqId, msgName, ms);
                             }
 
                         }
@@ -60,16 +60,24 @@ namespace Stacks.Actors.Remote
             clients.Add(client);
         }
 
-        private void HandleMessage(string messageName, MemoryStream ms)
+        private void HandleMessage(SocketClient client, long reqId, string messageName, MemoryStream ms)
         {
+            Action<MemoryStream> handler;
+
+            if (!handlers.TryGetValue(messageName, out handler))
+            {
+                throw new Exception(
+                    string.Format("Client {0} sent message for method {1}, which has no handler registered",
+                    client.RemoteEndPoint, messageName));
+            }
+
             try
             {
-                HandleMessageAux(messageName, ms);
+                handler(ms);
             }
             catch (Exception exc)
-            { }
+            {
+            }
         }
-
-        protected abstract void HandleMessageAux(string msgName, MemoryStream ms);
     }
 }

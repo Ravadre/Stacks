@@ -18,19 +18,35 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public Type CreateActorType(Type actorType)
         {
+            var templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
+
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorType.Name, TypeAttributes.Public,
-                                        typeof(ActorServerProxyTemplate), Type.EmptyTypes);
+                                        templateType, Type.EmptyTypes);
 
             {
-                var baseCtor = typeof(ActorServerProxyTemplate).GetConstructor(new[] { typeof(object), typeof(IPEndPoint) });
+                var baseCtor = templateType.GetConstructor(new[] { actorType, typeof(IPEndPoint) });
 
                 var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
-                                        CallingConventions.HasThis, new[] { typeof(object), typeof(IPEndPoint) });
+                                        CallingConventions.HasThis, new[] { actorType, typeof(IPEndPoint) });
+
                 var il = ctorBuilder.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldarg_1);
                 il.Emit(OpCodes.Ldarg_2);
                 il.Emit(OpCodes.Call, baseCtor);
+
+                foreach (var method in actorType.FindValidProxyMethods())
+                {
+                    var newMethod = CreateHandlerMethod(actorImplBuilder, method);
+
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldfld, templateType.GetField("handlers", BindingFlags.Instance | BindingFlags.NonPublic));
+                    il.Emit(OpCodes.Ldstr, method.Name);
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldftn, newMethod);
+                    il.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    il.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+                }
 
                 il.Emit(OpCodes.Ret);
             }
@@ -38,6 +54,29 @@ namespace Stacks.Actors.Remote.CodeGen
             ImplementHandleMessage(actorImplBuilder);
 
             return actorImplBuilder.CreateType();
+             
+        }
+
+        private MethodBuilder CreateHandlerMethod(TypeBuilder actorImplBuilder, MethodInfo method)
+        {
+            var mb = actorImplBuilder.DefineMethod(method.Name + "Handler",
+                                                 MethodAttributes.Private |
+                                                 MethodAttributes.HideBySig,
+                                               CallingConventions.HasThis,
+                                               typeof(void),
+                                               new[] { typeof(MemoryStream) });
+            Type messageType = moduleBuilder.GetType("Messages." + method.Name + "Message");
+            var desMethod = typeof(ProtoBuf.Serializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+
+            var il = mb.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_1);
+            il.EmitCall(OpCodes.Call, desMethod, null);
+            il.Emit(OpCodes.Pop);
+
+            il.Emit(OpCodes.Ret);
+
+            return mb;
         }
 
         private void ImplementHandleMessage(TypeBuilder actorBuilder)

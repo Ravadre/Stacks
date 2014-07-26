@@ -14,31 +14,31 @@ namespace Stacks.Actors.Remote
 {
     public class ActorServerProxy
     {
-        public static ActorServerProxyTemplate Create<T>(IPEndPoint bindEndPoint)
+        public static ActorServerProxyTemplate<T> Create<T>(IPEndPoint bindEndPoint)
             where T: new()
         {
             return Create(bindEndPoint, () => new T());
         }
 
-        public static ActorServerProxyTemplate Create<T>(string bindEndPoint)
+        public static ActorServerProxyTemplate<T> Create<T>(string bindEndPoint)
             where T: new()
         {
             return Create<T>(IPHelpers.Parse(bindEndPoint), () => new T());
         }
 
-        public static ActorServerProxyTemplate Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
+        public static ActorServerProxyTemplate<T> Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
         {
             return Create(factory(), bindEndPoint);
         }
 
-        public static ActorServerProxyTemplate Create<T>(string bindEndPoint, Func<T> factory)
+        public static ActorServerProxyTemplate<T> Create<T>(string bindEndPoint, Func<T> factory)
         {
             return Create(factory(), IPHelpers.Parse(bindEndPoint));
         }
 
         private static ServerActorTypeBuilder tBuilder;
 
-        private static ActorServerProxyTemplate Create(object actorImplementation, IPEndPoint bindEndPoint)
+        private static ActorServerProxyTemplate<T> Create<T>(T actorImplementation, IPEndPoint bindEndPoint)
         {
             var aType = actorImplementation.GetType();
             tBuilder = new ServerActorTypeBuilder("ActorServerProxy_ " + aType.FullName);
@@ -48,8 +48,8 @@ namespace Stacks.Actors.Remote
             var actorImplType = tBuilder.CreateActorType(aType);
             tBuilder.SaveToFile();
 
-            var actor = Activator.CreateInstance(actorImplType, new[] { actorImplementation, bindEndPoint });
-            return (ActorServerProxyTemplate)actor;
+            var actor = Activator.CreateInstance(actorImplType, new object[] { actorImplementation, bindEndPoint });
+            return (ActorServerProxyTemplate<T>)actor;
         }
     }
 }
