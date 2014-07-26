@@ -12,6 +12,7 @@ using System.Net;
 using System.Reactive.Linq;
 using System.IO;
 using ProtoBuf;
+using System.Threading;
 
 namespace RemoteActorsSample
 {
@@ -29,43 +30,70 @@ namespace RemoteActorsSample
         public async Task<double> Add(double x, double y)
         {
             await Context;
-
-            throw new NotImplementedException();
+            
+            return x + y;
         }
 
-        public Task<double> Subtract(double x, double y)
+        public async Task<double> Subtract(double x, double y)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            return x - y;
         }
 
-        public Task<double> Increment(double x)
+        public async Task<double> Increment(double x)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            return x + 1.0;
         }
 
-        public Task<RectangleInfo> GetRectData(Rectangle rect)
+        public async Task<RectangleInfo> GetRectData(Rectangle rect)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            return new RectangleInfo()
+            {
+                Field = rect.A * rect.B,
+                Perimeter = rect.A * 2.0 + rect.B * 2.0
+            };
         }
 
-        public Task<TriangleInfo> GetTriangleData(Triangle triangle)
+        public async Task<TriangleInfo> GetTriangleData(Triangle triangle)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            return new TriangleInfo()
+            {
+                 Field = 1.0,
+                 Height = 1.0
+            };
         }
 
-        public Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f)
+        public async Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            return new TriangleInfo()
+            {
+                Field = 1.0,
+                Height = 1.0
+            };
         }
 
-        public Task PushInfo(double x)
+        public async Task PushInfo(double x)
         {
-            throw new NotImplementedException();
+            await Context;
+
+            throw new Exception("Can't push info with parameter x = " + x);
         }
 
-        public Task Ping()
+        public async Task Ping()
         {
-            throw new NotImplementedException();
+            await Context;
+
+            Console.WriteLine("Ping");
+            Thread.Sleep(2000);
         }
 
         public void Close() { }

@@ -21,6 +21,21 @@ namespace RemoteActorsSample
             ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:4632").Result;
 
             Console.WriteLine("Result is: " + calculator.Add(5, 4).Result);
+            var rect = calculator.GetRectData(new Rectangle { A = 5, B = 6 }).Result;
+            Console.WriteLine("Pinging...");
+            calculator.Ping().Wait();
+            Console.WriteLine("Pinged");
+
+            try
+            {
+                calculator.PushInfo(5.5).Wait();
+            }
+            catch (Exception exc)
+            {
+                Console.WriteLine(exc);
+            }
+
+            Console.WriteLine("Rect field: " + rect.Field + ", per: " + rect.Perimeter);
 
             Console.Write("Press any key to exit... ");
             Console.ReadKey();

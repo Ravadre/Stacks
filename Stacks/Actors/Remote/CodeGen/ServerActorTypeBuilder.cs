@@ -57,8 +57,6 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ret);
             }
 
-            ImplementHandleMessage();
-
             return actorImplBuilder.CreateType();
              
         }
@@ -66,6 +64,7 @@ namespace Stacks.Actors.Remote.CodeGen
         private MethodBuilder CreateHandlerMethod(MethodInfo method)
         {
             var sendMethodTaskRet = method.ReturnType;
+            bool isNoParamTask = sendMethodTaskRet == typeof(Task);
             var sendMethodInnerRet = sendMethodTaskRet == typeof(Task)
                                         ? typeof(System.Reactive.Unit)
                                         : sendMethodTaskRet.GetGenericArguments()[0];
@@ -113,17 +112,28 @@ namespace Stacks.Actors.Remote.CodeGen
                     il.Emit(OpCodes.Ldfld, field);
                 }
 
-                il.Emit(OpCodes.Call, method);
+                il.EmitCall(OpCodes.Call, method, null);
             }
 
             il.Emit(OpCodes.Newobj, replyMessageType.GetConstructor(Type.EmptyTypes));
-            il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
-                                                  .MakeGenericMethod(sendMethodInnerRet), null);
+
+            if (isNoParamTask)
+            {
+                il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponseNoResult", BindingFlags.Instance | BindingFlags.NonPublic), null);
+            }
+            else
+            {
+                il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
+                                                      .MakeGenericMethod(sendMethodInnerRet), 
+                                          null);
+            }
 
             // } catch (Exception e) {
             il.BeginCatchBlock(typeof(Exception));
             var excMsgLocal = il.DeclareLocal(typeof(string));
             var replyMsgLocal = il.DeclareLocal(typeof(IReplyMessage<>).MakeGenericType(sendMethodInnerRet));
+
+            //var excMsgLocal = e.Message;
             il.EmitCall(OpCodes.Call, typeof(Exception).GetProperty("Message").GetGetMethod(), null);
             il.Emit(OpCodes.Stloc, excMsgLocal);
 
@@ -137,8 +147,18 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Ldloc, excMsgLocal);
             il.EmitCall(OpCodes.Callvirt, typeof(IReplyMessage<>).MakeGenericType(sendMethodInnerRet).GetMethod("SetError"), null);
             il.Emit(OpCodes.Ldloc, replyMsgLocal);
-            il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
-                                                .MakeGenericMethod(sendMethodInnerRet), null);
+           
+            if (isNoParamTask)
+            {
+                il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponseNoResult", BindingFlags.Instance | BindingFlags.NonPublic), null);
+            }
+            else
+            {
+                il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
+                                                      .MakeGenericMethod(sendMethodInnerRet), 
+                                          null);
+            }
+
 
             // }
             il.EndExceptionBlock();
@@ -147,21 +167,6 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Ret);
 
             return mb;
-        }
-
-        private void ImplementHandleMessage()
-        {
-            var method = actorImplBuilder.DefineMethod("HandleMessageAux", 
-                                                        MethodAttributes.Public | 
-                                                        MethodAttributes.HideBySig | 
-                                                        MethodAttributes.Virtual, 
-                                                    CallingConventions.HasThis, 
-                                                    typeof(void), 
-                                                    new[] { typeof(string), typeof(MemoryStream) });
-
-            var il = method.GetILGenerator();
-
-            il.Emit(OpCodes.Ret);
         }
     }
 }

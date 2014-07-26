@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks.Tcp;
@@ -69,11 +70,43 @@ namespace Stacks.Actors.Remote
             if (!handlers.TryGetValue(messageName, out handler))
             {
                 throw new Exception(
-                    string.Format("Client {0} sent message for method {1}, which has no handler registered",
-                    client.RemoteEndPoint, messageName));
+                    string.Format(
+                        "Client {0} sent message for method {1}, which has no handler registered",
+                        client.RemoteEndPoint, 
+                        messageName));
+
             }
 
             handler(client, reqId, ms);
+        }
+
+        protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse, IReplyMessage<Unit> msgToSend)
+        {
+            if (actorResponse == null)
+            {
+                Send(client, reqId, msgToSend);
+            }
+            else
+            {
+                actorResponse.ContinueWith(t =>
+                {
+                    try
+                    {
+                        t.Wait();
+                        msgToSend.SetResult(Unit.Default);
+                    }
+                    catch (AggregateException exc)
+                    {
+                        msgToSend.SetError(exc.InnerException.Message);
+                    }
+                    catch (Exception exc)
+                    {
+                        msgToSend.SetError(exc.Message);
+                    }
+
+                    Send(client, reqId, msgToSend);
+                });
+            }
         }
 
         protected void HandleResponse<R>(FramedClient client, long reqId, Task<R> actorResponse, IReplyMessage<R> msgToSend)

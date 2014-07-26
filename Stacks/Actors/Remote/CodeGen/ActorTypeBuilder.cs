@@ -49,18 +49,6 @@ namespace Stacks.Actors.Remote.CodeGen
 
         private void DefineMessageTypeForActorMethodParams(MethodInfo methodInfo)
         {
-            //if (methodInfo.GetParameters().Length == 1)
-            //{
-            //    var pType = methodInfo.GetParameters()[0].ParameterType;
-
-            //    if (pType.GetCustomAttribute(typeof(ProtoBuf.ProtoContractAttribute)) != null)
-            //    {
-            //        this.messageParamTypes[methodInfo.Name] = pType;
-            //        return;
-            //    }
-            //}
-
-
             var messageTypeName = methodInfo.Name + "Message";
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
 
@@ -96,6 +84,7 @@ namespace Stacks.Actors.Remote.CodeGen
             Type returnType = null;
 
             var returnTypeTask = methodInfo.ReturnType;
+            bool isEmptyReply = returnTypeTask == typeof(Task);
             if (returnTypeTask == typeof(Task))
                 returnType = typeof(System.Reactive.Unit);
             else
@@ -107,12 +96,6 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 returnType = genArgs[0];
             }
-
-            //if (returnType.GetCustomAttribute(typeof(ProtoBuf.ProtoContractAttribute)) != null)
-            //{
-            //    this.messageReturnTypes[methodInfo.Name] = returnType;
-            //    return;
-            //}
 
             var messageTypeName = methodInfo.Name + "MessageReply";
             var replyInterfaceType = typeof(IReplyMessage<>).MakeGenericType(returnType);
@@ -132,9 +115,13 @@ namespace Stacks.Actors.Remote.CodeGen
             var errfb = typeBuilder.DefineField("$ErrorMessage", typeof(string), FieldAttributes.Public);
             errfb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
 
-            var fb = typeBuilder.DefineField("@Return", returnType, FieldAttributes.Public);
-            fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 2 }));
+            FieldBuilder fb = null;
 
+            if (!isEmptyReply)
+            {
+                fb = typeBuilder.DefineField("@Return", returnType, FieldAttributes.Public);
+                fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 2 }));
+            }
 
             //GetResult()
             var getResultMb = typeBuilder.DefineMethod("GetResult", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
@@ -158,8 +145,15 @@ namespace Stacks.Actors.Remote.CodeGen
             // } else {
             // return @Return; }
             gril.MarkLabel(isOKLabel);
-            gril.Emit(OpCodes.Ldarg_0);
-            gril.Emit(OpCodes.Ldfld, fb);
+            if (!isEmptyReply)
+            {
+                gril.Emit(OpCodes.Ldarg_0);
+                gril.Emit(OpCodes.Ldfld, fb);
+            }
+            else
+            {
+                gril.EmitCall(OpCodes.Call, typeof(System.Reactive.Unit).GetProperty("Default", BindingFlags.Public | BindingFlags.Static).GetGetMethod(), null);
+            }
             gril.Emit(OpCodes.Ret); 
 
 
@@ -168,9 +162,12 @@ namespace Stacks.Actors.Remote.CodeGen
                 CallingConventions.HasThis, typeof(void), new[] { returnType });
             var sril = setResultMb.GetILGenerator();
 
-            sril.Emit(OpCodes.Ldarg_0);
-            sril.Emit(OpCodes.Ldarg_1);
-            sril.Emit(OpCodes.Stfld, fb);
+            if (!isEmptyReply)
+            {
+                sril.Emit(OpCodes.Ldarg_0);
+                sril.Emit(OpCodes.Ldarg_1);
+                sril.Emit(OpCodes.Stfld, fb);
+            }
             sril.Emit(OpCodes.Ret); 
 
             //SetError

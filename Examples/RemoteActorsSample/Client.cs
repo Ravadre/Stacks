@@ -17,15 +17,21 @@ namespace RemoteActorsSample
         public double Height { get; set; }
     }
 
+    [ProtoContract]
     public class Rectangle
     {
+        [ProtoMember(1)]
         public double A { get; set; }
+        [ProtoMember(2)]
         public double B { get; set; }
     }
 
+    [ProtoContract]
     public class RectangleInfo
     {
+        [ProtoMember(1)]
         public double Field { get; set; }
+        [ProtoMember(2)]
         public double Perimeter { get; set; }
     }
 
@@ -38,6 +44,11 @@ namespace RemoteActorsSample
         public double B { get; set; }
         [ProtoMember(3)]
         public double C { get; set; }
+    }
+
+    public interface ICalculatorActor2
+    {
+        Task<double> Multiply(double x, double y);
     }
 
     public interface ICalculatorActor : IActorClientProxy
