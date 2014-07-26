@@ -127,20 +127,56 @@ namespace Stacks.Actors.Remote.CodeGen
             var protoContractCtor = typeof(ProtoBuf.ProtoContractAttribute).GetConstructor(Type.EmptyTypes);
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(protoContractCtor, new object[0]));
 
-            var fb = typeBuilder.DefineField("@Return", returnType, FieldAttributes.Public);
             var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
-            fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
+
+            var errfb = typeBuilder.DefineField("$ErrorMessage", typeof(string), FieldAttributes.Public);
+            errfb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
+
+            var fb = typeBuilder.DefineField("@Return", returnType, FieldAttributes.Public);
+            fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 2 }));
 
             var getResultMb = typeBuilder.DefineMethod("GetResult", MethodAttributes.Virtual | MethodAttributes.Public | MethodAttributes.HideBySig,
                 CallingConventions.HasThis, returnType, Type.EmptyTypes);
             var gril = getResultMb.GetILGenerator();
+            var isOKLabel = gril.DefineLabel();
+
+            gril.Emit(OpCodes.Ldarg_0);
+            gril.Emit(OpCodes.Ldfld, errfb);
+            gril.Emit(OpCodes.Ldnull);
+            gril.Emit(OpCodes.Ceq);
+            //if($ErrorMessage != null) {
+            gril.Emit(OpCodes.Brtrue_S, isOKLabel);
+
+            // throw new Exception($ErrorMessage);
+            gril.Emit(OpCodes.Ldarg_0);
+            gril.Emit(OpCodes.Ldfld, errfb);
+            gril.Emit(OpCodes.Newobj, typeof(Exception).GetConstructor(new[] { typeof(string) }));
+            gril.Emit(OpCodes.Throw);
+
+            // } else {
+            // return @Return; }
+            gril.MarkLabel(isOKLabel);
             gril.Emit(OpCodes.Ldarg_0);
             gril.Emit(OpCodes.Ldfld, fb);
-            gril.Emit(OpCodes.Ret);
+            gril.Emit(OpCodes.Ret); 
 
 
             var createdType = typeBuilder.CreateType();
             this.messageReturnTypes[methodInfo.Name] = createdType;
+        }
+
+
+        protected FieldInfo GetFieldInfoFromProtobufMessage(Type t, int protoMessageIdx)
+        {
+            return t.GetFields()
+                    .First(fi =>
+                    {
+                        var a = fi.GetCustomAttribute<ProtoBuf.ProtoMemberAttribute>();
+                        if (a != null &&
+                            a.Tag == protoMessageIdx)
+                            return true;
+                        return false;
+                    });
         }
     }
 }

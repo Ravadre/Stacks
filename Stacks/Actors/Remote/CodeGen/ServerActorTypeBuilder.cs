@@ -12,15 +12,20 @@ namespace Stacks.Actors.Remote.CodeGen
 {
     public class ServerActorTypeBuilder : ActorTypeBuilder
     {
+        private Type templateType;
+        private Type actorType;
+        private TypeBuilder actorImplBuilder;
+
         public ServerActorTypeBuilder(string assemblyName)
             : base(assemblyName)
         { }
 
         public Type CreateActorType(Type actorType)
         {
-            var templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
+            templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
+            this.actorType = actorType;
 
-            var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorType.Name, TypeAttributes.Public,
+            actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorType.Name, TypeAttributes.Public,
                                         templateType, Type.EmptyTypes);
 
             {
@@ -37,7 +42,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 foreach (var method in actorType.FindValidProxyMethods())
                 {
-                    var newMethod = CreateHandlerMethod(actorImplBuilder, method);
+                    var newMethod = CreateHandlerMethod(method);
 
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldfld, templateType.GetField("handlers", BindingFlags.Instance | BindingFlags.NonPublic));
@@ -51,13 +56,13 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ret);
             }
 
-            ImplementHandleMessage(actorImplBuilder);
+            ImplementHandleMessage();
 
             return actorImplBuilder.CreateType();
              
         }
 
-        private MethodBuilder CreateHandlerMethod(TypeBuilder actorImplBuilder, MethodInfo method)
+        private MethodBuilder CreateHandlerMethod(MethodInfo method)
         {
             var mb = actorImplBuilder.DefineMethod(method.Name + "Handler",
                                                  MethodAttributes.Private |
@@ -70,8 +75,24 @@ namespace Stacks.Actors.Remote.CodeGen
 
             var il = mb.GetILGenerator();
 
+            var messageLocal = il.DeclareLocal(messageType);
+
             il.Emit(OpCodes.Ldarg_1);
             il.EmitCall(OpCodes.Call, desMethod, null);
+            il.Emit(OpCodes.Stloc_0);
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+
+            var sendParams = method.GetParameters();
+            for (int i = 1; i <= sendParams.Length; ++i)
+            {
+                var field = GetFieldInfoFromProtobufMessage(messageType, i);
+                il.Emit(OpCodes.Ldloc_0);
+                il.Emit(OpCodes.Ldfld, field);
+            }
+
+            il.Emit(OpCodes.Call, method);
             il.Emit(OpCodes.Pop);
 
             il.Emit(OpCodes.Ret);
@@ -79,9 +100,9 @@ namespace Stacks.Actors.Remote.CodeGen
             return mb;
         }
 
-        private void ImplementHandleMessage(TypeBuilder actorBuilder)
+        private void ImplementHandleMessage()
         {
-            var method = actorBuilder.DefineMethod("HandleMessageAux", 
+            var method = actorImplBuilder.DefineMethod("HandleMessageAux", 
                                                         MethodAttributes.Public | 
                                                         MethodAttributes.HideBySig | 
                                                         MethodAttributes.Virtual, 

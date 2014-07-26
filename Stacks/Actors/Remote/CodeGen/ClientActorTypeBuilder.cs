@@ -50,19 +50,6 @@ namespace Stacks.Actors.Remote.CodeGen
             return actorImplBuilder.CreateType();
         }
 
-        private FieldInfo GetFieldInfoFromProtobufMessage(Type t, int protoMessageIdx)
-        {
-            return t.GetFields()
-                    .First(fi =>
-                    {
-                        var a = fi.GetCustomAttribute<ProtoBuf.ProtoMemberAttribute>();
-                        if (a != null &&
-                            a.Tag == protoMessageIdx)
-                            return true;
-                        return false;
-                    });
-        }
-
         private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod)
         {
             var il = mb.GetILGenerator();
