@@ -24,10 +24,12 @@ namespace RemoteActorsSample
         public double y;
     }
 
-    public class CalculatorActor: ICalculatorActor
+    public class CalculatorActor: Actor, ICalculatorActor
     {
-        public Task<double> Add(double x, double y)
+        public async Task<double> Add(double x, double y)
         {
+            await Context;
+
             throw new NotImplementedException();
         }
 

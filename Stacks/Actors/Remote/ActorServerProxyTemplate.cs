@@ -90,6 +90,10 @@ namespace Stacks.Actors.Remote
                     {
                         msgToSend.SetResult(t.Result);
                     }
+                    catch (AggregateException exc)
+                    {
+                        msgToSend.SetError(exc.InnerException.Message);
+                    }
                     catch (Exception exc)
                     {
                         msgToSend.SetError(exc.Message);
