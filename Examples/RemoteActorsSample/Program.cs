@@ -23,7 +23,7 @@ namespace RemoteActorsSample
             // Returned reference can be used to stop server.
             var actorServer = ActorServerProxy.Create<CalculatorActor>("tcp://*:4632");
 
-            // To create client proxy and connect to server just pass an interface which describes
+            // To create client proxy and connect to the server just pass an interface which describes
             // what method actor supports. Returned object implements given interface,
             // so one can use one interface to call local and remote actors.
             // Returned task is signalled when actor successfully connects to the server.
@@ -46,8 +46,8 @@ namespace RemoteActorsSample
 
 
             {
-                // Messages can be sent just by calling methods in the interface.
-                // Returned Tasks will be notified when network response will be received
+                // Messages can be sent just by calling methods.
+                // Returned tasks will be notified when network response will be received
                 // from server.
                 Console.WriteLine();
                 Console.WriteLine("5 + 4 = " + calculator.Add(5, 4).Result);
