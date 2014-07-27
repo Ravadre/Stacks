@@ -126,14 +126,13 @@
       <Project>{3db3e2c1-08df-4fa5-a3b1-bfbaa8ac513c}</Project>
       <Name>Stacks.MessagePack</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Stacks.ProtoBuf\Stacks.ProtoBuf.csproj">
-      <Project>{27637df0-fda6-409d-879e-35ab309ee0e6}</Project>
-      <Name>Stacks.ProtoBuf</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Stacks\Stacks.csproj">
       <Project>{9e0d5c52-ad78-4a5e-82ad-289d272a111d}</Project>
       <Name>Stacks</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Remote\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
