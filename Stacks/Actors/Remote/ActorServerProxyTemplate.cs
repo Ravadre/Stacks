@@ -10,8 +10,9 @@ using Stacks.Tcp;
 
 namespace Stacks.Actors.Remote
 {
-    public abstract class ActorServerProxyTemplate<T>
+    public abstract class ActorServerProxyTemplate<T> : IActorServerProxy
     {
+        protected IExecutor executor;
         protected SocketServer server;
         protected List<FramedClient> clients;
         protected T actorImplementation;
@@ -20,14 +21,27 @@ namespace Stacks.Actors.Remote
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
+            this.executor = new ActionBlockExecutor();
             this.serializer = new ProtoBufStacksSerializer();
             this.clients = new List<FramedClient>();
             this.handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
             this.actorImplementation = actorImplementation;
 
-            server = new SocketServer(bindEndPoint);
+            server = new SocketServer(executor, bindEndPoint);
             server.Connected.Subscribe(ClientConnected);
             server.Start();
+        }
+
+        public void Stop()
+        {
+            server.Stop();
+            executor.Enqueue(() =>
+                {
+                    foreach (var client in clients)
+                    {
+                        client.Close();
+                    }
+                });
         }
 
         private void ClientConnected(SocketClient socketClient)

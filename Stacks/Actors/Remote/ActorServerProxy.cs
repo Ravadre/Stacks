@@ -14,31 +14,31 @@ namespace Stacks.Actors.Remote
 {
     public class ActorServerProxy
     {
-        public static ActorServerProxyTemplate<T> Create<T>(IPEndPoint bindEndPoint)
+        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint)
             where T: new()
         {
             return Create(bindEndPoint, () => new T());
         }
 
-        public static ActorServerProxyTemplate<T> Create<T>(string bindEndPoint)
+        public static IActorServerProxy Create<T>(string bindEndPoint)
             where T: new()
         {
             return Create<T>(IPHelpers.Parse(bindEndPoint), () => new T());
         }
 
-        public static ActorServerProxyTemplate<T> Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
+        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
         {
             return Create(factory(), bindEndPoint);
         }
 
-        public static ActorServerProxyTemplate<T> Create<T>(string bindEndPoint, Func<T> factory)
+        public static IActorServerProxy Create<T>(string bindEndPoint, Func<T> factory)
         {
             return Create(factory(), IPHelpers.Parse(bindEndPoint));
         }
 
         private static ServerActorTypeBuilder tBuilder;
 
-        private static ActorServerProxyTemplate<T> Create<T>(T actorImplementation, IPEndPoint bindEndPoint)
+        private static IActorServerProxy Create<T>(T actorImplementation, IPEndPoint bindEndPoint)
         {
             var aType = actorImplementation.GetType();
             tBuilder = new ServerActorTypeBuilder("ActorServerProxy_ " + aType.FullName);

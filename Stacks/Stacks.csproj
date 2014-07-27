@@ -100,6 +100,7 @@
     <Compile Include="Actors\Remote\CodeGen\Helpers.cs" />
     <Compile Include="Actors\Remote\CodeGen\ServerActorTypeBuilder.cs" />
     <Compile Include="Actors\Remote\IActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\IActorServerProxy.cs" />
     <Compile Include="Actors\Remote\IReplyMessage.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />

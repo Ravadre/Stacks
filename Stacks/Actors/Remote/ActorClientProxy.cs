@@ -23,7 +23,7 @@ namespace Stacks.Actors
                     if (t.Exception == null)
                         return (T)(object)t.Result;
                     else
-                        throw t.Exception;
+                        throw t.Exception.InnerException;
                 });
         }
 

@@ -27,6 +27,8 @@ namespace RemoteActorsSample
 
     public class CalculatorActor: Actor, ICalculatorActor
     {
+        private Stack<double> stack = new Stack<double>();
+
         public async Task<double> Add(double x, double y)
         {
             await Context;
@@ -41,14 +43,14 @@ namespace RemoteActorsSample
             return x - y;
         }
 
-        public async Task<double> Increment(double x)
+        public async Task<int> Increment(int x)
         {
             await Context;
 
-            return x + 1.0;
+            return ++x;
         }
 
-        public async Task<RectangleInfo> GetRectData(Rectangle rect)
+        public async Task<RectangleInfo> CalculateRectangle(Rectangle rect)
         {
             await Context;
 
@@ -59,41 +61,49 @@ namespace RemoteActorsSample
             };
         }
 
-        public async Task<TriangleInfo> GetTriangleData(Triangle triangle)
-        {
-            await Context;
-
-            return new TriangleInfo()
-            {
-                 Field = 1.0,
-                 Height = 1.0
-            };
-        }
-
-        public async Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f)
-        {
-            await Context;
-
-            return new TriangleInfo()
-            {
-                Field = 1.0,
-                Height = 1.0
-            };
-        }
-
-        public async Task PushInfo(double x)
-        {
-            await Context;
-
-            throw new Exception("Can't push info with parameter x = " + x);
-        }
-
         public async Task Ping()
         {
             await Context;
 
             Console.WriteLine("Ping");
-            Thread.Sleep(2000);
+            Thread.Sleep(1000);
+        }
+
+        public async Task PushNumber(double x)
+        {
+            await Context;
+
+            stack.Push(x);
+        }
+
+        public async Task<double> PopNumber()
+        {
+            await Context;
+
+            return stack.Pop();
+        }
+
+        public async Task<double> Mean(double[] xs)
+        {
+            await Context;
+
+            return xs.Average();
+        }
+
+        public async Task<double> MeanEnum(IEnumerable<double> xs)
+        {
+            await Context;
+
+            return xs.Average();
+        }
+        
+        public Task PingAsync()
+        {
+            return Task.Run(() =>
+                {
+                    Console.WriteLine("Ping async");
+                    Thread.Sleep(1000);
+                });
         }
 
         public void Close() { }

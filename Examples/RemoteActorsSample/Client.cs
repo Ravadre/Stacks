@@ -8,15 +8,6 @@ using Stacks.Actors;
 
 namespace RemoteActorsSample
 {
-     [ProtoContract]
-    public class TriangleInfo
-    {
-        [ProtoMember(1)]
-        public double Field { get; set; }
-        [ProtoMember(2)]
-        public double Height { get; set; }
-    }
-
     [ProtoContract]
     public class Rectangle
     {
@@ -35,33 +26,21 @@ namespace RemoteActorsSample
         public double Perimeter { get; set; }
     }
 
-    [ProtoContract]
-    public class Triangle
-    {
-        [ProtoMember(1)]
-        public double A { get; set; }
-        [ProtoMember(2)]
-        public double B { get; set; }
-        [ProtoMember(3)]
-        public double C { get; set; }
-    }
-
-    public interface ICalculatorActor2
-    {
-        Task<double> Multiply(double x, double y);
-    }
-
     public interface ICalculatorActor : IActorClientProxy
     {
         Task<double> Add(double x, double y);
         Task<double> Subtract(double x, double y);
-        Task<double> Increment(double x);
+        Task<int> Increment(int x);
 
-        Task<RectangleInfo> GetRectData(Rectangle rect);
-        Task<TriangleInfo> GetTriangleData(Triangle triangle);
-        Task<TriangleInfo> GetTriangleData2(Triangle triangle, double f);
+        Task<RectangleInfo> CalculateRectangle(Rectangle rect);
 
-        Task PushInfo(double x);
+        Task PushNumber(double x);
+        Task<double> PopNumber();
         Task Ping();
+
+        Task<double> Mean(double[] xs);
+        Task<double> MeanEnum(IEnumerable<double> xs);
+
+        Task PingAsync();
     }
 }
