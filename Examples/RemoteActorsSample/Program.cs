@@ -183,11 +183,27 @@ namespace RemoteActorsSample
                 calculator2.Close();
             }
 
+            {
+                // Created actor proxy is, from the user's perspective just an interface,
+                // which can also be implemented by local actor, therefore,
+                // where the code executes is fully transparent for other methods.
+                ICalculatorActor localCalc = new CalculatorActor();
+
+                Console.WriteLine();
+                Console.WriteLine("Remote: 4 + 8 = " + Add(calculator, 4, 8));
+                Console.WriteLine("Local: 4 + 8 = " + Add(localCalc, 4, 8));
+            }
+
 
             actorServer.Stop();
             calculator.Close();
 
             Console.ReadKey();
+        }
+
+        private static double Add(ICalculatorActor calculator, double x, double y)
+        {
+            return calculator.Add(x, y).Result;
         }
     }
 }
