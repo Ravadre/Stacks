@@ -2,19 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
-using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Tcp;
+using ProtoBuf;
+using System.Reactive;
+using System.Net;
 
-namespace Stacks.Tcp
+namespace Stacks.Actors
 {
-    public abstract class MessageClientBase : IMessageClient
-    {
+    class ActorRemoteMessageClient
+    {  
         protected readonly IFramedClient framedClient;
-        protected readonly IMessageIdCache messageIdCache;
         protected readonly IStacksSerializer packetSerializer;
-
 
         public IExecutor Executor
         {
@@ -51,32 +51,52 @@ namespace Stacks.Tcp
             get { return framedClient.RemoteEndPoint; }
         }
 
-        public MessageClientBase(IFramedClient client, IMessageIdCache messageIdCache,
-                                 IStacksSerializer packetSerializer)
-        {
-            this.framedClient = client;
-            this.messageIdCache = messageIdCache;
-            this.packetSerializer = packetSerializer;
-        }
-
         public IObservable<Unit> Connect(IPEndPoint endPoint)
         {
             return framedClient.Connect(endPoint);
         }
 
-        public IObservable<Unit> Connect(string endPoint)
+        public event Action<long, MemoryStream> MessageReceived;
+
+        public ActorRemoteMessageClient(IFramedClient client)
         {
-            return Connect(IPHelpers.Parse(endPoint));
+            this.framedClient = client;
+            this.packetSerializer = new ProtoBufStacksSerializer();
+
+            this.framedClient.Received.Subscribe(PacketReceived);
         }
 
-        public unsafe void Send<T>(T obj)
+
+
+        private unsafe void PacketReceived(ArraySegment<byte> buffer)
         {
-            var messageId = messageIdCache.GetMessageId<T>();
+            fixed (byte* b = &buffer.Array[buffer.Offset])
+            {
+                long requestId = *((long*)b);
+               
+                using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
+                {
+                    OnMessageReceived(requestId, ms);
+                }
+            }
+        }
+
+        private void OnMessageReceived(long requestId, MemoryStream ms)
+        {
+            var h = MessageReceived;
+            if (h != null)
+                h(requestId, ms);
+        }
+
+        public unsafe void Send<T>(string msgName, long requestId, T obj)
+        {
+            var msgNameBytes = Encoding.ASCII.GetBytes(msgName);
 
             using (var ms = new MemoryStream())
             {
-                ms.SetLength(4);
-                ms.Position = 4;
+                ms.SetLength(12);
+                ms.Position = 12;
+                ms.Write(msgNameBytes, 0, msgNameBytes.Length);
                 this.packetSerializer.Serialize(obj, ms);
                 ms.Position = 0;
 
@@ -84,27 +104,12 @@ namespace Stacks.Tcp
 
                 fixed (byte* buf = buffer)
                 {
-                    int* iBuf = (int*)buf;
-                    *iBuf = messageId;
+                    *(long*)buf = requestId;
+                    *(int*)(buf + 8) = msgNameBytes.Length;
                 }
 
                 this.framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
             }
-        }
-
-        public void PreLoadTypesFromAssemblyOfType<T>()
-        {
-            messageIdCache.PreLoadTypesFromAssemblyOfType<T>();
-        }
-
-        public void PreLoadType<T>()
-        {
-            messageIdCache.PreLoadType<T>();
-        }
-
-        public void PreLoadType(Type type)
-        {
-            messageIdCache.PreLoadType(type);
         }
 
         public void Close()

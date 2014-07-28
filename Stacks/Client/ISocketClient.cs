@@ -20,6 +20,7 @@ namespace Stacks
         IPEndPoint LocalEndPoint { get; }
 
         IObservable<Unit> Connect(IPEndPoint remoteEndPoint);
+        IObservable<Unit> Connect(string remoteEndPoint);
         void Close();
     }
 }

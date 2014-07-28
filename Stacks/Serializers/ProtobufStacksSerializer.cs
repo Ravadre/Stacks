@@ -10,10 +10,10 @@ using ProtoBuf;
 namespace Stacks
 {
     public class ProtoBufStacksSerializer : IStacksSerializer
-    { 
+    {
         public ProtoBufStacksSerializer()
         {
-            
+
         }
 
         public void Initialize()
