@@ -210,7 +210,7 @@ type Weather() =
 ```
 (See more samples in [Examples](/Examples) directory)
 
-Just like with `C#`'s version, awaiting other tasks (with `let!` and `do!` keywords is fully supported.
+Just like with `C#`'s version, awaiting other tasks (with `let!` and `do!` keywords) is fully supported.
 
 ### Remoting ###
 One of the Stacks biggest feature is a merge of its network and actor concepts. Through `ActorClientProxy` and `ActorServerProxy` it is possible to easily create an actor server and a proxy. Server is responsible for handling network from a proxy and execute incoming commands on an actor context, while proxy is an implementation which will redirect all methods to this server. 
