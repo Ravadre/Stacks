@@ -23,6 +23,8 @@ namespace Stacks
 
         public event Action<Exception> Error;
           
+        public string Name { get { return name; } }
+
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
         { }
@@ -33,7 +35,7 @@ namespace Stacks
 
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
-            this.name = name;
+            this.name = name == null ? string.Empty : name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
          
             if (settings.QueueBoundedCapacity <= 0)
@@ -112,6 +114,16 @@ namespace Stacks
         {
             if (!isStopping)
                 col.Add(action);
+        }
+
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return ExecutorHelper.PostTask(this, action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return ExecutorHelper.PostTask(this, func);
         }
 
         public Task Stop()

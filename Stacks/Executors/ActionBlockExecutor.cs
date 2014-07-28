@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.PlatformServices;
@@ -23,6 +24,8 @@ namespace Stacks
 
         public event Action<Exception> Error;
 
+        public string Name { get { return name; } }
+
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
         { }
@@ -33,7 +36,7 @@ namespace Stacks
 
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
-            this.name = name;
+            this.name = name == null ? string.Empty : name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
@@ -85,6 +88,16 @@ namespace Stacks
             }
         }
 
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return ExecutorHelper.PostTask(this, action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return ExecutorHelper.PostTask(this, func);
+        }
+
         public void Enqueue(Action action)
         {
             if (!queue.Post(action))
@@ -126,7 +139,7 @@ namespace Stacks
         public override string ToString()
         {
             return "ActionBlock Executor " +
-                (name == null ? "" : string.Format("({0})", name));
+                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
         }
 
 

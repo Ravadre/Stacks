@@ -14,5 +14,6 @@ namespace Stacks
 
         void PreLoadTypesFromAssemblyOfType<T>();
         void PreLoadType<T>();
+        void PreLoadType(Type type);
     }
 }

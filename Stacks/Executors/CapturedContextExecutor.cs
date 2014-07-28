@@ -21,10 +21,12 @@ namespace Stacks
         public event Action<Exception> Error;
 #pragma warning restore 67
 
+        public string Name { get { return name; } }
+
         public CapturedContextExecutor(string name, SynchronizationContext context)
         {
             Error = null;
-            this.name = name;
+            this.name = name == null ? string.Empty : name;
             this.context = context;
             tcs = new TaskCompletionSource<int>();
         }
@@ -60,10 +62,20 @@ namespace Stacks
             throw new NotSupportedException();
         }
 
+        public Task<System.Reactive.Unit> PostTask(Action action)
+        {
+            return ExecutorHelper.PostTask(this, action);
+        }
+
+        public Task<T> PostTask<T>(Func<T> func)
+        {
+            return ExecutorHelper.PostTask(this, func);
+        }
+
         public override string ToString()
         {
-            return "CapturedContext Executor" +
-                (name == null ? "" : string.Format("({0})", name));
+            return "CapturedContext Executor " +
+                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
         }
 
 

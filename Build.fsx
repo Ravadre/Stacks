@@ -4,12 +4,24 @@ open Fake
 
 let configuration = getBuildParamOrDefault "configuration" "Release"
 let platform = getBuildParamOrDefault "buildPlatform" "Any CPU"
+let betaVer = getBuildParamOrDefault "betaVer" ""
 
 let dir (project) = 
     project @@ "bin" @@ (if platform = "Any CPU" then "" else platform) @@ configuration
 
+let tryDelDir path = 
+    try
+        if System.IO.Directory.Exists(path) then
+            System.IO.Directory.Delete(path, true)
+    with
+    | _ -> ()
+
 let getVersion file = 
-    System.Reflection.AssemblyName.GetAssemblyName(file).Version.ToString()
+    let betaVer = if betaVer <> "" then "-" + betaVer else betaVer
+    let v = System.Reflection.AssemblyName.GetAssemblyName(file).Version
+
+    string(v.Major) + "." + string(v.Minor) + "." + string(v.Build) + betaVer
+
 
 Target "Build" (fun _ ->
     RestorePackages()
@@ -38,7 +50,7 @@ let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile =
     let dllsWithPath = dllsToCopy |> Seq.map(fun s -> srcDir @@ s)
     let mainDllWithPath = srcDir @@ mainDll 
 
-    CleanDir tmp
+    tryDelDir tmp
     ensureDirectory (tmp @@ "lib/net45")
     CopyFiles (tmp @@ "lib/net45") dllsWithPath
     NuGet (fun p ->
@@ -59,15 +71,9 @@ Target "Nuget" (fun _ ->
                  ["Stacks.dll"] 
                  "Stacks.dll"  
                  [ ("Microsoft.Tpl.Dataflow", "4.5.14" );
-                   ("Rx-Main", "2.2.4")]
-                 "Stacks/stacks.nuspec"
-
-    BuildPackage "Stacks.ProtoBuf"
-                 ["Stacks.ProtoBuf.dll"]
-                 "Stacks.ProtoBuf.dll"
-                 [ ("Stacks", stacksVer )
+                   ("Rx-Main", "2.2.4");
                    ("protobuf-net", "2.0.0.668") ]
-                 "Stacks.ProtoBuf/stacks.protobuf.nuspec"
+                 "Stacks/stacks.nuspec"
 
     BuildPackage "Stacks.MessagePack"
                  ["Stacks.MessagePack.dll"]
@@ -75,6 +81,13 @@ Target "Nuget" (fun _ ->
                  [ ("Stacks", stacksVer )
                    ("MsgPack.Cli", "0.4.3") ]
                  "Stacks.MessagePack/stacks.messagepack.nuspec"
+
+    BuildPackage "Stacks.FSharp"
+                 [ "Stacks.FSharp.dll";
+                   "Stacks.FSharp.xml" ]
+                 "Stacks.FSharp.dll"
+                 [ ("Stacks", stacksVer ) ]
+                 "Stacks.FSharp/Stacks.FSharp.nuspec"
 )
 
 Target "All" DoNothing

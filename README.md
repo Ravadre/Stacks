@@ -3,7 +3,11 @@ Stacks - Actor based networking library
 --------------------------------------
 [![Build status](https://ci.appveyor.com/api/projects/status/uxi69l39gcl63tsn)](https://ci.appveyor.com/project/Ravadre/stacks) [![NuGet](http://img.shields.io/nuget/v/Stacks.svg?style=flat)](http://www.nuget.org/packages/Stacks/)
 
-Stacks is a small networking library. With Stacks it is very easy to create a high performance socket client or server without worrying about synchronization or threading. Stacks is highly configurable, features like tls/ssl, framing or serialization can be composed together easily.
+Stacks is a small networking and actor library. With Stacks it is very easy to create high performance socket client or server without worrying about synchronization or threading. Stacks is highly configurable, features like tls/ssl, framing or serialization can be composed together easily. 
+
+Stacks introduce actor pattern in a completely new way by leveraging C#'s async/await pattern as well as F#'s Async workflows. 
+
+Actors can be used for in-proc communication as well as for IPC. This makes Stacks a good choice when implementing system which must be able to scale, by introducing parallel and distributed techniques.
 
 Build
 -----
@@ -26,32 +30,8 @@ Concepts
 --------
 --------------------------
 
-### Actors ###
+## Network ##
 
-Everything on Stacks uses lightweight implementation of actor model underneath. Actors in Stacks, instead of passing arbitrary messages, pass only one type of message -- `Action`. Passing `Action` to an actor means that it should be executed in it's context and that is should be synchronized with other messages.
-
-Sample actor, which implements behavior for single message:
-
-```cs
-//One of the ways of defining an actor is to 
-//inherit from Actor class
-class Formatter : Actor
-{
-    //Because every call has to be scheduled on
-    //actor's context, answer will not be ready instantly,
-    //so Task<T> is returned.
-    public async Task<string> SayHello(string name)
-    {
-        //Code after this await will be run
-        //on actor's context.
-        await Context;
-
-        //When an actor wants to reply to request, it just
-        //has to return the response.
-        return "Hello " + name + "!";
-    }
-}
-```
 
 ### Protocol layers ###
 
@@ -175,6 +155,100 @@ Note that `IClientPacketHandler` interface is automatically implemented and expo
 Also, no casting is required in user code, which makes the code more robust.
 
 By default, handlers are called on socket's context, but it is very easy to reschedule computation onto different executor using `.ObserveOn` method. Notice, that all `Stacks` concepts like `IExecutor` or `ActorContext` support Reactive extension's scheduling patterns. 
+
+## Actors ##
+
+Everything on Stacks uses lightweight implementation of actor model underneath. Actors in Stacks, instead of passing arbitrary messages, pass only one type of message -- `Action`. Passing `Action` to an actor means that it should be executed in it's context and that is should be synchronized with other messages.
+
+Sample actor, which implements behavior for single message:
+
+```cs
+//One of the ways of defining an actor is to 
+//inherit from Actor class
+class Formatter : Actor
+{
+    //Because every call has to be scheduled on
+    //actor's context, answer will not be ready instantly,
+    //so Task<T> is returned.
+    public async Task<string> SayHello(string name)
+    {
+        //Code after this await will be run
+        //on actor's context.
+        await Context;
+
+        //When an actor wants to reply to request, it just
+        //has to return the response.
+        return "Hello " + name + "!";
+    }
+}
+```
+
+Actor's `Context` is responsible for it's special behavior. Code to be executed can be `Enqueue`'d oraz `Post`'ed to `Context` and it will make sure that the code will be executed in correct order and that execution will be serial (even if it will be executed on different threads, no race condition or dirty reads can occur). Because `Context` is awaitable, instead of manually posting delegates to it, one can leverage async / await pattern to easily schedule any work on it. It is also legal to await other tasks inside actor methods, Stacks will automatically make sure that rest of the code is scheduled back to the right `Context`.
+
+### F# ###
+Stacks comes with wrapper which simplifies working with it in `F#`. After importing `Stacks.FSharp` it is possible to easily use
+`Async` module to work with Stack's actors.
+
+```fs
+type Weather() = 
+    let actor = ActorContext("Weather")
+    let httpClient = new HttpClient()
+
+    let xn s = XName.Get(s)
+
+    member this.GetTemperature(city: string) =
+        actor.RunAsync(async {
+            let! response = sprintf "http://api.openweathermap.org/data/2.5/\
+                                     weather?q=%s&mode=xml&units=metric" city
+                            |> httpClient.GetStringAsync
+                            |> Async.AwaitTask
+
+            return double (XDocument.Parse(response)
+                                    .Element(xn"current")
+                                    .Element(xn"temperature")
+                                    .Attribute(xn"value"))
+        })
+```
+(See more samples in [Examples](/Examples) directory)
+
+Just like with `C#`'s version, awaiting other tasks (with `let!` and `do!` keywords) is fully supported.
+
+### Remoting ###
+One of the Stacks biggest feature is a merge of its network and actor concepts. Through `ActorClientProxy` and `ActorServerProxy` it is possible to easily create an actor server and a proxy. Server is responsible for handling network from a proxy and execute incoming commands on an actor context, while proxy is an implementation which will redirect all methods to this server. 
+
+As with previous implementations, Stacks leverages code emitting to avoid reflection calls during execution. 
+
+Sample code which implements simple actor with only one method looks like this:
+
+```cs
+public interface ICalculatorActor
+{
+    Task<double> Add(double x, double y);
+}
+
+public class CalculatorActor: Actor, ICalculatorActor
+{
+    public async Task<double> Add(double x, double y)
+    {
+        await Context;
+        
+        return x + y;
+    }
+}
+
+var actorServer = ActorServerProxy.Create<CalculatorActor>("tcp://*:4632");
+ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://localhost:4632").Result;
+
+var result = calculator.Add(5, 4).Result;
+```
+
+Notice few key things:
+
+ * Compiled proxy implements `ICalculatorActor` just like 'normal' implementation, so there is no difference in using remote and local actors. For the user, it is *transparent* if actor is implemented in-proc or out-proc.
+ * Local actors use `Task<T>` to reflect, that execution was scheduled on a different thread and the task is signaled when computation has finished. For remote actors, tasks covers whole process of packing parameters, sending them to the server, waiting for response and de-serializing it.
+ * Remote actors obey the same rules that local do. Single actor instance is used per server, so there is no difference in keeping state etc., although of course introducing network communication introduces new problems.
+ * Remote actors use `ProtoBuf` to serialize parameters and responses. Therefore, all collections and built-in types are supported (like string, int, double, IEnumerable<T>) out of the box, for custom types, they should be decorated with appropriate attributes. Consult [Sample](/Examples/RemoteActorsSample/Program.cs) for more information.
+ * Underneath, message types and code for serialization and de-serialization is dynamically emitted, which means that reflection is not used to serialize messages every time.
 
 Copyright and License
 ---------------------

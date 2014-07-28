@@ -13,6 +13,8 @@ namespace Stacks.Actors
         bool IsCompleted { get; }
 
         void Post(Action action);
+        Task<System.Reactive.Unit> PostTask(Action action);
+        Task<T> PostTask<T>(Func<T> func);
 
         IActorContext GetAwaiter();
         void GetResult();

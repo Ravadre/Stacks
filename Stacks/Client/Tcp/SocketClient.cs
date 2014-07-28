@@ -106,6 +106,11 @@ namespace Stacks.Tcp
             this.executor = executor;
         }
 
+        public IObservable<Unit> Connect(string remoteEndPoint)
+        {
+            return Connect(IPHelpers.Parse(remoteEndPoint));
+        }
+
         public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
@@ -269,11 +274,18 @@ namespace Stacks.Tcp
 
             executor.Enqueue(() =>
                 {
-                    AddBufferToBufferList(buffer);
-
-                    if (!isSending)
+                    try
                     {
-                        StartSending();
+                        AddBufferToBufferList(buffer);
+
+                        if (!isSending)
+                        {
+                            StartSending();
+                        }
+                    }
+                    catch (Exception exn)
+                    {
+                        HandleDisconnection(exn);
                     }
                 });
         }

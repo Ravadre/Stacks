@@ -55,6 +55,9 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="protobuf-net">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core">
@@ -84,8 +87,20 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Actors\Actor.cs" />
+    <Compile Include="Actors\Remote\ActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\IActorContext.cs" />
+    <Compile Include="Actors\Remote\ActorRemoteMessageClient.cs" />
+    <Compile Include="Actors\Remote\ActorServerProxy.cs" />
+    <Compile Include="Actors\Remote\ActorServerProxyTemplate.cs" />
+    <Compile Include="Actors\Remote\CodeGen\ActorTypeBuilder.cs" />
+    <Compile Include="Actors\Remote\CodeGen\ClientActorTypeBuilder.cs" />
+    <Compile Include="Actors\Remote\CodeGen\Helpers.cs" />
+    <Compile Include="Actors\Remote\CodeGen\ServerActorTypeBuilder.cs" />
+    <Compile Include="Actors\Remote\IActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\IActorServerProxy.cs" />
+    <Compile Include="Actors\Remote\IReplyMessage.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />
     <Compile Include="Client\IFramedClient.cs" />
@@ -106,13 +121,16 @@
     <Compile Include="Executors\BusyWaitExecutor.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
+    <Compile Include="Executors\ExecutorHelper.cs" />
     <Compile Include="Executors\IExecutor.cs" />
+    <Compile Include="IPHelpers.cs" />
     <Compile Include="MessageClient\ImperativeMessageIdCache.cs" />
     <Compile Include="MessageClient\IMessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdRegistration.cs" />
     <Compile Include="MessageClient\ReactiveMessageReceiverCreator.cs" />
     <Compile Include="ResizableCyclicBuffer.cs" />
+    <Compile Include="Serializers\ProtobufStacksSerializer.cs" />
     <Compile Include="Serializers\StacksSerializationHandler.cs" />
     <Compile Include="Serializers\IMessageHandler.cs" />
     <Compile Include="Serializers\IStacksSerializer.cs" />
@@ -123,6 +141,7 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
