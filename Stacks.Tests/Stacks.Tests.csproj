@@ -108,6 +108,8 @@
     <Compile Include="IPHelpersTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Client\RawBytesClientTests.cs" />
+    <Compile Include="Remote\ConnectionTests.cs" />
+    <Compile Include="Remote\Utils.cs" />
     <Compile Include="Serialization\MessagePackSerializerTests.cs" />
     <Compile Include="Serialization\ProtoBufSerializerTests.cs" />
     <Compile Include="Serialization\SerializationHandlerTests.cs" />
@@ -131,9 +133,7 @@
       <Name>Stacks</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Remote\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

@@ -10,7 +10,7 @@ using System.Reactive.Threading.Tasks;
 using Stacks.Tcp;
 using System.Reactive.Linq;
 
-namespace Stacks.Actors.Remote
+namespace Stacks.Actors
 {
     public class ActorServerProxy
     {

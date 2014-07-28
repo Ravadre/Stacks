@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Stacks.Tcp;
 
-namespace Stacks.Actors.Remote
+namespace Stacks.Actors
 {
     public abstract class ActorServerProxyTemplate<T> : IActorServerProxy
     {
@@ -18,6 +18,8 @@ namespace Stacks.Actors.Remote
         protected T actorImplementation;
         protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
         protected IStacksSerializer serializer;
+
+        public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
