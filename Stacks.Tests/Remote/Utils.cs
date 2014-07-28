@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks.Actors;
@@ -9,9 +11,9 @@ namespace Stacks.Tests.Remote
 {
     public static class Utils
     {
-        public static void CreateServerAndClient<T, I>(Func<T> fac, out IActorServerProxy server, out I client)
+        public static void CreateServerAndClient<T, I>(T impl, out IActorServerProxy server, out I client)
         {
-            server = ActorServerProxy.Create("tcp://*:0", fac);
+            server = ActorServerProxy.Create("tcp://*:0", impl);
             int port = server.BindEndPoint.Port;
 
             client = ActorClientProxy.Create<I>("tcp://localhost:" + port).Result;
@@ -24,6 +26,15 @@ namespace Stacks.Tests.Remote
             int port = server.BindEndPoint.Port;
 
             client = ActorClientProxy.Create<I>("tcp://localhost:" + port).Result;
+        }
+
+        public static int FindFreePort()
+        {
+            TcpListener l = new TcpListener(new IPEndPoint(IPAddress.Any, 0));
+            l.Start();
+            int port = ((IPEndPoint)l.LocalEndpoint).Port;
+            l.Stop();
+            return port;
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Stacks.Tests.Remote
         {
             var impl = new MessageActor();
 
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(() => impl, out server, out client);
+            Utils.CreateServerAndClient<MessageActor, IMessageActor>(impl, out server, out client);
 
             client.Ping().Wait();
 

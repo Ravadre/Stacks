@@ -32,7 +32,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Client_should_return_task_which_fails_if_it_could_not_connect_to_server()
         {
-            var clientTask = ActorClientProxy.Create<ITestActor>("tcp://localhost:57331");
+            var clientTask = ActorClientProxy.Create<ITestActor>("tcp://localhost:" + Utils.FindFreePort());
 
             Assert.Throws(typeof(SocketException), () =>
                 {

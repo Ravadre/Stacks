@@ -17,23 +17,23 @@ namespace Stacks.Actors
         public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint)
             where T: new()
         {
-            return Create(bindEndPoint, () => new T());
+            return Create(bindEndPoint, new T());
         }
 
         public static IActorServerProxy Create<T>(string bindEndPoint)
             where T: new()
         {
-            return Create<T>(IPHelpers.Parse(bindEndPoint), () => new T());
+            return Create<T>(IPHelpers.Parse(bindEndPoint), new T());
         }
 
-        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, Func<T> factory)
+        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, T actorImpl)
         {
-            return Create(factory(), bindEndPoint);
+            return Create(actorImpl, bindEndPoint);
         }
 
-        public static IActorServerProxy Create<T>(string bindEndPoint, Func<T> factory)
+        public static IActorServerProxy Create<T>(string bindEndPoint, T actorImpl)
         {
-            return Create(factory(), IPHelpers.Parse(bindEndPoint));
+            return Create(actorImpl, IPHelpers.Parse(bindEndPoint));
         }
 
         private static ServerActorTypeBuilder tBuilder;
