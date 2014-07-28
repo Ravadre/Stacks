@@ -31,7 +31,8 @@ Concepts
 --------------------------
 
 ## Network ##
------
+
+
 ### Protocol layers ###
 
 In Stacks, choosing socket behavior and features is done by composing different functionalities by chaining layers on top of themselves, just like on stack. For example, to enable framing one should create `FramedClient` on top of `SocketClient`. To enable ssl, `SslClient` should be inserted between those two layers.
@@ -156,7 +157,7 @@ Also, no casting is required in user code, which makes the code more robust.
 By default, handlers are called on socket's context, but it is very easy to reschedule computation onto different executor using `.ObserveOn` method. Notice, that all `Stacks` concepts like `IExecutor` or `ActorContext` support Reactive extension's scheduling patterns. 
 
 ## Actors ##
------------
+
 Everything on Stacks uses lightweight implementation of actor model underneath. Actors in Stacks, instead of passing arbitrary messages, pass only one type of message -- `Action`. Passing `Action` to an actor means that it should be executed in it's context and that is should be synchronized with other messages.
 
 Sample actor, which implements behavior for single message:
