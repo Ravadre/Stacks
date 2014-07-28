@@ -4,6 +4,7 @@ open Fake
 
 let configuration = getBuildParamOrDefault "configuration" "Release"
 let platform = getBuildParamOrDefault "buildPlatform" "Any CPU"
+let betaVer = getBuildParamOrDefault "betaVer" ""
 
 let dir (project) = 
     project @@ "bin" @@ (if platform = "Any CPU" then "" else platform) @@ configuration
@@ -16,7 +17,11 @@ let tryDelDir path =
     | _ -> ()
 
 let getVersion file = 
-    System.Reflection.AssemblyName.GetAssemblyName(file).Version.ToString()
+    let betaVer = if betaVer <> "" then "-" + betaVer else betaVer
+    let v = System.Reflection.AssemblyName.GetAssemblyName(file).Version
+
+    string(v.Major) + "." + string(v.Minor) + "." + string(v.Build) + betaVer
+
 
 Target "Build" (fun _ ->
     RestorePackages()
@@ -66,15 +71,9 @@ Target "Nuget" (fun _ ->
                  ["Stacks.dll"] 
                  "Stacks.dll"  
                  [ ("Microsoft.Tpl.Dataflow", "4.5.14" );
-                   ("Rx-Main", "2.2.4")]
-                 "Stacks/stacks.nuspec"
-
-    BuildPackage "Stacks.ProtoBuf"
-                 ["Stacks.ProtoBuf.dll"]
-                 "Stacks.ProtoBuf.dll"
-                 [ ("Stacks", stacksVer )
+                   ("Rx-Main", "2.2.4");
                    ("protobuf-net", "2.0.0.668") ]
-                 "Stacks.ProtoBuf/stacks.protobuf.nuspec"
+                 "Stacks/stacks.nuspec"
 
     BuildPackage "Stacks.MessagePack"
                  ["Stacks.MessagePack.dll"]
