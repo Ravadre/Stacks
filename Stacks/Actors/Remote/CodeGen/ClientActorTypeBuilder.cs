@@ -42,7 +42,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                                                     MethodAttributes.HideBySig |
                                                                     MethodAttributes.Final);
                 mb.SetReturnType(method.ReturnType);
-                mb.SetParameters(method.GetParameters().Select(p => p.ParameterType).ToArray());
+                mb.SetParameters(method.GetParameters().OrderBy(p => p.Name).Select(p => p.ParameterType).ToArray());
 
                 ImplementSendMethod(mb, method);
             }

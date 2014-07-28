@@ -32,6 +32,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public void SaveToFile()
         {
+            //throw new NotSupportedException();
             asmBuilder.Save(asmName.Name + ".dll");
         }
 
@@ -61,7 +62,6 @@ namespace Stacks.Actors.Remote.CodeGen
 
             // Properties
             var miParams = methodInfo.GetParameters()
-                                     .OrderBy(p => p.Name)
                                      .ToArray();
 
             // Index used for proto member attribute. Must start with 1.
