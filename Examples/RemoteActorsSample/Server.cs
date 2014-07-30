@@ -29,6 +29,16 @@ namespace RemoteActorsSample
     {
         private Stack<double> stack = new Stack<double>();
 
+        private Random rng = new Random();
+        public IObservable<double> Rng { get; private set; }
+
+        public CalculatorActor()
+        {
+            Rng = Observable.Interval(TimeSpan.FromSeconds(1.0), Context)
+                            .Select(t => rng.NextDouble());
+                            
+        }
+
         public async Task<double> Add(double x, double y)
         {
             await Context;

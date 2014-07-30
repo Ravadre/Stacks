@@ -17,7 +17,23 @@ namespace Stacks.Actors.Remote.CodeGen
             {
                 if (!hs.Add(m.Name))
                     throw new InvalidOperationException("Method names must be unique when using " +
-                        "an interface as a actor client proxy");
+                        "an interface as an actor proxy");
+            }
+        }
+    }
+
+    public static class PropertyInfoExtensions
+    {
+        public static void EnsureNamesAreUnique(this IEnumerable<PropertyInfo> properties)
+        {
+            //This might be unnecessary?
+            var hs = new HashSet<string>();
+
+            foreach (var p in properties)
+            {
+                if (!hs.Add(p.Name))
+                    throw new InvalidOperationException("Property names must be unique when using " +
+                        "an interface as an actor proxy");
             }
         }
     }
@@ -30,6 +46,14 @@ namespace Stacks.Actors.Remote.CodeGen
             return t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
                     .Where(m => typeof(Task).IsAssignableFrom(m.ReturnType))
                     .OrderBy(m => m.Name)
+                    .ToArray();
+        }
+
+        public static PropertyInfo[] FindValidObservableProperties(this Type type)
+        {
+            var t = type;
+            return t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(p => typeof(IObservable<>).IsAssignableFrom(p.PropertyType))
                     .ToArray();
         }
     }

@@ -42,5 +42,7 @@ namespace RemoteActorsSample
         Task<double> MeanEnum(IEnumerable<double> xs);
 
         Task PingAsync();
+
+        IObservable<double> Rng { get; }
     }
 }
