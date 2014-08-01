@@ -57,9 +57,11 @@ namespace Stacks.Actors.Remote.CodeGen
                 foreach (var property in actorType.FindValidObservableProperties())
                 {
                     var newMethod = CreatePropertyHandler(property);
+                    var errMethod = CreateErrorHandler(property);
 
                     var innerPropType = property.PropertyType.GetGenericArguments()[0];
                     var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
+                    var errorActionType = typeof(Action<>).MakeGenericType(new[] { typeof(Exception) });
 
                     var obsMethod = typeof(ObservableExtensions)
                                         .GetMethods(BindingFlags.Static | BindingFlags.Public)
@@ -74,10 +76,11 @@ namespace Stacks.Actors.Remote.CodeGen
                                         {
                                             var m = x.Method;
                                             var p = x.Params;
-                                            if (m.IsGenericMethod && p.Length == 2)
+                                            if (m.IsGenericMethod && p.Length == 3)
                                             {
                                                 if (p[0].ParameterType.GetGenericTypeDefinition() == typeof(IObservable<>) &&
-                                                    p[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
+                                                    p[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>) &&
+                                                    p[2].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
                                                     return true;
                                             }
                                             return false;
@@ -92,6 +95,9 @@ namespace Stacks.Actors.Remote.CodeGen
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldftn, newMethod);
                     il.Emit(OpCodes.Newobj, actionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldftn, errMethod);
+                    il.Emit(OpCodes.Newobj, errorActionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
                     il.EmitCall(OpCodes.Call, obsMethod, null);
                     il.Emit(OpCodes.Pop);
                 }
@@ -103,12 +109,26 @@ namespace Stacks.Actors.Remote.CodeGen
 
         }
 
+        private MethodBuilder CreateErrorHandler(PropertyInfo property)
+        {
+            var mb = actorImplBuilder.DefineMethod(property.Name + "$ObservableErrorHandler",
+                                                       MethodAttributes.Private |
+                                                       MethodAttributes.HideBySig,
+                                                   CallingConventions.HasThis,
+                                                   typeof(void),
+                                                   new[] { typeof(Exception) });
+            var il = mb.GetILGenerator();
+            il.Emit(OpCodes.Ret);
+
+            return mb;
+        }
+
         private MethodBuilder CreatePropertyHandler(PropertyInfo property)
         {
             var propType = property.PropertyType;
             var innerType = propType.GetGenericArguments()[0];
 
-            var mb = actorImplBuilder.DefineMethod(property.Name + "ObservableHandler",
+            var mb = actorImplBuilder.DefineMethod(property.Name + "$ObservableHandler",
                                                        MethodAttributes.Private |
                                                        MethodAttributes.HideBySig,
                                                    CallingConventions.HasThis,
@@ -127,7 +147,7 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Ldloc_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Stfld, msgType.GetField("$Value"));
-            
+
             il.Emit(OpCodes.Ldarg_0);
             //il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
             il.Emit(OpCodes.Ldstr, property.Name);
