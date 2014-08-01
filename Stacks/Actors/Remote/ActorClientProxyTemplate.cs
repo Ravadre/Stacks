@@ -32,12 +32,18 @@ namespace Stacks.Actors
             serializer = new ProtoBufStacksSerializer();
             replyHandlersByRequest = new Dictionary<long, Action<MemoryStream, Exception>>();
             exec = new ActionBlockExecutor();
+            exec.Error += ExecutionError;
             client = new ActorRemoteMessageClient(
                         new FramedClient(
                             new SocketClient(exec)));
 
             client.MessageReceived += MessageReceived;
             client.Disconnected.Subscribe(HandleDisconnection);
+        }
+
+        void ExecutionError(Exception exn)
+        {
+            HandleDisconnection(exn);
         }
 
         internal async Task<ActorClientProxyTemplate> Connect()

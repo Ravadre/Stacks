@@ -53,7 +53,8 @@ namespace Stacks.Actors.Remote.CodeGen
         {
             var t = type;
             return t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(p => typeof(IObservable<>).IsAssignableFrom(p.PropertyType))
+                    .Where(p => p.PropertyType.IsGenericType && 
+                                typeof(IObservable<>) == p.PropertyType.GetGenericTypeDefinition())
                     .ToArray();
         }
     }

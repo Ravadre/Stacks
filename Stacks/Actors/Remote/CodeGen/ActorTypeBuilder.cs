@@ -28,14 +28,14 @@ namespace Stacks.Actors.Remote.CodeGen
 
             //TODO: Change to RunAndCollect when more stable
             this.asmBuilder = AppDomain.CurrentDomain
-                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
+                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
         }
 
         public void SaveToFile()
         {
-            throw new NotSupportedException();
-            //asmBuilder.Save(asmName.Name + ".dll");
+            //throw new NotSupportedException();
+            asmBuilder.Save(asmName.Name + ".dll");
         }
 
         public void DefineMessagesFromInterfaceType(Type actorInterface)
@@ -212,7 +212,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
         private void DefineMessageTypeForActorObservable(PropertyInfo propertyInfo)
         {
-            var messageTypeName = propertyInfo.Name + "ObsMessage";
+            var messageTypeName = propertyInfo.Name + "$ObsMessage";
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
 
             var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });

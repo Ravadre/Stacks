@@ -43,8 +43,6 @@ namespace RemoteActorsSample
                 }
             }
 
-
-
             {
                 // Messages can be sent just by calling methods.
                 // Returned tasks will be notified when network response will be received
