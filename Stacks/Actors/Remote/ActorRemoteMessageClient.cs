@@ -57,6 +57,7 @@ namespace Stacks.Actors
         }
 
         public event Action<long, MemoryStream> MessageReceived;
+        public event Action<string, MemoryStream> ObsMessageReceived;
 
         public ActorRemoteMessageClient(IFramedClient client)
         {
@@ -83,6 +84,16 @@ namespace Stacks.Actors
                         OnMessageReceived(requestId, ms);
                     }
                 }
+                else if (Bit.IsSet(header, (int)ActorProtocolFlags.Observable))
+                {
+                    var nameLen = *(int*)(b + 4);
+                    var name = new string((sbyte*)b, 8, nameLen);
+                    
+                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen))
+                    {
+                        OnObsMessageReceived(name, ms);
+                    }
+                }
                 else
                 {
                     throw new NotImplementedException();
@@ -95,6 +106,13 @@ namespace Stacks.Actors
             var h = MessageReceived;
             if (h != null)
                 h(requestId, ms);
+        }
+
+        private void OnObsMessageReceived(string name, MemoryStream ms)
+        {
+            var h = ObsMessageReceived;
+            if (h != null)
+                h(name, ms);
         }
 
         public unsafe void Send<T>(string msgName, long requestId, T obj)

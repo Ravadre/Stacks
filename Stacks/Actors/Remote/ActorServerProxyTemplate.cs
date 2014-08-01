@@ -189,7 +189,7 @@ namespace Stacks.Actors
                 ms.Position = 8;
                 var nameBytes = Encoding.ASCII.GetBytes(name);
                 ms.Write(nameBytes, 0, nameBytes.Length);
-                serializer.Serialize(msg, ms);
+                this.serializer.Serialize(msg, ms);
 
                 ms.Position = 0;
                 var buffer = ms.GetBuffer();

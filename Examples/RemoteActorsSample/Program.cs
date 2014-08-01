@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks;
@@ -192,10 +193,20 @@ namespace RemoteActorsSample
                 Console.WriteLine("Local: 4 + 8 = " + Add(localCalc, 4, 8));
             }
 
+            // Properties with IObservable<T> types can be used to 
+            // broadcast messages to clients without receiving any
+            // requests first.
+            Console.WriteLine("Random generator: ");
+            var rng = calculator.Rng.Subscribe(r => Console.WriteLine(r));
+
+            Thread.Sleep(4000);
+            rng.Dispose();
+
 
             actorServer.Stop();
             calculator.Close();
 
+            Console.WriteLine("Sample done");
             Console.ReadKey();
         }
 

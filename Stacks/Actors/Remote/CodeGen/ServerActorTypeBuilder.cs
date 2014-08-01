@@ -129,7 +129,7 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Stfld, msgType.GetField("$Value"));
             
             il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+            //il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
             il.Emit(OpCodes.Ldstr, property.Name);
             il.Emit(OpCodes.Ldloc_0);
             il.EmitCall(OpCodes.Call, sendMessageMethod, null);
