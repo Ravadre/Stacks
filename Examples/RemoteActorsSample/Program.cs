@@ -196,17 +196,25 @@ namespace RemoteActorsSample
             // Properties with IObservable<T> types can be used to 
             // broadcast messages to clients without receiving any
             // requests first.
+            Console.WriteLine();
             Console.WriteLine("Random generator: ");
             var rng = calculator.Rng.Subscribe(r => Console.WriteLine(r));
 
             Thread.Sleep(4000);
             rng.Dispose();
 
+            Console.WriteLine();
+            calculator.Messages.Subscribe(m =>
+                {
+                    Console.WriteLine("A: " + m.X + "; B: " + m.Y + ". Area: " + m.Info.Field);
+                });
+            Thread.Sleep(3000);
 
             actorServer.Stop();
             calculator.Close();
 
-            Console.WriteLine("Sample done");
+            Console.WriteLine();
+            Console.WriteLine("Sample finished");
             Console.ReadKey();
         }
 

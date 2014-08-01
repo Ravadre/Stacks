@@ -26,6 +26,17 @@ namespace RemoteActorsSample
         public double Perimeter { get; set; }
     }
 
+    [ProtoContract]
+    public class Message
+    {
+        [ProtoMember(1)]
+        public long X { get; set; }
+        [ProtoMember(2)]
+        public long Y { get; set; }
+        [ProtoMember(3)]
+        public RectangleInfo Info { get; set; }
+    }
+
     public interface ICalculatorActor : IActorClientProxy
     {
         Task<double> Add(double x, double y);
@@ -44,5 +55,6 @@ namespace RemoteActorsSample
         Task PingAsync();
 
         IObservable<double> Rng { get; }
+        IObservable<Message> Messages { get; }
     }
 }
