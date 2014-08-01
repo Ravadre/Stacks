@@ -13,6 +13,7 @@ using System.Reactive.Linq;
 using System.IO;
 using ProtoBuf;
 using System.Threading;
+using System.Reactive.Subjects;
 
 namespace RemoteActorsSample
 {
@@ -25,14 +26,47 @@ namespace RemoteActorsSample
         public double y;
     }
 
-    public class CalculatorActor: Actor, ICalculatorActor
+    public class CalculatorActor : Actor, ICalculatorActor
     {
         private Stack<double> stack = new Stack<double>();
+
+        private Random rng = new Random();
+        public IObservable<double> Rng { get; private set; }
+
+        private long x;
+        private Subject<Message> messages;
+        public IObservable<Message> Messages { get { return messages; } }
+
+        public CalculatorActor()
+        {
+            Rng = Observable.Interval(TimeSpan.FromSeconds(1.0), Context)
+                            .Select(t => rng.NextDouble());
+            messages = new Subject<Message>();
+
+            Task.Run(async () =>
+                {
+                    while (true)
+                    {
+                        ++x;
+                        await Task.Delay(1000);
+                        messages.OnNext(new Message
+                            {
+                                X = x,
+                                Y = x * 2,
+                                Info = new RectangleInfo
+                                {
+                                    Field = x * (x * 2),
+                                    Perimeter = x * 6
+                                }
+                            });
+                    }
+                });
+        }
 
         public async Task<double> Add(double x, double y)
         {
             await Context;
-            
+
             return x + y;
         }
 
@@ -96,7 +130,7 @@ namespace RemoteActorsSample
 
             return xs.Average();
         }
-        
+
         public Task PingAsync()
         {
             return Task.Run(() =>
@@ -107,5 +141,7 @@ namespace RemoteActorsSample
         }
 
         public void Close() { }
+
+
     }
 }

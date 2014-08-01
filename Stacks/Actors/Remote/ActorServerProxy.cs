@@ -46,7 +46,7 @@ namespace Stacks.Actors
             tBuilder.DefineMessagesFromInterfaceType(aType);
 
             var actorImplType = tBuilder.CreateActorType(aType);
-            //tBuilder.SaveToFile();
+            tBuilder.SaveToFile();
 
             var actor = Activator.CreateInstance(actorImplType, new object[] { actorImplementation, bindEndPoint });
             return (ActorServerProxyTemplate<T>)actor;

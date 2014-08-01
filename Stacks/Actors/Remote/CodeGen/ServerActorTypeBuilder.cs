@@ -54,11 +54,89 @@ namespace Stacks.Actors.Remote.CodeGen
                     il.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<FramedClient, long, MemoryStream>>).GetMethod("set_Item"), null);
                 }
 
+                foreach (var property in actorType.FindValidObservableProperties())
+                {
+                    var newMethod = CreatePropertyHandler(property);
+
+                    var innerPropType = property.PropertyType.GetGenericArguments()[0];
+                    var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
+
+                    var obsMethod = typeof(ObservableExtensions)
+                                        .GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                        .Where(m => m.Name == "Subscribe")
+                                        .Select(m => new
+                                        {
+                                            Method = m,
+                                            Params = m.GetParameters(),
+                                            Args = m.GetGenericArguments()
+                                        })
+                                        .Where(x =>
+                                        {
+                                            var m = x.Method;
+                                            var p = x.Params;
+                                            if (m.IsGenericMethod && p.Length == 2)
+                                            {
+                                                if (p[0].ParameterType.GetGenericTypeDefinition() == typeof(IObservable<>) &&
+                                                    p[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
+                                                    return true;
+                                            }
+                                            return false;
+                                        })
+                                        .Select(x => x.Method)
+                                        .First()
+                                        .MakeGenericMethod(innerPropType);
+
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+                    il.EmitCall(OpCodes.Call, property.GetGetMethod(), null);
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldftn, newMethod);
+                    il.Emit(OpCodes.Newobj, actionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    il.EmitCall(OpCodes.Call, obsMethod, null);
+                    il.Emit(OpCodes.Pop);
+                }
+
                 il.Emit(OpCodes.Ret);
             }
 
             return actorImplBuilder.CreateType();
-             
+
+        }
+
+        private MethodBuilder CreatePropertyHandler(PropertyInfo property)
+        {
+            var propType = property.PropertyType;
+            var innerType = propType.GetGenericArguments()[0];
+
+            var mb = actorImplBuilder.DefineMethod(property.Name + "ObservableHandler",
+                                                       MethodAttributes.Private |
+                                                       MethodAttributes.HideBySig,
+                                                   CallingConventions.HasThis,
+                                                   typeof(void),
+                                                   new[] { innerType });
+
+            var msgType = moduleBuilder.GetType("Messages." + property.Name + "$ObsMessage");
+            var sendMessageMethod = templateType.GetMethod("SendObs", BindingFlags.NonPublic | BindingFlags.Instance).MakeGenericMethod(msgType);
+
+            var il = mb.GetILGenerator();
+
+            il.DeclareLocal(msgType);
+
+            il.Emit(OpCodes.Newobj, msgType.GetConstructor(Type.EmptyTypes));
+            il.Emit(OpCodes.Stloc_0);
+            il.Emit(OpCodes.Ldloc_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Stfld, msgType.GetField("$Value"));
+            
+            il.Emit(OpCodes.Ldarg_0);
+            //il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+            il.Emit(OpCodes.Ldstr, property.Name);
+            il.Emit(OpCodes.Ldloc_0);
+            il.EmitCall(OpCodes.Call, sendMessageMethod, null);
+
+            il.Emit(OpCodes.Ret);
+
+            return mb;
         }
 
         private MethodBuilder CreateHandlerMethod(MethodInfo method)
@@ -124,7 +202,7 @@ namespace Stacks.Actors.Remote.CodeGen
             else
             {
                 il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
-                                                      .MakeGenericMethod(sendMethodInnerRet), 
+                                                      .MakeGenericMethod(sendMethodInnerRet),
                                           null);
             }
 
@@ -147,7 +225,7 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Ldloc, excMsgLocal);
             il.EmitCall(OpCodes.Callvirt, typeof(IReplyMessage<>).MakeGenericType(sendMethodInnerRet).GetMethod("SetError"), null);
             il.Emit(OpCodes.Ldloc, replyMsgLocal);
-           
+
             if (isNoParamTask)
             {
                 il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponseNoResult", BindingFlags.Instance | BindingFlags.NonPublic), null);
@@ -155,7 +233,7 @@ namespace Stacks.Actors.Remote.CodeGen
             else
             {
                 il.EmitCall(OpCodes.Call, templateType.GetMethod("HandleResponse", BindingFlags.Instance | BindingFlags.NonPublic)
-                                                      .MakeGenericMethod(sendMethodInnerRet), 
+                                                      .MakeGenericMethod(sendMethodInnerRet),
                                           null);
             }
 

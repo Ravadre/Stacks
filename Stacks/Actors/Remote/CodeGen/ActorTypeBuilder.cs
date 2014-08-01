@@ -16,24 +16,26 @@ namespace Stacks.Actors.Remote.CodeGen
         protected AssemblyName asmName;
         protected Dictionary<string, Type> messageParamTypes;
         protected Dictionary<string, Type> messageReturnTypes;
+        protected Dictionary<string, Type> messageObsTypes;
 
         public ActorTypeBuilder(string assemblyName)
         {
             this.messageParamTypes = new Dictionary<string, Type>();
             this.messageReturnTypes = new Dictionary<string, Type>();
+            this.messageObsTypes = new Dictionary<string, Type>();
         
             this.asmName = new AssemblyName(assemblyName);
 
             //TODO: Change to RunAndCollect when more stable
             this.asmBuilder = AppDomain.CurrentDomain
-                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
+                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
         }
 
         public void SaveToFile()
         {
-            throw new NotSupportedException();
-            //asmBuilder.Save(asmName.Name + ".dll");
+            //throw new NotSupportedException();
+            asmBuilder.Save(asmName.Name + ".dll");
         }
 
         public void DefineMessagesFromInterfaceType(Type actorInterface)
@@ -45,6 +47,14 @@ namespace Stacks.Actors.Remote.CodeGen
             {
                 DefineMessageTypeForActorMethodParams(methods[i]);
                 DefineMessageTypeForActorMethodReturn(methods[i]);
+            }
+
+            var properties = actorInterface.FindValidObservableProperties();
+            properties.EnsureNamesAreUnique();
+
+            for (int i = 0; i < properties.Length; ++i)
+            {
+                DefineMessageTypeForActorObservable(properties[i]);
             }
         }
 
@@ -197,6 +207,31 @@ namespace Stacks.Actors.Remote.CodeGen
                             return true;
                         return false;
                     });
+        }
+
+
+        private void DefineMessageTypeForActorObservable(PropertyInfo propertyInfo)
+        {
+            var messageTypeName = propertyInfo.Name + "$ObsMessage";
+            var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
+
+            var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
+
+            // Empty ctor
+            typeBuilder.DefineDefaultConstructor(MethodAttributes.Public | MethodAttributes.HideBySig);
+
+            // Type attributes
+            var protoContractCtor = typeof(ProtoBuf.ProtoContractAttribute).GetConstructor(Type.EmptyTypes);
+            typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(protoContractCtor, new object[0]));
+
+            var propTypeObs = propertyInfo.PropertyType;
+            var p = propTypeObs.GetGenericArguments()[0];
+
+            var fb = typeBuilder.DefineField("$Value", p, FieldAttributes.Public);
+            fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
+
+            var createdType = typeBuilder.CreateType();
+            this.messageParamTypes[propertyInfo.Name] = createdType;
         }
     }
 }

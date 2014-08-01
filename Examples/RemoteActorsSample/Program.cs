@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks;
@@ -42,8 +43,6 @@ namespace RemoteActorsSample
                     Console.WriteLine("Could not connect to server: " + exc.InnerException.Message);
                 }
             }
-
-
 
             {
                 // Messages can be sent just by calling methods.
@@ -194,10 +193,28 @@ namespace RemoteActorsSample
                 Console.WriteLine("Local: 4 + 8 = " + Add(localCalc, 4, 8));
             }
 
+            // Properties with IObservable<T> types can be used to 
+            // broadcast messages to clients without receiving any
+            // requests first.
+            Console.WriteLine();
+            Console.WriteLine("Random generator: ");
+            var rng = calculator.Rng.Subscribe(r => Console.WriteLine(r));
+
+            Thread.Sleep(4000);
+            rng.Dispose();
+
+            Console.WriteLine();
+            calculator.Messages.Subscribe(m =>
+                {
+                    Console.WriteLine("A: " + m.X + "; B: " + m.Y + ". Area: " + m.Info.Field);
+                });
+            Thread.Sleep(3000);
 
             actorServer.Stop();
             calculator.Close();
 
+            Console.WriteLine();
+            Console.WriteLine("Sample finished");
             Console.ReadKey();
         }
 

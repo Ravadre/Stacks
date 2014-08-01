@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reactive.Subjects;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -21,18 +23,15 @@ namespace Stacks.Actors.Remote.CodeGen
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,
                                         typeof(ActorClientProxyTemplate), new[] { actorInterface });
 
-            {
-                var baseCtor = typeof(ActorClientProxyTemplate).GetConstructor(new[] { typeof(IPEndPoint) });
+            var baseCtor = typeof(ActorClientProxyTemplate).GetConstructor(new[] { typeof(IPEndPoint) });
 
-                var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
-                                        CallingConventions.HasThis, new[] { typeof(IPEndPoint) });
-                var il = ctorBuilder.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldarg_1);
-                il.Emit(OpCodes.Call, baseCtor);
+            var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
+                                    CallingConventions.HasThis, new[] { typeof(IPEndPoint) });
+            var ctorIl = ctorBuilder.GetILGenerator();
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            ctorIl.Emit(OpCodes.Ldarg_1);
+            ctorIl.Emit(OpCodes.Call, baseCtor);
 
-                il.Emit(OpCodes.Ret);
-            }
 
             foreach (var method in actorInterface.FindValidProxyMethods())
             {
@@ -46,6 +45,71 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 ImplementSendMethod(mb, method);
             }
+
+            foreach (var property in actorInterface.FindValidObservableProperties())
+            {
+                var innerType = property.PropertyType.GetGenericArguments()[0];
+
+                var fb = actorImplBuilder.DefineField(
+                                            property.Name + "$Field",
+                                            typeof(Subject<>).MakeGenericType(innerType),
+                                            FieldAttributes.Private);
+
+                var pb = actorImplBuilder.DefineProperty(property.Name,
+                            PropertyAttributes.HasDefault, property.PropertyType, null);
+
+                var getMethod = actorImplBuilder.DefineMethod("get_" + property.Name,
+                                        MethodAttributes.Public |
+                                        MethodAttributes.HideBySig |
+                                        MethodAttributes.SpecialName |
+                                        MethodAttributes.Virtual,
+                                    property.PropertyType, Type.EmptyTypes);
+
+                var il = getMethod.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld, fb);
+                il.Emit(OpCodes.Ret);
+                
+                pb.SetGetMethod(getMethod);
+
+
+                Type messageType = moduleBuilder.GetType("Messages." + property.Name + "$ObsMessage");
+                var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+
+                var handlerMethod = actorImplBuilder.DefineMethod(property.Name + "$ObsHandler",
+                                        MethodAttributes.Private | MethodAttributes.HideBySig,
+                                        CallingConventions.HasThis, typeof(void),
+                                        new[] { typeof(MemoryStream) });
+
+                var hil = handlerMethod.GetILGenerator();
+                hil.Emit(OpCodes.Ldarg_0);
+                hil.Emit(OpCodes.Ldfld, fb);
+                hil.Emit(OpCodes.Ldarg_0);
+                hil.Emit(OpCodes.Ldfld, typeof(ActorClientProxyTemplate).GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
+                hil.Emit(OpCodes.Ldarg_1);
+                hil.EmitCall(OpCodes.Callvirt, desMethod, null);
+                hil.Emit(OpCodes.Ldfld, messageType.GetField("$Value"));
+                hil.EmitCall(OpCodes.Call, typeof(Subject<>).MakeGenericType(innerType).GetMethod("OnNext"), null);
+                hil.Emit(OpCodes.Ret);
+
+
+      
+
+                ctorIl.Emit(OpCodes.Ldarg_0);
+                ctorIl.Emit(OpCodes.Newobj, typeof(Subject<>).MakeGenericType(innerType).GetConstructor(Type.EmptyTypes));
+                ctorIl.Emit(OpCodes.Stfld, fb);
+
+
+                ctorIl.Emit(OpCodes.Ldarg_0);
+                ctorIl.Emit(OpCodes.Ldfld, typeof(ActorClientProxyTemplate).GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
+                ctorIl.Emit(OpCodes.Ldstr, property.Name);
+                ctorIl.Emit(OpCodes.Ldarg_0);
+                ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
+                ctorIl.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                ctorIl.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+            }
+            
+            ctorIl.Emit(OpCodes.Ret);
 
             return actorImplBuilder.CreateType();
         }

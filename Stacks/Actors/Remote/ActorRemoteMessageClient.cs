@@ -57,6 +57,7 @@ namespace Stacks.Actors
         }
 
         public event Action<long, MemoryStream> MessageReceived;
+        public event Action<string, MemoryStream> ObsMessageReceived;
 
         public ActorRemoteMessageClient(IFramedClient client)
         {
@@ -72,11 +73,30 @@ namespace Stacks.Actors
         {
             fixed (byte* b = &buffer.Array[buffer.Offset])
             {
-                long requestId = *((long*)b);
-               
-                using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
+                int header = *(int*)b;
+
+                if (Bit.IsSet(header, (int)ActorProtocolFlags.RequestReponse))
                 {
-                    OnMessageReceived(requestId, ms);
+                    long requestId = *(long*)(b + 4);
+
+                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12, buffer.Count - 12))
+                    {
+                        OnMessageReceived(requestId, ms);
+                    }
+                }
+                else if (Bit.IsSet(header, (int)ActorProtocolFlags.Observable))
+                {
+                    var nameLen = *(int*)(b + 4);
+                    var name = new string((sbyte*)b, 8, nameLen);
+                    
+                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen))
+                    {
+                        OnObsMessageReceived(name, ms);
+                    }
+                }
+                else
+                {
+                    throw new NotImplementedException();
                 }
             }
         }
@@ -88,14 +108,21 @@ namespace Stacks.Actors
                 h(requestId, ms);
         }
 
+        private void OnObsMessageReceived(string name, MemoryStream ms)
+        {
+            var h = ObsMessageReceived;
+            if (h != null)
+                h(name, ms);
+        }
+
         public unsafe void Send<T>(string msgName, long requestId, T obj)
         {
             var msgNameBytes = Encoding.ASCII.GetBytes(msgName);
 
             using (var ms = new MemoryStream())
             {
-                ms.SetLength(12);
-                ms.Position = 12;
+                ms.SetLength(16);
+                ms.Position = 16;
                 ms.Write(msgNameBytes, 0, msgNameBytes.Length);
                 this.packetSerializer.Serialize(obj, ms);
                 ms.Position = 0;
@@ -104,8 +131,9 @@ namespace Stacks.Actors
 
                 fixed (byte* buf = buffer)
                 {
-                    *(long*)buf = requestId;
-                    *(int*)(buf + 8) = msgNameBytes.Length;
+                    *(ActorProtocolFlags*)buf = ActorProtocolFlags.RequestReponse;
+                    *(long*)(buf + 4) = requestId;
+                    *(int*)(buf + 12) = msgNameBytes.Length;
                 }
 
                 this.framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));

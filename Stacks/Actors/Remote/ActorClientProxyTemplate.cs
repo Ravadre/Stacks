@@ -17,12 +17,14 @@ namespace Stacks.Actors
         private IPEndPoint endPoint;
         private ActorRemoteMessageClient client;
         private ActionBlockExecutor exec;
-        private IStacksSerializer serializer;
+        protected IStacksSerializer serializer;
 
         private Dictionary<long, Action<MemoryStream, Exception>> replyHandlersByRequest;
         private long requestId;
         private bool disconnected;
         private Exception disconnectedException;
+        
+        protected Dictionary<string, Action<MemoryStream>> obsHandlers;
 
         public ActorClientProxyTemplate(IPEndPoint endPoint)
         {
@@ -31,13 +33,21 @@ namespace Stacks.Actors
 
             serializer = new ProtoBufStacksSerializer();
             replyHandlersByRequest = new Dictionary<long, Action<MemoryStream, Exception>>();
+            obsHandlers = new Dictionary<string, Action<MemoryStream>>();
             exec = new ActionBlockExecutor();
+            exec.Error += ExecutionError;
             client = new ActorRemoteMessageClient(
                         new FramedClient(
                             new SocketClient(exec)));
 
             client.MessageReceived += MessageReceived;
+            client.ObsMessageReceived += ObsMessageReceived;
             client.Disconnected.Subscribe(HandleDisconnection);
+        }
+
+        void ExecutionError(Exception exn)
+        {
+            HandleDisconnection(exn);
         }
 
         internal async Task<ActorClientProxyTemplate> Connect()
@@ -55,6 +65,16 @@ namespace Stacks.Actors
             replyHandlersByRequest.Remove(requestId);
 
             handler(ms, null);
+        }
+
+        private void ObsMessageReceived(string name, MemoryStream ms)
+        {
+            Action<MemoryStream> handler;
+
+            if (!obsHandlers.TryGetValue(name, out handler))
+                return;
+
+            handler(ms);
         }
 
         private void HandleDisconnection(Exception exn)
