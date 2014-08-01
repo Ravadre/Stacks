@@ -17,6 +17,7 @@ namespace Stacks.Actors
         protected List<FramedClient> clients;
         protected T actorImplementation;
         protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
+        protected Dictionary<string, object> obsHandlers;
         protected IStacksSerializer serializer;
 
         public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
@@ -27,6 +28,7 @@ namespace Stacks.Actors
             this.serializer = new ProtoBufStacksSerializer();
             this.clients = new List<FramedClient>();
             this.handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
+            this.obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
 
             server = new SocketServer(executor, bindEndPoint);
@@ -62,12 +64,17 @@ namespace Stacks.Actors
                         fixed (byte* b = bs.Array)
                         {
                             byte* s = b + bs.Offset;
-                            long reqId = *(long*)s;
-                            int headerLen = *(int*)(s + 8);
-                            string msgName = new string((sbyte*)s, 12, headerLen);
-                            int pOffset = 12 + headerLen;
+                            ActorProtocolFlags header = *(ActorProtocolFlags*)s;
 
-                            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - 12 - headerLen))
+                            if (header != ActorProtocolFlags.RequestReponse)
+                                throw new Exception("Invalid actor protocol header. Expected request-response");
+
+                            long reqId = *(long*)(s + 4);
+                            int msgNameLength = *(int*)(s + 12);
+                            string msgName = new string((sbyte*)s, 16, msgNameLength);
+                            int pOffset = 16 + msgNameLength;
+
+                            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
                             {
                                 HandleMessage(client, reqId, msgName, ms);
                             }
@@ -157,8 +164,8 @@ namespace Stacks.Actors
         {
             using (var ms = new MemoryStream())
             {
-                ms.SetLength(8);
-                ms.Position = 8;
+                ms.SetLength(12);
+                ms.Position = 12;
                 serializer.Serialize<IReplyMessage<R>>(packet, ms);
                 ms.Position = 0;
 
@@ -166,10 +173,41 @@ namespace Stacks.Actors
 
                 fixed (byte* buf = buffer)
                 {
-                    *(long*)buf = requestId;
+                    *(ActorProtocolFlags*)buf = ActorProtocolFlags.RequestReponse;
+                    *(long*)(buf + 4) = requestId;
                 }
 
                 client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
+            }
+        }
+
+        protected unsafe void SendObs<M>(string name, M msg)
+        {
+            using (var ms = new MemoryStream())
+            {  
+                ms.SetLength(8);
+                ms.Position = 8;
+                var nameBytes = Encoding.ASCII.GetBytes(name);
+                ms.Write(nameBytes, 0, nameBytes.Length);
+                this.serializer.Serialize(msg, ms);
+
+                ms.Position = 0;
+                var buffer = ms.GetBuffer();
+
+                fixed (byte* buf = buffer)
+                {
+                    *(ActorProtocolFlags*)buf = ActorProtocolFlags.Observable;
+                    *(int*)(buf + 4) = nameBytes.Length;
+                }
+
+                var packet = new ArraySegment<byte>(buffer, 0, (int)ms.Length);
+                executor.Enqueue(() =>
+                    {
+                        foreach (var c in clients)
+                        {
+                            c.SendPacket(packet);
+                        }
+                    });
             }
         }
     }
