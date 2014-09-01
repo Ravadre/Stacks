@@ -1,4 +1,4 @@
-﻿namespace Stacks.FSharp
+﻿namespace Stacks
 
 
 [<AutoOpen>]
