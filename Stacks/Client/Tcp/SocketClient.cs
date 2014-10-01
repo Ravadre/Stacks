@@ -26,8 +26,8 @@ namespace Stacks.Tcp
         private const int recvBufferLength = 8192;
 
         private SocketAsyncEventArgs sendArgs;
-        private IList<ArraySegment<byte>> toSendBuffers;
-        private IList<ArraySegment<byte>> sendingBuffers;
+        private List<ArraySegment<byte>> toSendBuffers;
+        private List<ArraySegment<byte>> sendingBuffers;
         private bool isSending;
 
         private SocketAsyncEventArgs connectArgs;
@@ -302,10 +302,21 @@ namespace Stacks.Tcp
                 if (toSendBuffers.Count == 0)
                     return;
 
-                var tmp = this.sendingBuffers;
-                this.sendingBuffers = this.toSendBuffers;
-                this.toSendBuffers = tmp;
-                this.toSendBuffers.Clear();
+                if (this.toSendBuffers.Count > 1024)
+                {
+                    var toTake = Math.Min(1024, this.toSendBuffers.Count);
+                    var swap = this.toSendBuffers.Take(toTake).ToList();
+                    this.toSendBuffers.RemoveRange(0, toTake);
+                    this.sendingBuffers.Clear();
+                    this.sendingBuffers = swap;
+                }
+                else
+                {
+                    var tmp = this.sendingBuffers;
+                    this.sendingBuffers.Clear();
+                    this.sendingBuffers = this.toSendBuffers;
+                    this.toSendBuffers = tmp;
+                }
 
                 this.sendArgs.BufferList = this.sendingBuffers;
 
