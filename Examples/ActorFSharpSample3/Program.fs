@@ -1,7 +1,5 @@
 ﻿open RestSharp
 open Stacks
-open Stacks.Actors
-open Stacks.FSharp
 open Newtonsoft.Json
 open Newtonsoft.Json.Linq
 
@@ -39,14 +37,14 @@ let GetStargazers user repo = async {
 // Instead, composition with ActorContext is a way to go
     
 [<EntryPoint>]
-let main argv = 
+let main _ = 
 
     let exec = ActionBlockExecutor("main")
    
     //RunAsync creates new async block, which will run given one
     //on executor's context. Whol block can be awaited synchronously
     //with Async.RunSynchronously or asynchronously, with Async.StartImmediate.
-    exec.RunAsync(async {
+    exec.MakeAsync(async {
         printfn "Running on executor: %s" (Executor.GetCurrentName())
     
         let! repos = GetRepositories "Ravadre"
