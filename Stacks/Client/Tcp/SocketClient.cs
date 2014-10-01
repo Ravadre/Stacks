@@ -12,6 +12,10 @@ using System.Threading.Tasks;
 
 namespace Stacks.Tcp
 {
+    /// <summary>
+    /// Represents a single client socket. SocketClient can be used to send and receive
+    /// raw data. It is a replacement for System.Net.Sockets.TcpClient.
+    /// </summary>
     public class SocketClient : IRawByteClient
     {
         private IExecutor executor;
@@ -37,23 +41,60 @@ namespace Stacks.Tcp
         private Subject<int> sent;
         private Subject<ArraySegment<byte>> received;
 
+        /// <summary>
+        /// Signalled, when socket is connected. Connected observable will be signalled
+        /// as completed once socket is connected. If socket throws an error before it 
+        /// connects, Connected will signal an error.
+        /// <remarks>Because Connected will signal completion of error immediately, 
+        /// it can be treated as awaitable.
+        /// </remarks>
+        /// </summary>
         public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+        /// <summary>
+        /// Signalled, when socket is disconnected. Disconnected will never fail, as disconnection
+        /// reason is given as a completion result.
+        /// <remarks>Because Disconnected will signal completion immediately, it can be treated as awaitable.
+        /// </remarks>
+        /// </summary>
         public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
+        /// <summary>
+        /// Signalled every time socket finishes sending bytes. This doesn't mean that
+        /// they are received by remote endpoint. Parameter is number of bytes sent.
+        /// </summary>
         public IObservable<int> Sent { get { return sent.AsObservable(); } }
+        /// <summary>
+        /// Signalled when bytes are received. Received bytes are given as a parameter.
+        /// </summary>
         public IObservable<ArraySegment<byte>> Received { get { return received.AsObservable(); } }
 
+        /// <summary>
+        /// Remote end point for socket. It is safe to access this property after disconnection.
+        /// </summary>
         public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
+        /// <summary>
+        /// Local socket end point. It is safe to access this property after disconnection.
+        /// </summary>
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
-
-        public Socket Socket { get { return socket; } }
 
         private bool disconnectionNotified;
         private bool wasConnected;
 
+        /// <summary>
+        /// Returns true, if socket is connected. 
+        /// Returned value might not be accurate if no communication 
+        /// was done recently.
+        /// </summary>
         public bool IsConnected { get { return socket.Connected; } }
 
+        /// <summary>
+        /// Access underlying executor.
+        /// </summary>
         public IExecutor Executor { get { return executor; } }
 
+        /// <summary>
+        /// Create new socket client using given executor and already connected socket.
+        /// This method will fail, if socket is not already connected.
+        /// </summary>
         public SocketClient(IExecutor executor, Socket socket)
         {
             InitialiseCommon(executor);
@@ -72,18 +113,30 @@ namespace Stacks.Tcp
                 throw new InvalidOperationException("Socket must be connected");
         }
 
+        /// <summary>
+        /// Creates IPv4 tcp socket client with default executor.
+        /// </summary>
         public SocketClient()
             : this(new ActionBlockExecutor(), false)
         { }
 
+        /// <summary>
+        /// Creates tcp socket client with default executor.
+        /// </summary>
         public SocketClient(bool useIPv6)
             : this(new ActionBlockExecutor(), useIPv6)
         { }
 
+        /// <summary>
+        /// Creates IPv4 tcp socket client with given executor.
+        /// </summary>
         public SocketClient(IExecutor executor)
             : this(executor, false)
         { }
 
+        /// <summary>
+        /// Creates tcp socket client with given executor.
+        /// </summary>
         public SocketClient(IExecutor executor, bool useIPv6)
         {
             InitialiseCommon(executor);
@@ -106,11 +159,26 @@ namespace Stacks.Tcp
             this.executor = executor;
         }
 
+        /// <summary>
+        /// Connects to a given remote end point. This method returns before
+        /// socket is connected, observe Connected property to discover
+        /// if actual connection was successfull or not. 
+        /// </summary>
+        /// <param name="remoteEndPoint">
+        /// End point in format [proto]://[address]:[port]
+        /// <para>Supported protocols: 'tcp' and 'tcp6'</para>
+        /// <para>Supported addresses: 'localhost' or numeric form.</para>
+        /// </param>
         public IObservable<Unit> Connect(string remoteEndPoint)
         {
             return Connect(IPHelpers.Parse(remoteEndPoint));
         }
 
+        /// <summary>
+        /// Connects to a given remote end point. This method returns before
+        /// socket is connected, observe Connected property to discover
+        /// if actual connection was successfull or not. 
+        /// </summary>
         public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             if (this.wasConnected)
@@ -263,11 +331,17 @@ namespace Stacks.Tcp
             catch { }
         }
 
+        /// <summary>
+        /// Enqueues buffer to be sent by the socket.
+        /// </summary>
         public void Send(byte[] buffer)
         {
             Send(new ArraySegment<byte>(buffer));
         }
 
+        /// <summary>
+        /// Enqueues buffer to be sent by the socket.
+        /// </summary>
         public void Send(ArraySegment<byte> buffer)
         {
             Ensure.IsNotNull(buffer.Array, "buffer.Array");
@@ -365,6 +439,9 @@ namespace Stacks.Tcp
             StartSending();
         }
 
+        /// <summary>
+        /// Closes socket. This method will never throw, even is it can't be closed gracefully.
+        /// </summary>
         public void Close()
         {
             SafeCloseSocket();

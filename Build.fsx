@@ -68,7 +68,8 @@ Target "Nuget" (fun _ ->
 
     //Main stacks package
     BuildPackage "Stacks" 
-                 ["Stacks.dll"] 
+                 ["Stacks.dll";
+                  "Stacks.xml"] 
                  "Stacks.dll"  
                  [ ("Microsoft.Tpl.Dataflow", "4.5.14" );
                    ("Rx-Main", "2.2.4");
