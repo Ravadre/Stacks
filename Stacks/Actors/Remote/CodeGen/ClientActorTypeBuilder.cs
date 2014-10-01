@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
-    public class ClientActorTypeBuilder : ActorTypeBuilder
+    class ClientActorTypeBuilder : ActorTypeBuilder
     {
 
         public ClientActorTypeBuilder(string assemblyName)

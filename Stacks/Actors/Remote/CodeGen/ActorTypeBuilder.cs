@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
-    public class ActorTypeBuilder
+    class ActorTypeBuilder
     {
         protected AssemblyBuilder asmBuilder;
         protected ModuleBuilder moduleBuilder;

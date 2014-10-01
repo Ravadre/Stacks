@@ -11,7 +11,7 @@ using Stacks.Tcp;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
-    public class ServerActorTypeBuilder : ActorTypeBuilder
+    class ServerActorTypeBuilder : ActorTypeBuilder
     {
         private Type templateType;
         private Type actorType;

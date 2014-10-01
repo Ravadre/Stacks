@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace Stacks.Actors
 {
     [Flags]
-    public enum ActorProtocolFlags
+    enum ActorProtocolFlags
     {
         RequestReponse = 0x01,
         Observable = 0x02,
     }
 
-    public static class Bit
+    static class Bit
     {
         public static bool IsSet(int flags, int bit)
         {

@@ -32,21 +32,21 @@ namespace Stacks.Actors
             return Create<T>(IPHelpers.Parse(endPoint));
         }
 
-        public static Task<ActorClientProxyTemplate> Create(Type actorType, IPEndPoint remoteEndPoint)
+        public static Task<IActorClientProxy> Create(Type actorType, IPEndPoint remoteEndPoint)
         {
             var proxyCreator = new ActorClientProxy();
 
             return proxyCreator.AuxCreate(actorType, remoteEndPoint);
         }
 
-        public static Task<ActorClientProxyTemplate> Create(Type actorType, string endPoint)
+        public static Task<IActorClientProxy> Create(Type actorType, string endPoint)
         {
             return Create(actorType, IPHelpers.Parse(endPoint));
         }
 
         private ClientActorTypeBuilder tBuilder;
 
-        private Task<ActorClientProxyTemplate> AuxCreate(Type actorType, IPEndPoint remoteEndPoint)
+        private Task<IActorClientProxy> AuxCreate(Type actorType, IPEndPoint remoteEndPoint)
         {
             Ensure.IsInterface(actorType, "actorType", "Only interfaces can be used to create actor client proxy");
 
@@ -57,7 +57,14 @@ namespace Stacks.Actors
             tBuilder.SaveToFile();
 
             var actor = Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
-            return ((ActorClientProxyTemplate)actor).Connect();
+            return ((ActorClientProxyTemplate)actor).Connect()
+                        .ContinueWith(t =>
+                            {
+                                if (t.Exception == null)
+                                    return (IActorClientProxy)t.Result;
+                                else
+                                    throw t.Exception.InnerException;
+                            });
         }
     }
 }
