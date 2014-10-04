@@ -66,8 +66,6 @@ namespace Stacks.Actors
         public event Action<long, MemoryStream> MessageReceived;
         public event Action<string, MemoryStream> ObsMessageReceived;
 
-        private ProtoBufStacksSerializer serializer;
-
         public ActorRemoteMessageClient(IFramedClient client)
         {
             this.framedClient = client;
