@@ -131,60 +131,13 @@ namespace Stacks.Actors
             handshakeCompleted.OnCompleted();
         }
 
-        private unsafe void PacketReceived(ArraySegment<byte> buffer)
+        private unsafe void HandleReqRespMessage(byte* b, ArraySegment<byte> buffer)
         {
-            fixed (byte* b = &buffer.Array[buffer.Offset])
+            long requestId = *(long*)(b + 4);
+
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12, buffer.Count - 12))
             {
-                int header = *(int*)b;
-
-                if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.RequestReponse))
-                {
-                    long requestId = *(long*)(b + 4);
-
-                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12, buffer.Count - 12))
-                    {
-                        OnMessageReceived(requestId, ms);
-                    }
-                }
-                else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.Observable))
-                {
-                    var nameLen = *(int*)(b + 4);
-                    var name = new string((sbyte*)b, 8, nameLen);
-
-                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen))
-                    {
-                        OnObsMessageReceived(name, ms);
-                    }
-                }
-                else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.StacksProtocol))
-                {
-                    int pid = *(int*)(b + 4);
-
-                    if (pid != 2)
-                    {
-                        FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
-                    }
-
-                    using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 , buffer.Count - 8))
-                    {
-                        var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ms);
-
-                        if (resp.ProtocolMatch)
-                        {
-                            CompleteHandshake();
-                        }
-                        else
-                        {
-                            FailWithExnAndClose(new InvalidProgramException(
-                                "Server has incompatible protocol. Server version: " + resp.ServerProtocolVersion +
-                                ". Client version: " + resp.RequestedProtocolVersion));
-                        }
-                    }
-                }
-                else
-                {
-                    FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
-                }
+                OnMessageReceived(requestId, ms);
             }
         }
 
@@ -201,6 +154,66 @@ namespace Stacks.Actors
             if (h != null)
                 h(name, ms);
         }
+
+        private unsafe void HandleObservableMessage(byte* b, ArraySegment<byte> buffer)
+        {
+            var nameLen = *(int*)(b + 4);
+            var name = new string((sbyte*)b, 8, nameLen);
+
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen))
+            {
+                OnObsMessageReceived(name, ms);
+            }
+        }
+
+        private unsafe void HandleProtocolMessage(byte* b, ArraySegment<byte> buffer)
+        {
+            int pid = *(int*)(b + 4);
+
+            if (pid != 2)
+                FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
+
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
+            {
+                var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ms);
+
+                if (resp.ProtocolMatch)
+                {
+                    CompleteHandshake();
+                }
+                else
+                {
+                    FailWithExnAndClose(new InvalidProgramException(
+                        "Server has incompatible protocol. Server version: " + resp.ServerProtocolVersion +
+                        ". Client version: " + resp.RequestedProtocolVersion));
+                }
+            }
+        }
+
+        private unsafe void PacketReceived(ArraySegment<byte> buffer)
+        {
+            try
+            {
+                fixed (byte* b = &buffer.Array[buffer.Offset])
+                {
+                    int header = *(int*)b;
+
+                    if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.RequestReponse))
+                        HandleReqRespMessage(b, buffer);
+                    else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.Observable))
+                        HandleObservableMessage(b, buffer);  
+                    else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.StacksProtocol))
+                        HandleProtocolMessage(b, buffer);
+                    else
+                        FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
+                }
+            }
+            catch (Exception exn)
+            {
+                FailWithExnAndClose(exn);
+            }
+        }
+
 
         public unsafe void Send<T>(string msgName, long requestId, T obj)
         {

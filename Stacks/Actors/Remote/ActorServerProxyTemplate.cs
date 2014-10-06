@@ -48,6 +48,44 @@ namespace Stacks.Actors
                 });
         }
 
+        private void HandleClientReceivedData(FramedClient client, ArraySegment<byte> bs)
+        {
+            unsafe
+            {
+                fixed (byte* b = bs.Array)
+                {
+                    byte* s = b + bs.Offset;
+                    Proto.ActorProtocolFlags header = *(Proto.ActorProtocolFlags*)s;
+
+                    if (header == Proto.ActorProtocolFlags.StacksProtocol)
+                    {
+                        HandleProtocolMessage(client, bs, s);
+                    }
+                    else
+                    {
+                        if (header != Proto.ActorProtocolFlags.RequestReponse)
+                            throw new Exception("Invalid actor protocol header. Expected request-response");
+
+                        bs = HandleRequestMessage(client, bs, s);
+                    }
+                }
+            }
+        }
+
+        private unsafe ArraySegment<byte> HandleRequestMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
+        {
+            long reqId = *(long*)(s + 4);
+            int msgNameLength = *(int*)(s + 12);
+            string msgName = new string((sbyte*)s, 16, msgNameLength);
+            int pOffset = 16 + msgNameLength;
+
+            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
+            {
+                HandleMessage(client, reqId, msgName, ms);
+            }
+            return bs;
+        }
+
         private void ClientConnected(SocketClient socketClient)
         {
             var client = new FramedClient(socketClient);
@@ -59,33 +97,13 @@ namespace Stacks.Actors
 
             client.Received.Subscribe(bs =>
                 {
-                    unsafe
+                    try
                     {
-                        fixed (byte* b = bs.Array)
-                        {
-                            byte* s = b + bs.Offset;
-                            Proto.ActorProtocolFlags header = *(Proto.ActorProtocolFlags*)s;
-
-                            if (header == Proto.ActorProtocolFlags.StacksProtocol)
-                            {
-                                HandleProtocolMessage(client, bs, s);
-                            }
-                            else
-                            {
-                                if (header != Proto.ActorProtocolFlags.RequestReponse)
-                                    throw new Exception("Invalid actor protocol header. Expected request-response");
-
-                                long reqId = *(long*)(s + 4);
-                                int msgNameLength = *(int*)(s + 12);
-                                string msgName = new string((sbyte*)s, 16, msgNameLength);
-                                int pOffset = 16 + msgNameLength;
-
-                                using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
-                                {
-                                    HandleMessage(client, reqId, msgName, ms);
-                                }
-                            }
-                        }
+                        HandleClientReceivedData(client, bs);
+                    }
+                    catch
+                    {
+                        client.Close();
                     }
                 });
 
@@ -97,7 +115,7 @@ namespace Stacks.Actors
             int pid = *(int*)(s + 4);
 
             if (pid != 1)
-                throw new Exception("Invalid actor protocol header. Expected request-response");
+                throw new Exception("Invalid actor protocol header.");
 
             using (var ms = new MemoryStream(bs.Array, bs.Offset + 8, bs.Count - 8))
             {
