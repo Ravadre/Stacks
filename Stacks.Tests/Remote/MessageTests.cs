@@ -101,7 +101,7 @@ namespace Stacks.Tests.Remote
 
     }
 
-    public interface IMessageActor : IActorClientProxy
+    public interface IMessageActor
     {
         Task Ping();
         Task<int> Random();

@@ -16,7 +16,7 @@ namespace Stacks.Tests.Remote
             server = ActorServerProxy.Create("tcp://*:0", impl);
             int port = server.BindEndPoint.Port;
 
-            client = ActorClientProxy.Create<I>("tcp://localhost:" + port).Result;
+            client = ActorClientProxy.CreateProxy<I>("tcp://localhost:" + port).Result.Actor;
         }
 
         public static void CreateServerAndClient<T, I>(out IActorServerProxy server, out I client)
@@ -25,7 +25,7 @@ namespace Stacks.Tests.Remote
             server = ActorServerProxy.Create<T>("tcp://*:0");
             int port = server.BindEndPoint.Port;
 
-            client = ActorClientProxy.Create<I>("tcp://localhost:" + port).Result;
+            client = ActorClientProxy.CreateProxy<I>("tcp://localhost:" + port).Result.Actor;
         }
 
         public static int FindFreePort()

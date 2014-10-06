@@ -28,14 +28,14 @@ namespace RemoteActorsSample
             // what method actor supports. Returned object implements given interface,
             // so one can use one interface to call local and remote actors.
             // Returned task is signalled when actor successfully connects to the server.
-            ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://localhost:4632").Result;
+            ICalculatorActor calculator = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://localhost:4632").Result;
 
             {
 
                 // Task will throw an exception if it won't be able to connect to the server.
                 try
                 {
-                    ICalculatorActor wrongAddress = ActorClientProxy.Create<ICalculatorActor>("tcp://127.0.0.1:45662").Result;
+                    ICalculatorActor wrongAddress = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://127.0.0.1:45662").Result;
                 }
                 catch (AggregateException exc)
                 {
@@ -170,8 +170,8 @@ namespace RemoteActorsSample
                 // automatically.
                 Console.WriteLine();
                 Console.WriteLine("Pinging with 2 clients");
-                var calculator2 = ActorClientProxy.Create<ICalculatorActor>("tcp://localhost:4632").Result;
-
+                var calculator2 = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://localhost:4632").Result;
+               
                 var p1 = calculator.Ping();
                 var p2 = calculator2.Ping();
 
@@ -179,7 +179,11 @@ namespace RemoteActorsSample
 
                 Console.WriteLine("Pinging done");
 
-                calculator2.Close();
+                // Because 'simpler' method for creating an actor was used, 
+                // reference to an actor interface was received, instead of to wrapper object.
+                // If wrapper object with control method is needed, returned object
+                // can be cast to IActorClientProxy or IActorClientProxy<Actor Interface>
+                ((IActorClientProxy)calculator2).Close();
             }
 
             {
@@ -210,8 +214,26 @@ namespace RemoteActorsSample
                 });
             Thread.Sleep(3000);
 
+            
+
+            // When more control over proxy is needed, CreateProxy method can be used.
+            // This will return the same object as CreateActor method would, but returned
+            // type will be of a wrapper type.
+            var proxyCalc = ActorClientProxy.CreateProxy<ICalculatorActor>("tcp://localhost:4632").Result;
+
+            // Actual actor implementation can be accessed through .Actor property,
+            // or by simply casting whole proxy to actor interface.
+            // Both method will return the same object.
+            ICalculatorActor proxyCalcActor1 = proxyCalc.Actor;
+            ICalculatorActor proxyCalcActor2 = (ICalculatorActor)proxyCalc;
+
+            Console.WriteLine();
+            Console.WriteLine("Two methods of accessing proxy actor return the same object - " +
+                                object.ReferenceEquals(proxyCalcActor1, proxyCalcActor2));
+
+
             actorServer.Stop();
-            calculator.Close();
+            ((IActorClientProxy)calculator).Close();
 
             Console.WriteLine();
             Console.WriteLine("Sample finished");

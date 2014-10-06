@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
 using Xunit;
@@ -26,13 +27,13 @@ namespace Stacks.Tests.Remote
             Utils.CreateServerAndClient<TestActor, ITestActor>(out server, out client);
 
             server.Stop();
-            client.Close();
+            ((IActorClientProxy)client).Close();
         }
 
         [Fact]
         public void Client_should_return_task_which_fails_if_it_could_not_connect_to_server()
         {
-            var clientTask = ActorClientProxy.Create<ITestActor>("tcp://localhost:" + Utils.FindFreePort());
+            var clientTask = ActorClientProxy.CreateProxy<ITestActor>("tcp://localhost:" + Utils.FindFreePort());
 
             Assert.Throws(typeof(SocketException), () =>
                 {
@@ -45,9 +46,23 @@ namespace Stacks.Tests.Remote
                     }
                 });
         }
+
+        [Fact]
+        public void Client_should_signal_disconnection_when_server_is_closed()
+        {
+            var disconnected = new ManualResetEventSlim();
+            Utils.CreateServerAndClient<TestActor, ITestActor>(out server, out client);
+
+            var clientProxy = (IActorClientProxy)client;
+            clientProxy.Disconnected.Subscribe(exn => { disconnected.Set(); });
+            
+            server.Stop();
+
+            disconnected.AssertWaitFor();
+        }
     }
 
-    public interface ITestActor : IActorClientProxy
+    public interface ITestActor
     {
         Task Ping();
     }

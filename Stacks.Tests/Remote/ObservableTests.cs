@@ -89,6 +89,11 @@ namespace Stacks.Tests.Remote
             if (y == null) return false;
             return this.Equals(y);
         }
+
+        public override int GetHashCode()
+        {
+            return A.GetHashCode() ^ X.GetHashCode();
+        }
     }
 
     public interface IObservableActor

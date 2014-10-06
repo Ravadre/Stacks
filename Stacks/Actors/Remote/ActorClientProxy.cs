@@ -15,39 +15,68 @@ namespace Stacks.Actors
 
     public class ActorClientProxy
     {
-        public static Task<T> Create<T>(IPEndPoint remoteEndPoint)
+        public static Task<IActorClientProxy<T>> CreateProxy<T>(IPEndPoint remoteEndPoint)
         {
-            var type = typeof(T);
-            return Create(type, remoteEndPoint).ContinueWith(t =>
+            var proxyCreator = new ActorClientProxy();
+
+            return proxyCreator.AuxCreate<T>(remoteEndPoint);
+        }
+
+        public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint)
+        {
+            return CreateProxy<T>(IPHelpers.Parse(endPoint));
+        }
+
+
+        public static Task<IActorClientProxy> CreateProxy(Type actorType, IPEndPoint remoteEndPoint)
+        {
+            var proxyCreator = new ActorClientProxy();
+
+            return (Task<IActorClientProxy>)proxyCreator
+                        .GetType()
+                        .GetMethod("AuxCreate", BindingFlags.NonPublic | BindingFlags.Instance,
+                                    null, new Type[] { typeof(IPEndPoint) }, null)
+                        .MakeGenericMethod(actorType)
+                        .Invoke(proxyCreator, new[] { remoteEndPoint });
+        }
+
+        public static Task<IActorClientProxy> CreateProxy(Type actorType, string remoteEndPoint)
+        {
+            return CreateProxy(actorType, IPHelpers.Parse(remoteEndPoint));
+        }
+
+
+
+        public static Task<T> CreateActor<T>(IPEndPoint remoteEndPoint)
+        {
+            return CreateProxy<T>(remoteEndPoint).ContinueWith(t =>
                 {
                     if (t.Exception == null)
-                        return (T)(object)t.Result;
+                        return t.Result.Actor;
                     else
                         throw t.Exception.InnerException;
                 });
         }
 
-        public static Task<T> Create<T>(string endPoint)
+        public static Task<T> CreateActor<T>(string remoteEndPoint)
         {
-            return Create<T>(IPHelpers.Parse(endPoint));
+            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint));
         }
 
-        public static Task<IActorClientProxy> Create(Type actorType, IPEndPoint remoteEndPoint)
-        {
-            var proxyCreator = new ActorClientProxy();
 
-            return proxyCreator.AuxCreate(actorType, remoteEndPoint);
-        }
 
-        public static Task<IActorClientProxy> Create(Type actorType, string endPoint)
-        {
-            return Create(actorType, IPHelpers.Parse(endPoint));
-        }
+        [Obsolete("This method is obsolete. Choose between CreateActor and CreateProxy.")]
+        public static Task<T> Create<T>(IPEndPoint remoteEndPoint) { return CreateActor<T>(remoteEndPoint); }
+        [Obsolete("This method is obsolete. Choose between CreateActor and CreateProxy.")]
+        public static Task<T> Create<T>(string remoteEndPoint) { return CreateActor<T>(remoteEndPoint); }
+
+
 
         private ClientActorTypeBuilder tBuilder;
 
-        private Task<IActorClientProxy> AuxCreate(Type actorType, IPEndPoint remoteEndPoint)
+        private Task<IActorClientProxy<T>> AuxCreate<T>(IPEndPoint remoteEndPoint)
         {
+            var actorType = typeof(T);
             Ensure.IsInterface(actorType, "actorType", "Only interfaces can be used to create actor client proxy");
 
             tBuilder = new ClientActorTypeBuilder("ActorClientProxy_ " + actorType.FullName);
@@ -57,11 +86,12 @@ namespace Stacks.Actors
             tBuilder.SaveToFile();
 
             var actor = Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
-            return ((ActorClientProxyTemplate)actor).Connect()
+    
+            return ((ActorClientProxyTemplate<T>)actor).Connect()
                         .ContinueWith(t =>
                             {
                                 if (t.Exception == null)
-                                    return (IActorClientProxy)t.Result;
+                                    return (IActorClientProxy<T>)t.Result;
                                 else
                                     throw t.Exception.InnerException;
                             });

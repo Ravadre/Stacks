@@ -20,10 +20,11 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public Type CreateActorType(Type actorInterface)
         {
+            var proxyTemplateType = typeof(ActorClientProxyTemplate<>).MakeGenericType(actorInterface);
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,
-                                        typeof(ActorClientProxyTemplate), new[] { actorInterface });
+                                        proxyTemplateType, new[] { actorInterface });
 
-            var baseCtor = typeof(ActorClientProxyTemplate).GetConstructor(new[] { typeof(IPEndPoint) });
+            var baseCtor = proxyTemplateType.GetConstructor(new[] { typeof(IPEndPoint) });
 
             var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
                                     CallingConventions.HasThis, new[] { typeof(IPEndPoint) });
@@ -32,6 +33,21 @@ namespace Stacks.Actors.Remote.CodeGen
             ctorIl.Emit(OpCodes.Ldarg_1);
             ctorIl.Emit(OpCodes.Call, baseCtor);
 
+            {
+                var actorProperty = actorImplBuilder.DefineProperty("Actor", PropertyAttributes.HasDefault, actorInterface, null);
+                var actorGetMethodProperty = actorImplBuilder.DefineMethod("get_Actor",
+                                                                MethodAttributes.Public |
+                                                                MethodAttributes.HideBySig |
+                                                                MethodAttributes.SpecialName |
+                                                                MethodAttributes.Virtual,
+                                                            actorInterface, Type.EmptyTypes);
+                
+                var il = actorGetMethodProperty.GetILGenerator();
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ret);
+
+                actorProperty.SetGetMethod(actorGetMethodProperty);
+            }
 
             foreach (var method in actorInterface.FindValidProxyMethods())
             {
@@ -43,7 +59,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 mb.SetReturnType(method.ReturnType);
                 mb.SetParameters(method.GetParameters().Select(p => p.ParameterType).ToArray());
 
-                ImplementSendMethod(mb, method);
+                ImplementSendMethod(mb, method, proxyTemplateType);
             }
 
             foreach (var property in actorInterface.FindValidObservableProperties())
@@ -69,7 +85,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ldfld, fb);
                 il.Emit(OpCodes.Ret);
-                
+
                 pb.SetGetMethod(getMethod);
 
 
@@ -85,7 +101,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 hil.Emit(OpCodes.Ldarg_0);
                 hil.Emit(OpCodes.Ldfld, fb);
                 hil.Emit(OpCodes.Ldarg_0);
-                hil.Emit(OpCodes.Ldfld, typeof(ActorClientProxyTemplate).GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
+                hil.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
                 hil.Emit(OpCodes.Ldarg_1);
                 hil.EmitCall(OpCodes.Callvirt, desMethod, null);
                 hil.Emit(OpCodes.Ldfld, messageType.GetField("$Value"));
@@ -93,7 +109,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 hil.Emit(OpCodes.Ret);
 
 
-      
+
 
                 ctorIl.Emit(OpCodes.Ldarg_0);
                 ctorIl.Emit(OpCodes.Newobj, typeof(Subject<>).MakeGenericType(innerType).GetConstructor(Type.EmptyTypes));
@@ -101,20 +117,20 @@ namespace Stacks.Actors.Remote.CodeGen
 
 
                 ctorIl.Emit(OpCodes.Ldarg_0);
-                ctorIl.Emit(OpCodes.Ldfld, typeof(ActorClientProxyTemplate).GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
+                ctorIl.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
                 ctorIl.Emit(OpCodes.Ldstr, property.Name);
                 ctorIl.Emit(OpCodes.Ldarg_0);
                 ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
                 ctorIl.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
                 ctorIl.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
             }
-            
+
             ctorIl.Emit(OpCodes.Ret);
 
             return actorImplBuilder.CreateType();
         }
 
-        private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod)
+        private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod, Type proxyTemplateType)
         {
             var il = mb.GetILGenerator();
             var msgType = messageParamTypes[sendMethod.Name];
@@ -143,7 +159,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                         ? typeof(System.Reactive.Unit)
                                         : sendMethodTaskRet.GetGenericArguments()[0];
 
-            var sendMessageTemplate = typeof(ActorClientProxyTemplate).GetMethod("SendMessage",
+            var sendMessageTemplate = proxyTemplateType.GetMethod("SendMessage",
                                                                          BindingFlags.Instance | BindingFlags.NonPublic);
             var sendMessage = sendMessageTemplate.MakeGenericMethod(msgType, sendMethodInnerRet, msgReplyType);
 

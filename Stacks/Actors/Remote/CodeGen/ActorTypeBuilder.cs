@@ -34,7 +34,6 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public void SaveToFile()
         {
-            //throw new NotSupportedException();
             //asmBuilder.Save(asmName.Name + ".dll");
         }
 
