@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Actors;
@@ -99,6 +101,27 @@ namespace Stacks.Tests.Remote
             client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312).Wait();
         }
 
+        [Fact]
+        public void Request_should_fail_if_server_goes_down_while_processing_an_event()
+        {
+            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+
+            var addResult = client.LongRunningAdder(5, 6);
+            Thread.Sleep(50);
+            server.Stop();
+
+            Assert.Throws(typeof(SocketException), () =>
+                {
+                    try
+                    {
+                        var res = addResult.Result;
+                    }
+                    catch (AggregateException exc)
+                    {
+                        throw exc.InnerException;
+                    }
+                });
+        }
     }
 
     public interface IMessageActor
@@ -108,6 +131,8 @@ namespace Stacks.Tests.Remote
         Task NotProtoContract(InvalidData data);
         Task<IEnumerable<ValidDataResponse>> PassValidData(IEnumerable<ValidData> data);
         Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j);
+
+        Task<int> LongRunningAdder(int x, int y);
     }
 
     public class InvalidData
@@ -191,6 +216,13 @@ namespace Stacks.Tests.Remote
             {
                 throw new Exception("Custom fail message");
             }
+        }
+
+        public async Task<int> LongRunningAdder(int x, int y)
+        {
+            await Context;
+            await Task.Delay(5000);
+            return x + y;
         }
     }
 }

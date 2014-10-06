@@ -14,6 +14,7 @@ namespace Stacks.Tests.Remote
     {
         private IActorServerProxy server;
         private ITestActor client;
+        private IActorClientProxy<ITestActor> clientProxy;
 
         [Fact]
         public void Client_should_be_able_to_connect_to_server()
@@ -51,9 +52,8 @@ namespace Stacks.Tests.Remote
         public void Client_should_signal_disconnection_when_server_is_closed()
         {
             var disconnected = new ManualResetEventSlim();
-            Utils.CreateServerAndClient<TestActor, ITestActor>(out server, out client);
+            Utils.CreateServerAndClientProxy<TestActor, ITestActor>(out server, out clientProxy);
 
-            var clientProxy = (IActorClientProxy)client;
             clientProxy.Disconnected.Subscribe(exn => { disconnected.Set(); });
             
             server.Stop();
