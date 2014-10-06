@@ -7,6 +7,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Tcp;
@@ -22,6 +23,8 @@ namespace Stacks.Actors
         private AsyncSubject<Exception> disconnectedSubject;
 
         private Dictionary<int, Action<IntPtr, MemoryStream>> protocolHandlers;
+
+        private Timer pingTimer;
 
         public IExecutor Executor
         {
@@ -81,37 +84,19 @@ namespace Stacks.Actors
             disconnectedSubject = new AsyncSubject<Exception>();
 
             protocolHandlers = new Dictionary<int, Action<IntPtr, MemoryStream>>();
-            protocolHandlers[1] = HandleHandshakeMessage;
-            protocolHandlers[2] = HandlePingMessage;
+            protocolHandlers[Proto.ActorProtocol.HandshakeId] = HandleHandshakeMessage;
+            protocolHandlers[Proto.ActorProtocol.PingId] = HandlePingMessage;
+
+            pingTimer = new Timer(OnPingTimer, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         private void OnConnected(Unit _)
         {
-            using (var ms = new MemoryStream())
-            {
-                ms.SetLength(8);
-                ms.Position = 8;
-                
-                packetSerializer.Serialize(
-                    new Proto.HandshakeRequest()
+            AuxSendProtocolPacket(Proto.ActorProtocol.HandshakeId,
+                    new Proto.HandshakeRequest
                     {
                         ClientProtocolVersion = Proto.ActorProtocol.Version
-                    }, ms);
-
-                ms.Position = 0;
-
-                var buffer = ms.GetBuffer();
-                unsafe
-                {
-                    fixed (byte* b = buffer)
-                    {
-                        *(Proto.ActorProtocolFlags*)b = Proto.ActorProtocolFlags.StacksProtocol;
-                        *(int*)(b + 4) = 1;
-                    }
-                }
-
-                framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
-            }
+                    });
         }
 
         private void OnDisconnected(Exception exn)
@@ -126,14 +111,17 @@ namespace Stacks.Actors
             handshakeCompleted.OnError(exn);
             disconnectedSubject.OnNext(exn);
             disconnectedSubject.OnCompleted();
-            
+
             framedClient.Close();
+            pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
         private void CompleteHandshake()
         {
             handshakeCompleted.OnNext(Unit.Default);
             handshakeCompleted.OnCompleted();
+
+            pingTimer.Change(0, 10000);
         }
 
         private unsafe void HandleReqRespMessage(byte* b, ArraySegment<byte> buffer)
@@ -183,7 +171,7 @@ namespace Stacks.Actors
 
             using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
             {
-                handler(new IntPtr(b), ms);  
+                handler(new IntPtr(b), ms);
             }
         }
 
@@ -203,9 +191,37 @@ namespace Stacks.Actors
             }
         }
 
+
+        private void OnPingTimer(object state)
+        {
+            Executor.Enqueue(() =>
+                {
+                    try
+                    {
+                        if (disconnectedSubject.IsCompleted)
+                        {
+                            pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                            return;
+                        }
+                        else
+                        {
+                            AuxSendProtocolPacket(Proto.ActorProtocol.PingId,
+                                new Proto.Ping
+                                {
+                                    Timestamp = System.Diagnostics.Stopwatch.GetTimestamp()
+                                });
+                        }
+                    }
+                    catch (Exception exn)
+                    {
+                        FailWithExnAndClose(exn);
+                    }
+                });
+        }
+
         private void HandlePingMessage(IntPtr p, MemoryStream ms)
         {
-            
+
         }
 
 
@@ -220,7 +236,7 @@ namespace Stacks.Actors
                     if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.RequestReponse))
                         HandleReqRespMessage(b, buffer);
                     else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.Observable))
-                        HandleObservableMessage(b, buffer);  
+                        HandleObservableMessage(b, buffer);
                     else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.StacksProtocol))
                         HandleProtocolMessage(b, buffer);
                     else
@@ -262,6 +278,31 @@ namespace Stacks.Actors
         public void Close()
         {
             this.framedClient.Close();
+        }
+
+        private void AuxSendProtocolPacket<T>(int packetId, T packet)
+        {
+            using (var ms = new MemoryStream())
+            {
+                ms.SetLength(8);
+                ms.Position = 8;
+
+                packetSerializer.Serialize(packet, ms);
+
+                ms.Position = 0;
+
+                var buffer = ms.GetBuffer();
+                unsafe
+                {
+                    fixed (byte* b = buffer)
+                    {
+                        *(Proto.ActorProtocolFlags*)b = Proto.ActorProtocolFlags.StacksProtocol;
+                        *(int*)(b + 4) = packetId;
+                    }
+                }
+
+                framedClient.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
+            }
         }
     }
 }

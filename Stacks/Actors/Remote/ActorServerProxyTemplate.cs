@@ -19,7 +19,7 @@ namespace Stacks.Actors
         protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
         protected Dictionary<string, object> obsHandlers;
         protected IStacksSerializer serializer;
-       
+
         protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
 
         public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
@@ -122,7 +122,7 @@ namespace Stacks.Actors
 
             Action<FramedClient, MemoryStream> handler;
             bool hasHandler = protocolHandlers.TryGetValue(pid, out handler);
-            
+
             if (!hasHandler)
                 throw new Exception("Invalid actor protocol header.");
 
@@ -136,34 +136,24 @@ namespace Stacks.Actors
         {
             var req = serializer.Deserialize<Proto.HandshakeRequest>(ms);
 
-            using (var respMs = new MemoryStream())
-            {
-                respMs.SetLength(8);
-                respMs.Position = 8;
-                serializer.Serialize<Proto.HandshakeResponse>(
-                    new Proto.HandshakeResponse()
+            AuxSendProtocolPacket(client, Proto.ActorProtocol.HandshakeId,
+                  new Proto.HandshakeResponse
                     {
                         RequestedProtocolVersion = req.ClientProtocolVersion,
                         ServerProtocolVersion = Proto.ActorProtocol.Version,
                         ProtocolMatch = req.ClientProtocolVersion == Proto.ActorProtocol.Version
-                    }, respMs);
-                respMs.Position = 0;
-
-                var buffer = respMs.GetBuffer();
-
-                fixed (byte* buf = buffer)
-                {
-                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.StacksProtocol;
-                    *(int*)(buf + 4) = Proto.ActorProtocol.HandshakeId;
-                }
-
-                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)respMs.Length));
-            }
+                    });
         }
 
         private void HandlePingMessage(FramedClient client, MemoryStream ms)
         {
-            throw new NotImplementedException();
+            var req = serializer.Deserialize<Proto.Ping>(ms);
+
+            AuxSendProtocolPacket(client, Proto.ActorProtocol.PingId,
+                  new Proto.Ping
+                  {
+                      Timestamp = req.Timestamp
+                  });
         }
 
 
@@ -289,6 +279,27 @@ namespace Stacks.Actors
                             c.SendPacket(packet);
                         }
                     });
+            }
+        }
+
+        private unsafe void AuxSendProtocolPacket<P>(FramedClient client, int packetId, P packet)
+        {
+            using (var ms = new MemoryStream())
+            {
+                ms.SetLength(8);
+                ms.Position = 8;
+                serializer.Serialize(packet, ms);
+                ms.Position = 0;
+
+                var buffer = ms.GetBuffer();
+
+                fixed (byte* buf = buffer)
+                {
+                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.StacksProtocol;
+                    *(int*)(buf + 4) = packetId;
+                }
+
+                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
             }
         }
     }
