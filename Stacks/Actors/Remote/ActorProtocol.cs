@@ -18,6 +18,9 @@ namespace Stacks.Actors.Proto
     public static class ActorProtocol
     {
         public static readonly int Version = 1;
+
+        public static readonly int HandshakeId = 1;
+        public static readonly int PingId = 2;
     }
 
     [ProtoContract]
@@ -38,7 +41,12 @@ namespace Stacks.Actors.Proto
         public bool ProtocolMatch { get; set; }
     }
 
-    
+    [ProtoContract]
+    class Ping
+    {
+        [ProtoMember(1)]
+        public long Timestamp { get; set; }
+    }
 }
 
 namespace Stacks.Actors

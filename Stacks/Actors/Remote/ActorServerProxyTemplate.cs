@@ -19,6 +19,8 @@ namespace Stacks.Actors
         protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
         protected Dictionary<string, object> obsHandlers;
         protected IStacksSerializer serializer;
+       
+        protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
 
         public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
 
@@ -30,6 +32,10 @@ namespace Stacks.Actors
             this.handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
             this.obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
+
+            protocolHandlers = new Dictionary<int, Action<FramedClient, MemoryStream>>();
+            protocolHandlers[Proto.ActorProtocol.HandshakeId] = HandleHandshakeMessage;
+            protocolHandlers[Proto.ActorProtocol.PingId] = HandlePingMessage;
 
             server = new SocketServer(executor, bindEndPoint);
             server.Connected.Subscribe(ClientConnected);
@@ -114,39 +120,52 @@ namespace Stacks.Actors
         {
             int pid = *(int*)(s + 4);
 
-            if (pid != 1)
+            Action<FramedClient, MemoryStream> handler;
+            bool hasHandler = protocolHandlers.TryGetValue(pid, out handler);
+            
+            if (!hasHandler)
                 throw new Exception("Invalid actor protocol header.");
 
             using (var ms = new MemoryStream(bs.Array, bs.Offset + 8, bs.Count - 8))
             {
-                var req = serializer.Deserialize<Proto.HandshakeRequest>(ms);
-
-
-                using (var respMs = new MemoryStream())
-                {
-                    respMs.SetLength(8);
-                    respMs.Position = 8;
-                    serializer.Serialize<Proto.HandshakeResponse>(
-                        new Proto.HandshakeResponse()
-                        {
-                            RequestedProtocolVersion = req.ClientProtocolVersion,
-                            ServerProtocolVersion = Proto.ActorProtocol.Version,
-                            ProtocolMatch = req.ClientProtocolVersion == Proto.ActorProtocol.Version
-                        }, respMs);
-                    respMs.Position = 0;
-
-                    var buffer = respMs.GetBuffer();
-
-                    fixed (byte* buf = buffer)
-                    {
-                        *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.StacksProtocol;
-                        *(int*)(buf + 4) = 2;
-                    }
-
-                    client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)respMs.Length));
-                }
+                handler(client, ms);
             }
         }
+
+        private unsafe void HandleHandshakeMessage(FramedClient client, MemoryStream ms)
+        {
+            var req = serializer.Deserialize<Proto.HandshakeRequest>(ms);
+
+            using (var respMs = new MemoryStream())
+            {
+                respMs.SetLength(8);
+                respMs.Position = 8;
+                serializer.Serialize<Proto.HandshakeResponse>(
+                    new Proto.HandshakeResponse()
+                    {
+                        RequestedProtocolVersion = req.ClientProtocolVersion,
+                        ServerProtocolVersion = Proto.ActorProtocol.Version,
+                        ProtocolMatch = req.ClientProtocolVersion == Proto.ActorProtocol.Version
+                    }, respMs);
+                respMs.Position = 0;
+
+                var buffer = respMs.GetBuffer();
+
+                fixed (byte* buf = buffer)
+                {
+                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.StacksProtocol;
+                    *(int*)(buf + 4) = Proto.ActorProtocol.HandshakeId;
+                }
+
+                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)respMs.Length));
+            }
+        }
+
+        private void HandlePingMessage(FramedClient client, MemoryStream ms)
+        {
+            throw new NotImplementedException();
+        }
+
 
         private void HandleMessage(FramedClient client, long reqId, string messageName, MemoryStream ms)
         {

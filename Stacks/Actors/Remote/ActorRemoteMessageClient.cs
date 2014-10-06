@@ -21,6 +21,8 @@ namespace Stacks.Actors
         private AsyncSubject<Unit> handshakeCompleted;
         private AsyncSubject<Exception> disconnectedSubject;
 
+        private Dictionary<int, Action<IntPtr, MemoryStream>> protocolHandlers;
+
         public IExecutor Executor
         {
             get { return framedClient.Executor; }
@@ -68,17 +70,20 @@ namespace Stacks.Actors
 
         public ActorRemoteMessageClient(IFramedClient client)
         {
-            this.framedClient = client;
-            this.packetSerializer = new ProtoBufStacksSerializer();
+            framedClient = client;
+            packetSerializer = new ProtoBufStacksSerializer();
 
-            this.framedClient.Received.Subscribe(PacketReceived);
-            this.framedClient.Connected.Subscribe(OnConnected);
-            this.framedClient.Disconnected.Subscribe(OnDisconnected);
+            framedClient.Received.Subscribe(PacketReceived);
+            framedClient.Connected.Subscribe(OnConnected);
+            framedClient.Disconnected.Subscribe(OnDisconnected);
 
-            this.handshakeCompleted = new AsyncSubject<Unit>();
-            this.disconnectedSubject = new AsyncSubject<Exception>();
+            handshakeCompleted = new AsyncSubject<Unit>();
+            disconnectedSubject = new AsyncSubject<Exception>();
+
+            protocolHandlers = new Dictionary<int, Action<IntPtr, MemoryStream>>();
+            protocolHandlers[1] = HandleHandshakeMessage;
+            protocolHandlers[2] = HandlePingMessage;
         }
-
 
         private void OnConnected(Unit _)
         {
@@ -170,25 +175,39 @@ namespace Stacks.Actors
         {
             int pid = *(int*)(b + 4);
 
-            if (pid != 2)
+            Action<IntPtr, MemoryStream> handler;
+            bool hasHandler = protocolHandlers.TryGetValue(pid, out handler);
+
+            if (!hasHandler)
                 FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
 
             using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
             {
-                var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ms);
-
-                if (resp.ProtocolMatch)
-                {
-                    CompleteHandshake();
-                }
-                else
-                {
-                    FailWithExnAndClose(new InvalidProgramException(
-                        "Server has incompatible protocol. Server version: " + resp.ServerProtocolVersion +
-                        ". Client version: " + resp.RequestedProtocolVersion));
-                }
+                handler(new IntPtr(b), ms);  
             }
         }
+
+        private unsafe void HandleHandshakeMessage(IntPtr p, MemoryStream ms)
+        {
+            var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ms);
+
+            if (resp.ProtocolMatch)
+            {
+                CompleteHandshake();
+            }
+            else
+            {
+                FailWithExnAndClose(new InvalidProgramException(
+                    "Server has incompatible protocol. Server version: " + resp.ServerProtocolVersion +
+                    ". Client version: " + resp.RequestedProtocolVersion));
+            }
+        }
+
+        private void HandlePingMessage(IntPtr p, MemoryStream ms)
+        {
+            
+        }
+
 
         private unsafe void PacketReceived(ArraySegment<byte> buffer)
         {
