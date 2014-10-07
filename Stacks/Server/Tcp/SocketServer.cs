@@ -77,6 +77,7 @@ namespace Stacks.Tcp
                 this.socket = new Socket(AddressFamily.InterNetworkV6,
                                          SocketType.Stream,
                                          ProtocolType.Tcp);
+#if !MONO
                 if (IsWinVistaOrHigher() || IsNotWindows())
                 {
                     try
@@ -85,6 +86,7 @@ namespace Stacks.Tcp
                     }
                     catch { }
                 }
+#endif
             }
             else
             {
