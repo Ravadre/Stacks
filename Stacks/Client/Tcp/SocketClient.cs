@@ -206,7 +206,16 @@ namespace Stacks.Tcp
         {
             try
             {
+                // This seems to be broken on Mono. 
+                // SocketError is success even when socket is not connected.
+                // However, checking RemoteEndPoint seems to overcome this issue
+                // (on .Net, this however throws when socket is not connected)
+#if !MONO
                 if (e.SocketError == SocketError.Success)
+#else
+                if (e.SocketError == SocketError.Success &&
+                    socket.RemoteEndPoint != null)
+#endif
                 {
                     InitialiseConnectedSocket();
 
