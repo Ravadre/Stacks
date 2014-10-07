@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
-    public class ActorTypeBuilder
+    class ActorTypeBuilder
     {
         protected AssemblyBuilder asmBuilder;
         protected ModuleBuilder moduleBuilder;
@@ -34,7 +34,6 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public void SaveToFile()
         {
-            //throw new NotSupportedException();
             //asmBuilder.Save(asmName.Name + ".dll");
         }
 

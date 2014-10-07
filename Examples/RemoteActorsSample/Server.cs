@@ -139,9 +139,5 @@ namespace RemoteActorsSample
                     Thread.Sleep(1000);
                 });
         }
-
-        public void Close() { }
-
-
     }
 }

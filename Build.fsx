@@ -68,10 +68,11 @@ Target "Nuget" (fun _ ->
 
     //Main stacks package
     BuildPackage "Stacks" 
-                 ["Stacks.dll"] 
+                 ["Stacks.dll";
+                  "Stacks.xml"] 
                  "Stacks.dll"  
-                 [ ("Microsoft.Tpl.Dataflow", "4.5.14" );
-                   ("Rx-Main", "2.2.4");
+                 [ ("Microsoft.Tpl.Dataflow", "4.5.23" );
+                   ("Rx-Main", "2.2.5");
                    ("protobuf-net", "2.0.0.668") ]
                  "Stacks/stacks.nuspec"
 
@@ -79,7 +80,7 @@ Target "Nuget" (fun _ ->
                  ["Stacks.MessagePack.dll"]
                  "Stacks.MessagePack.dll"
                  [ ("Stacks", stacksVer )
-                   ("MsgPack.Cli", "0.4.3") ]
+                   ("MsgPack.Cli", "0.5.4") ]
                  "Stacks.MessagePack/stacks.messagepack.nuspec"
 
     BuildPackage "Stacks.FSharp"

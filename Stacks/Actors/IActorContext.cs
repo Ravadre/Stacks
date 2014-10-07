@@ -18,5 +18,7 @@ namespace Stacks.Actors
 
         IActorContext GetAwaiter();
         void GetResult();
+
+        event Action<Exception> Error;
     }
 }

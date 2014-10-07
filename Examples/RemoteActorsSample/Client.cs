@@ -37,7 +37,7 @@ namespace RemoteActorsSample
         public RectangleInfo Info { get; set; }
     }
 
-    public interface ICalculatorActor : IActorClientProxy
+    public interface ICalculatorActor
     {
         Task<double> Add(double x, double y);
         Task<double> Subtract(double x, double y);

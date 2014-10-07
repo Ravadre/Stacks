@@ -14,6 +14,12 @@ namespace Stacks.Actors
         private IExecutor executor;
         private string name;
 
+        public event Action<Exception> Error
+        {
+            add { executor.Error += value; }
+            remove { executor.Error -= value; }
+        }
+
         public ActorContext()
             : this(null, 
                    new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))

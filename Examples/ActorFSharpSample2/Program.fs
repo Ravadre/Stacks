@@ -1,9 +1,9 @@
-﻿open System
+﻿
 open System.Net.Http
 open Stacks.Actors
 open System.Xml.Linq
 open Stacks
-open Stacks.FSharp
+
 
 type Weather() = 
     let actor = ActorContext("Weather")
@@ -11,8 +11,8 @@ type Weather() =
 
     let xn s = XName.Get(s)
 
-    member this.GetTemperature(city: string) =
-        actor.RunAsync(async {
+    member __.GetTemperature(city: string) =
+        actor.MakeAsync(async {
             let! response = sprintf "http://api.openweathermap.org/data/2.5/\
                                      weather?q=%s&mode=xml&units=metric" city
                             |> httpClient.GetStringAsync
@@ -26,7 +26,7 @@ type Weather() =
 
 
 [<EntryPoint>]
-let main argv = 
+let main _ = 
     
     let weather = Weather()
 
@@ -34,6 +34,6 @@ let main argv =
         let temp = weather.GetTemperature("Warsaw") |> Async.RunSynchronously
         printfn "Temperature in Warsaw, Poland: %.2f\u00B0C" temp
     with
-    | e -> printfn "Could not get temperature for Warsaw, Poland"
+    | _ -> printfn "Could not get temperature for Warsaw, Poland"
 
     0

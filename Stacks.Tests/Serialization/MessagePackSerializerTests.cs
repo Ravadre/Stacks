@@ -19,7 +19,7 @@ namespace Stacks.Tests.Serialization
     {
         protected MemoryStream CreateSerializedObject<T>(T sample)
         {
-            var serializer = MessagePackSerializer.Create<T>();
+            var serializer = MessagePackSerializer.Get<T>();
             var ms = new MemoryStream();
 
             serializer.Pack(ms, sample);

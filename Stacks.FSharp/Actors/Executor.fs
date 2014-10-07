@@ -1,4 +1,4 @@
-﻿namespace Stacks.FSharp
+﻿namespace Stacks
 
 open Stacks
 
@@ -13,7 +13,7 @@ module Executors =
         /// almost immediately after start, so Async.RunSynchronously or 
         /// Async.StartImmediate are recommended to start it.
         /// </summary>
-        member this.RunAsync<'a>(wf: Async<'a>) = async {
+        member this.MakeAsync<'a>(wf: Async<'a>) = async {
             do! Async.SwitchToContext(this.Context)
             return! wf    
         }
@@ -22,7 +22,7 @@ module Executors =
         /// Runs given code on executor's context immediately. Result can be awaited with 
         /// Async.RunSynchronously
         /// </summary>
-        member this.PostAsync<'a>(code: unit -> 'a) = 
+        member this.RunAsync<'a>(code: unit -> 'a) = 
             this.PostTask(code)
             |> Async.AwaitTask
 
@@ -30,6 +30,6 @@ module Executors =
         /// Runs given code on executor's context immediately. 
         /// Async.RunSynchronously can be used to await completion of code.
         /// </summary>
-        member this.PostAsync(code: unit -> unit) = 
+        member this.RunAsync(code: unit -> unit) = 
             this.PostTask(code)
             |> Async.AwaitTask

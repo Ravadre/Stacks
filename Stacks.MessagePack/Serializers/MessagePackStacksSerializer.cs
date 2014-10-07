@@ -26,13 +26,13 @@ namespace Stacks
 
         public T Deserialize<T>(MemoryStream ms)
         {
-            var d = MessagePackSerializer.Create<T>(this.context);
+            var d = MessagePackSerializer.Get<T>(this.context);
             return d.Unpack(ms);
         }
 
         public void Serialize<T>(T obj, MemoryStream ms)
         {
-            var s = MessagePackSerializer.Create<T>(this.context);
+            var s = MessagePackSerializer.Get<T>(this.context);
             s.Pack(ms, obj);
         }
 

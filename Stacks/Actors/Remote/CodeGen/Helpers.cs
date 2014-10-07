@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
-    public static class MethodInfoExtensions
+    static class MethodInfoExtensions
     {
         public static void EnsureNamesAreUnique(this IEnumerable<MethodInfo> methods)
         {
@@ -22,7 +22,7 @@ namespace Stacks.Actors.Remote.CodeGen
         }
     }
 
-    public static class PropertyInfoExtensions
+    static class PropertyInfoExtensions
     {
         public static void EnsureNamesAreUnique(this IEnumerable<PropertyInfo> properties)
         {
@@ -38,7 +38,7 @@ namespace Stacks.Actors.Remote.CodeGen
         }
     }
 
-    public static class TypeExtensions
+    static class TypeExtensions
     {
         public static MethodInfo[] FindValidProxyMethods(this Type type)
         {
