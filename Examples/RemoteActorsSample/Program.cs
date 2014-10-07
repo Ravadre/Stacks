@@ -237,7 +237,7 @@ namespace RemoteActorsSample
 
             Console.WriteLine();
             Console.WriteLine("Sample finished");
-            Console.ReadKey();
+            Console.Read();
         }
 
         private static double Add(ICalculatorActor calculator, double x, double y)
