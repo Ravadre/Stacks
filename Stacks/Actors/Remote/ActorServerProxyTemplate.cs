@@ -70,6 +70,9 @@ namespace Stacks.Actors
         {
             executor.Enqueue(() =>
                 {
+                    if (isStopped)
+                        return;
+
                     var now = DateTime.UtcNow;
                     var halfMinute = TimeSpan.FromMinutes(1.0);
 
