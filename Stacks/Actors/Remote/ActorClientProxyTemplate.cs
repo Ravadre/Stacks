@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 using Stacks;
 using System.Reactive.Linq;
 using Stacks.Tcp;
+using System.Reactive.Subjects;
 
 namespace Stacks.Actors
 {
-    public abstract class ActorClientProxyTemplate : IActorClientProxy, IDisposable
+    public abstract class ActorClientProxyTemplate<T> : IActorClientProxy<T>, IDisposable
     {
         private IPEndPoint endPoint;
         private ActorRemoteMessageClient client;
@@ -23,14 +24,20 @@ namespace Stacks.Actors
         private long requestId;
         private bool disconnected;
         private Exception disconnectedException;
+
+        private AsyncSubject<Exception> disconnectedSubject;
+        public IObservable<Exception> Disconnected { get { return disconnectedSubject.AsObservable(); } }
         
         protected Dictionary<string, Action<MemoryStream>> obsHandlers;
+
+        public abstract T Actor { get; }
 
         public ActorClientProxyTemplate(IPEndPoint endPoint)
         {
             this.endPoint = endPoint;
             this.disconnected = false;
 
+            this.disconnectedSubject = new AsyncSubject<Exception>();
             serializer = new ProtoBufStacksSerializer();
             replyHandlersByRequest = new Dictionary<long, Action<MemoryStream, Exception>>();
             obsHandlers = new Dictionary<string, Action<MemoryStream>>();
@@ -50,7 +57,7 @@ namespace Stacks.Actors
             HandleDisconnection(exn);
         }
 
-        internal async Task<ActorClientProxyTemplate> Connect()
+        internal async Task<IActorClientProxy<T>> Connect()
         {
             await client.Connect(endPoint);
             return this;
@@ -85,11 +92,15 @@ namespace Stacks.Actors
                 h(null, exn);
             }
             replyHandlersByRequest.Clear();
-            this.disconnected = true;
-            this.disconnectedException = exn;
+            
+            disconnected = true;
+            disconnectedException = exn;
+
+            disconnectedSubject.OnNext(exn);
+            disconnectedSubject.OnCompleted();
         }
 
-        protected Task<R> SendMessage<T, R, P>(string msgName, T packet)
+        protected Task<R> SendMessage<S, R, P>(string msgName, S packet)
         {
             var reqId = GetRequestId();
             client.Send(msgName, reqId, packet);

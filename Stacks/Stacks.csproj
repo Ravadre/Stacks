@@ -24,7 +24,8 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <DocumentationFile>bin\Debug\Stacks.xml</DocumentationFile>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -93,6 +94,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Actors\Actor.cs" />
+    <Compile Include="Actors\Bit.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
     <Compile Include="Actors\ActorContext.cs" />
