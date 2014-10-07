@@ -43,9 +43,9 @@ namespace Stacks.Tests.Remote
             SendHandshake();
             SendPing();
 
-            Thread.Sleep(20000);
+            Thread.Sleep(40000);
             Assert.False(disconnected.IsSet);
-            disconnected.Wait(30000);
+            disconnected.Wait(40000);
             Assert.True(disconnected.IsSet);
         }
 

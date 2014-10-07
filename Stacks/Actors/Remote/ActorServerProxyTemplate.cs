@@ -68,7 +68,7 @@ namespace Stacks.Actors
             executor.Enqueue(() =>
                 {
                     var now = DateTime.UtcNow;
-                    var halfMinute = TimeSpan.FromMinutes(0.5);
+                    var halfMinute = TimeSpan.FromMinutes(1.0);
 
                     foreach (var kv in clientTimestamps)
                     {
