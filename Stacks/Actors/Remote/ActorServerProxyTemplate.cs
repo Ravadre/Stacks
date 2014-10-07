@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Reactive;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Tcp;
 
@@ -21,17 +22,23 @@ namespace Stacks.Actors
         protected IStacksSerializer serializer;
 
         protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
+        
+        protected Dictionary<FramedClient, DateTime> clientTimestamps;
+        protected Timer pingTimer;
 
         public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
-            this.executor = new ActionBlockExecutor();
-            this.serializer = new ProtoBufStacksSerializer();
-            this.clients = new List<FramedClient>();
-            this.handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
-            this.obsHandlers = new Dictionary<string, object>();
+            executor = new ActionBlockExecutor();
+            serializer = new ProtoBufStacksSerializer();
+            clients = new List<FramedClient>();
+            handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
+            obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
+
+            clientTimestamps = new Dictionary<FramedClient, DateTime>();
+            pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
             protocolHandlers = new Dictionary<int, Action<FramedClient, MemoryStream>>();
             protocolHandlers[Proto.ActorProtocol.HandshakeId] = HandleHandshakeMessage;
@@ -47,9 +54,31 @@ namespace Stacks.Actors
             server.Stop();
             executor.Enqueue(() =>
                 {
+                    pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+
                     foreach (var client in clients)
                     {
                         client.Close();
+                    }
+                });
+        }
+
+        private void OnPingTimer(object _)
+        {
+            executor.Enqueue(() =>
+                {
+                    var now = DateTime.UtcNow;
+                    var halfMinute = TimeSpan.FromMinutes(0.5);
+
+                    foreach (var kv in clientTimestamps)
+                    {
+                        var c = kv.Key;
+                        var ts = kv.Value;
+
+                        if (now - ts > halfMinute)
+                        {
+                            c.Close();
+                        }
                     }
                 });
         }
@@ -99,6 +128,7 @@ namespace Stacks.Actors
             client.Disconnected.Subscribe(exn =>
                 {
                     clients.Remove(client);
+                    clientTimestamps.Remove(client);
                 });
 
             client.Received.Subscribe(bs =>
@@ -114,6 +144,7 @@ namespace Stacks.Actors
                 });
 
             clients.Add(client);
+            clientTimestamps[client] = DateTime.UtcNow;
         }
 
         private unsafe void HandleProtocolMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
@@ -147,8 +178,9 @@ namespace Stacks.Actors
 
         private void HandlePingMessage(FramedClient client, MemoryStream ms)
         {
+            clientTimestamps[client] = DateTime.UtcNow;
+            
             var req = serializer.Deserialize<Proto.Ping>(ms);
-
             AuxSendProtocolPacket(client, Proto.ActorProtocol.PingId,
                   new Proto.Ping
                   {

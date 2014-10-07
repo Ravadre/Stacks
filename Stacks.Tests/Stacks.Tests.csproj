@@ -116,6 +116,7 @@
     <Compile Include="Remote\ConnectionTests.cs" />
     <Compile Include="Remote\MessageTests.cs" />
     <Compile Include="Remote\ObservableTests.cs" />
+    <Compile Include="Remote\TimeoutTests.cs" />
     <Compile Include="Remote\Utils.cs" />
     <Compile Include="Serialization\MessagePackSerializerTests.cs" />
     <Compile Include="Serialization\ProtoBufSerializerTests.cs" />
