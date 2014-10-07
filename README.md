@@ -237,7 +237,7 @@ public class CalculatorActor: Actor, ICalculatorActor
 }
 
 var actorServer = ActorServerProxy.Create<CalculatorActor>("tcp://*:4632");
-ICalculatorActor calculator = ActorClientProxy.Create<ICalculatorActor>("tcp://localhost:4632").Result;
+ICalculatorActor calculator = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://localhost:4632").Result;
 
 var result = calculator.Add(5, 4).Result;
 ```
