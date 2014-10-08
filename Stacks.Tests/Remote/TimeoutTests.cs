@@ -11,6 +11,7 @@ using Stacks.Tcp;
 using System.Threading;
 using System.IO;
 using ProtoBuf;
+using System.Net.Sockets;
 
 namespace Stacks.Tests.Remote
 {
@@ -25,7 +26,7 @@ namespace Stacks.Tests.Remote
             serializer = new ProtoBufStacksSerializer();
         }
 
-        [Fact(Skip="Test takes too long to run without ability to set pinging intervals")]
+        [Fact(Skip = "Test takes too long to run without ability to set pinging intervals")]
         public async void Client_should_be_disconnected_after_over_30_seconds_after_last_ping()
         {
             var disconnected = new ManualResetEventSlim();
@@ -35,7 +36,7 @@ namespace Stacks.Tests.Remote
             client = new FramedClient(new SocketClient());
             await client.Connect("tcp://localhost:" + port);
 
-            client.Received.Subscribe(x => Console.WriteLine("Received " + x.Count + " bytes. " + 
+            client.Received.Subscribe(x => Console.WriteLine("Received " + x.Count + " bytes. " +
                 "Header: " + BitConverter.ToInt32(x.Array, x.Offset) + " " +
                 "Id: " + BitConverter.ToInt32(x.Array, x.Offset + 4)));
             client.Disconnected.Subscribe(_ => disconnected.Set());
@@ -47,6 +48,39 @@ namespace Stacks.Tests.Remote
             Assert.False(disconnected.IsSet);
             disconnected.Wait(40000);
             Assert.True(disconnected.IsSet);
+        }
+
+        [Fact(Skip = "Test takes too long to run")]
+        public void Client_should_receive_disconnected_event_with_timeout_after_period_of_time()
+        {
+            var client = new SocketClient();
+            var connected = client.Connect("tcp://10.255.255.1:80");
+
+
+            try
+            {
+                connected.Wait();
+            }
+            catch (SocketException exn)
+            {
+                Assert.Equal(SocketError.TimedOut, exn.SocketErrorCode);
+            }
+        }
+
+        [Fact(Skip = "Test takes too long to run")]
+        public void Actor_should_receive_disconnected_event_with_timeout_after_period_of_time()
+        {
+            var client = ActorClientProxy.CreateProxy<IMessageActor>("tcp://10.255.255.1:80");
+
+            try
+            {
+                var proxy = client.Result;
+            }
+            catch (AggregateException exn)
+            {
+                Assert.IsType<SocketException>(exn.InnerException);
+                Assert.Equal(SocketError.TimedOut, ((SocketException)exn.InnerException).SocketErrorCode);
+            }
         }
 
         private void SendPing()
