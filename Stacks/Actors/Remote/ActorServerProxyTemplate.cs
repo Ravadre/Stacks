@@ -20,6 +20,7 @@ namespace Stacks.Actors
         protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
         protected Dictionary<string, object> obsHandlers;
         protected IStacksSerializer serializer;
+        protected bool isStopped;
 
         protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
         
@@ -30,6 +31,7 @@ namespace Stacks.Actors
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
+            isStopped = false;
             executor = new ActionBlockExecutor();
             serializer = new ProtoBufStacksSerializer();
             clients = new List<FramedClient>();
@@ -54,6 +56,7 @@ namespace Stacks.Actors
             server.Stop();
             executor.Enqueue(() =>
                 {
+                    isStopped = true;
                     pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
                     foreach (var client in clients)
@@ -67,6 +70,9 @@ namespace Stacks.Actors
         {
             executor.Enqueue(() =>
                 {
+                    if (isStopped)
+                        return;
+
                     var now = DateTime.UtcNow;
                     var halfMinute = TimeSpan.FromMinutes(1.0);
 
@@ -123,6 +129,9 @@ namespace Stacks.Actors
 
         private void ClientConnected(SocketClient socketClient)
         {
+            if (isStopped)
+                return;
+
             var client = new FramedClient(socketClient);
 
             client.Disconnected.Subscribe(exn =>

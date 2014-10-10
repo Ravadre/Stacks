@@ -27,7 +27,7 @@ namespace Stacks.Actors
 
         private AsyncSubject<Exception> disconnectedSubject;
         public IObservable<Exception> Disconnected { get { return disconnectedSubject.AsObservable(); } }
-        
+
         protected Dictionary<string, Action<MemoryStream>> obsHandlers;
 
         public abstract T Actor { get; }
@@ -92,7 +92,7 @@ namespace Stacks.Actors
                 h(null, exn);
             }
             replyHandlersByRequest.Clear();
-            
+
             disconnected = true;
             disconnectedException = exn;
 
@@ -102,41 +102,50 @@ namespace Stacks.Actors
 
         protected Task<R> SendMessage<S, R, P>(string msgName, S packet)
         {
-            var reqId = GetRequestId();
-            client.Send(msgName, reqId, packet);
-
             var tcs = new TaskCompletionSource<R>();
 
             exec.Enqueue(() =>
-                {
-                    if (disconnected)
-                    {
-                        tcs.SetException(disconnectedException);
-                        return;
-                    }
+            {
+                var reqId = GetRequestId();
 
-                    replyHandlersByRequest[reqId] = (ms, error) =>
-                        {
-                            if (error == null)
-                            {
-                                try
-                                {
-                                    var p = (IReplyMessage<R>)serializer.Deserialize<P>(ms);
-                                    var v = p.GetResult();
-                                    tcs.SetResult(v);
-                                }
-                                catch (Exception exc)
-                                {
-                                    tcs.SetException(exc);
-                                }
-                            }
-                            else
-                            {
-                                tcs.SetException(error);
-                            }
-                        };
+                try
+                {
+                    client.Send(msgName, reqId, packet);
+                }
+                catch (Exception exn)
+                {
+                    tcs.SetException(exn);
                     return;
-                });
+                }
+
+                if (disconnected)
+                {
+                    tcs.SetException(disconnectedException);
+                    return;
+                }
+
+                replyHandlersByRequest[reqId] = (ms, error) =>
+                    {
+                        if (error == null)
+                        {
+                            try
+                            {
+                                var p = (IReplyMessage<R>)serializer.Deserialize<P>(ms);
+                                var v = p.GetResult();
+                                tcs.SetResult(v);
+                            }
+                            catch (Exception exc)
+                            {
+                                tcs.SetException(exc);
+                            }
+                        }
+                        else
+                        {
+                            tcs.SetException(error);
+                        }
+                    };
+                return;
+            });
 
             return tcs.Task;
         }

@@ -37,13 +37,21 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public void Calling_method_with_object_that_isnt_protocontract_should_fail_prematurely()
+        public void Calling_method_with_object_that_isnt_protocontract_should_return_failed_task()
         {
             Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
 
             Assert.Throws(typeof(InvalidOperationException), () =>
                 {
                     var res = client.NotProtoContract(new InvalidData { X = 5 });
+                    try
+                    {
+                        res.Wait();
+                    }
+                    catch (AggregateException exn)
+                    {
+                        throw exn.InnerException;
+                    }
                 });
         }
 

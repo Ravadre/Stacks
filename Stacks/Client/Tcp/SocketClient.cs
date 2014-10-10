@@ -76,8 +76,11 @@ namespace Stacks.Tcp
         /// </summary>
         public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
 
-        private bool disconnectionNotified;
-        private bool wasConnected;
+        private volatile bool disconnectionNotified;
+        private volatile bool wasConnected;
+
+        private Timer connectionTimeoutTimer;
+        private bool connectionInProgress;
 
         /// <summary>
         /// Returns true, if socket is connected. 
@@ -147,6 +150,7 @@ namespace Stacks.Tcp
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
             this.wasConnected = false;
+            this.connectionTimeoutTimer = new Timer(OnConnectionTimeout, null, -1, -1);
         }
 
         private void InitialiseCommon(IExecutor executor)
@@ -185,16 +189,37 @@ namespace Stacks.Tcp
                 throw new InvalidOperationException("Socket was already in connected state");
             this.wasConnected = true;
 
-            connectArgs = new SocketAsyncEventArgs();
-            connectArgs.Completed += ConnectedCapture;
-            connectArgs.RemoteEndPoint = remoteEndPoint;
+            executor.Enqueue(() =>
+                {
+                    connectArgs = new SocketAsyncEventArgs();
+                    connectArgs.Completed += ConnectedCapture;
+                    connectArgs.RemoteEndPoint = remoteEndPoint;
 
-            bool isPending = this.socket.ConnectAsync(connectArgs);
+                    bool isPending = this.socket.ConnectAsync(connectArgs);
 
-            if (!isPending)
-                ConnectedCapture(this, this.connectArgs);
-
+                    if (!isPending)
+                        ConnectedCapture(this, this.connectArgs);
+                    else
+                    {
+                        connectionInProgress = true;
+                        connectionTimeoutTimer.Change(20000, -1);
+                    }
+                });
+            
             return Connected;
+        }
+
+        private void OnConnectionTimeout(object _)
+        {
+            executor.Enqueue(() =>
+                {
+                    if (!connectionInProgress)
+                        return;
+
+                    connectionInProgress = false;
+                    connectArgs.SocketError = SocketError.TimedOut;
+                    HandleConnected(null, connectArgs);
+                });
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
@@ -206,7 +231,27 @@ namespace Stacks.Tcp
         {
             try
             {
+                // If connection is not in progress, then probably we
+                // have timed out, so make sure that only timed out error 
+                // will be processed.
+                if (!connectionInProgress && 
+                    e.SocketError != SocketError.TimedOut)
+                    return;
+
+                connectionTimeoutTimer.Change(-1, -1);
+                connectionTimeoutTimer.Dispose();
+                connectionInProgress = false;
+
+                // This seems to be broken on Mono. 
+                // SocketError is success even when socket is not connected.
+                // However, checking RemoteEndPoint seems to overcome this issue
+                // (on .Net, this however throws when socket is not connected)
+#if !MONO
                 if (e.SocketError == SocketError.Success)
+#else
+                if (e.SocketError == SocketError.Success &&
+                    socket.RemoteEndPoint != null)
+#endif
                 {
                     InitialiseConnectedSocket();
 
