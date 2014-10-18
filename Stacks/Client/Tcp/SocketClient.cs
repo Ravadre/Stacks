@@ -374,6 +374,25 @@ namespace Stacks.Tcp
                 socket.Close();
             }
             catch { }
+
+            try
+            {
+                recvArgs.Dispose();
+            }
+            catch { }
+
+            try
+            {
+                sendArgs.Dispose();
+            }
+            catch { }
+
+            try
+            {
+                if (connectArgs != null)
+                    connectArgs.Dispose();
+            }
+            catch { }
         }
 
         /// <summary>
