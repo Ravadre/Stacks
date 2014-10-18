@@ -22,6 +22,8 @@ namespace Stacks.Actors
         protected IStacksSerializer serializer;
         protected bool isStopped;
 
+        protected Dictionary<IFramedClient, IActorSession> actorSessions;
+
         protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
         
         protected Dictionary<FramedClient, DateTime> clientTimestamps;
@@ -36,6 +38,7 @@ namespace Stacks.Actors
             serializer = new ProtoBufStacksSerializer();
             clients = new List<FramedClient>();
             handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
+            actorSessions = new Dictionary<IFramedClient, IActorSession>();
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
 
@@ -137,6 +140,7 @@ namespace Stacks.Actors
             client.Disconnected.Subscribe(exn =>
                 {
                     clients.Remove(client);
+                    actorSessions.Remove(client);
                     clientTimestamps.Remove(client);
                 });
 
@@ -153,6 +157,7 @@ namespace Stacks.Actors
                 });
 
             clients.Add(client);
+            actorSessions[client] = new ActorSession(client);
             clientTimestamps[client] = DateTime.UtcNow;
         }
 

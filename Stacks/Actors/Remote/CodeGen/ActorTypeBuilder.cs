@@ -45,7 +45,7 @@ namespace Stacks.Actors.Remote.CodeGen
             for (int i = 0; i < methods.Length; ++i)
             {
                 DefineMessageTypeForActorMethodParams(methods[i]);
-                DefineMessageTypeForActorMethodReturn(methods[i]);
+                DefineMessageTypeForActorMethodReturn(methods[i]); 
             }
 
             var properties = actorInterface.FindValidObservableProperties();
@@ -74,13 +74,18 @@ namespace Stacks.Actors.Remote.CodeGen
                                      .ToArray();
 
             // Index used for proto member attribute. Must start with 1.
-            for (int i = 1; i <= miParams.Length; ++i)
+            for (int idx = 0, i = 1; idx < miParams.Length; ++idx)
             {
-                var p = miParams[i - 1];
+                var p = miParams[idx];
+
+                // Ommit parameter in message if it is a IActorSession and is on first place
+                if (p.ParameterType == typeof(IActorSession) && idx == 0)
+                    continue;
 
                 var fb = typeBuilder.DefineField(p.Name, p.ParameterType, FieldAttributes.Public);
                 var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
                 fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { i }));
+                ++i;
             }
 
 

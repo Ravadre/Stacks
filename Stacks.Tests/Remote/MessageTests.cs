@@ -130,6 +130,20 @@ namespace Stacks.Tests.Remote
                     }
                 });
         }
+
+        [Fact]
+        public async void If_first_parameter_is_IActorSession_it_should_be_filled_with_reference_to_an_client()
+        {
+            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
+
+            await client.PassDataWithClient(1);
+            await client.PassDataWithClient(1);
+            await client2.PassDataWithClient(2);
+            await client.PassDataWithClient(1);
+            await client2.PassDataWithClient(2);
+
+        }
     }
 
     public interface IMessageActor
@@ -138,6 +152,7 @@ namespace Stacks.Tests.Remote
         Task<int> Random();
         Task NotProtoContract(InvalidData data);
         Task<IEnumerable<ValidDataResponse>> PassValidData(IEnumerable<ValidData> data);
+        Task PassDataWithClient(int c);
         Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j);
 
         Task<int> LongRunningAdder(int x, int y);
@@ -165,9 +180,10 @@ namespace Stacks.Tests.Remote
         public int Result { get; set; }
     }
 
-    public class MessageActor : Actor, IMessageActor
+    public class MessageActor : Actor
     {
         private Random rng = new Random();
+        private Dictionary<int, IFramedClient> clientCache = new Dictionary<int, IFramedClient>();
 
         private volatile int pingsCalled;
 
@@ -203,6 +219,24 @@ namespace Stacks.Tests.Remote
             await Context;
 
             return data.Select(d => new ValidDataResponse { Result = d.X + d.Y });
+        }
+
+        public async Task PassDataWithClient(IActorSession session, int c)
+        {
+            await Context;
+
+            var client = session.Client;
+
+            Assert.NotNull(client);
+
+            if (clientCache.ContainsKey(c))
+            {
+                Assert.Equal(clientCache[c], client);
+            }
+            else
+            {
+                clientCache[c] = client;
+            }
         }
 
         public async Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j)

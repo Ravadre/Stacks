@@ -202,12 +202,31 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
 
                 //actorImplementation.[methodName](params);
+
                 var sendParams = method.GetParameters();
-                for (int i = 1; i <= sendParams.Length; ++i)
+                
+                // If first parameter is IActorSession, load session for dictionary and 
+                // place it on stack as first parameter.
+                if (sendParams.Length >= 1 &&
+                    sendParams[0].ParameterType == typeof(IActorSession))
                 {
+                    il.Emit(OpCodes.Ldarg_0);
+                    il.Emit(OpCodes.Ldfld, templateType.GetField("actorSessions", BindingFlags.Instance | BindingFlags.NonPublic));
+                    il.Emit(OpCodes.Ldarg_1); //FramedClient used as a key for session cache
+                    il.EmitCall(OpCodes.Call, typeof(Dictionary<IFramedClient, IActorSession>).GetMethod("get_Item"), null);
+                }
+
+                for (int idx = 0, i = 1; idx < sendParams.Length; ++idx)
+                {
+                    // Ommit first parameter if it is an IActorSession
+                    if (idx == 0 && sendParams[0].ParameterType == typeof(IActorSession))
+                        continue;
+
                     var field = GetFieldInfoFromProtobufMessage(messageType, i);
                     il.Emit(OpCodes.Ldloc_0);
                     il.Emit(OpCodes.Ldfld, field);
+
+                    ++i;
                 }
 
                 il.EmitCall(OpCodes.Call, method, null);
