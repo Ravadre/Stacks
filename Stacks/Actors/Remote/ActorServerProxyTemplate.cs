@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +33,12 @@ namespace Stacks.Actors
 
         public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
 
+        private Subject<IActorSession> clientActorConnected;
+        private Subject<IActorSession> clientActorDisconnected;
+
+        public IObservable<IActorSession> ActorClientConnected { get { return clientActorConnected.AsObservable(); } }
+        public IObservable<IActorSession> ActorClientDisconnected { get { return clientActorDisconnected.AsObservable(); } }
+
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
             isStopped = false;
@@ -42,6 +50,9 @@ namespace Stacks.Actors
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
 
+            clientActorConnected = new Subject<IActorSession>();
+            clientActorDisconnected = new Subject<IActorSession>();
+
             clientTimestamps = new Dictionary<FramedClient, DateTime>();
             pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
@@ -52,6 +63,11 @@ namespace Stacks.Actors
             server = new SocketServer(executor, bindEndPoint);
             server.Connected.Subscribe(ClientConnected);
             server.Start();
+        }
+
+        public Task<IActorSession[]> GetCurrentClientSessions()
+        {
+            return executor.PostTask(() => { return actorSessions.Values.ToArray(); });
         }
 
         public void Stop()
@@ -140,8 +156,15 @@ namespace Stacks.Actors
             client.Disconnected.Subscribe(exn =>
                 {
                     clients.Remove(client);
-                    actorSessions.Remove(client);
                     clientTimestamps.Remove(client);
+
+                    IActorSession isession;
+                    if (actorSessions.TryGetValue(client, out isession))
+                    {
+                        actorSessions.Remove(client);
+                        try { clientActorDisconnected.OnNext(isession); }
+                        catch { }
+                    }
                 });
 
             client.Received.Subscribe(bs =>
@@ -157,8 +180,12 @@ namespace Stacks.Actors
                 });
 
             clients.Add(client);
-            actorSessions[client] = new ActorSession(client);
             clientTimestamps[client] = DateTime.UtcNow;
+
+            var session = new ActorSession(client);
+            actorSessions[client] = session;
+            try { clientActorConnected.OnNext(session); }
+            catch { }
         }
 
         private unsafe void HandleProtocolMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
