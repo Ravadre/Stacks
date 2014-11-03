@@ -116,6 +116,13 @@ namespace Stacks.Tcp
         public void Stop()
         {
             this.socket.Close(0);
+
+            try
+            {
+                if (acceptArgs != null)
+                    acceptArgs.Dispose();
+            }
+            catch { }
         }
 
         private void VerifyFirstStart()
