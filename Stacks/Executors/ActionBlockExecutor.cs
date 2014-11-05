@@ -44,7 +44,7 @@ namespace Stacks
             }, new ExecutionDataflowBlockOptions
             {
                 BoundedCapacity = settings.QueueBoundedCapacity,
-                MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism
+                MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism,
             });
         }
 
