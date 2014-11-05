@@ -50,9 +50,14 @@ namespace Stacks.Actors
 
         public Task Completion { get { return executor.Completion; } }
 
+        public Task Stop(bool stopImmediately)
+        {
+            return executor.Stop(stopImmediately);
+        }
+
         public Task Stop()
         {
-            return executor.Stop();
+            return Stop(stopImmediately: false);
         }
 
         public void Post(Action action)

@@ -17,14 +17,13 @@ namespace Stacks
     {
         private ActionBlock<Action> queue;
         private string name;
-
         private bool supportSynchronizationContext;
+        private volatile bool stopImmediately;
 
         public Task Completion { get { return queue.Completion; } }
-
         public event Action<Exception> Error;
-
         public string Name { get { return name; } }
+        
 
         public ActionBlockExecutor()
             : this(null, new ActionBlockExecutorSettings())
@@ -40,6 +39,8 @@ namespace Stacks
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
+                if (stopImmediately) return;
+
                 ExecuteAction(a);
             }, new ExecutionDataflowBlockOptions
             {
@@ -104,10 +105,16 @@ namespace Stacks
                 queue.SendAsync(action).Wait();
         }
 
-        public Task Stop()
+        public Task Stop(bool stopImmediately)
         {
             queue.Complete();
+            this.stopImmediately = stopImmediately;
             return queue.Completion;
+        }
+
+        public Task Stop()
+        {
+            return Stop(stopImmediately: false);
         }
 
         public SynchronizationContext Context

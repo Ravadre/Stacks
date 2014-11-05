@@ -42,6 +42,11 @@ namespace Stacks
             return tcs.Task;
         }
 
+        public Task Stop(bool stopImmediately)
+        {
+            return Stop();
+        }
+
         public SynchronizationContext Context
         {
             get { return context; }

@@ -16,6 +16,7 @@ namespace Stacks
         private BlockingCollection<Action> col;
         private TaskCompletionSource<int> tcs;
         private volatile bool isStopping;
+        private volatile bool stopImmediately;
         private Thread runner;
 
         public event Action<Exception> Error;
@@ -42,7 +43,7 @@ namespace Stacks
 
             while (true)
             {
-                if (this.isStopping && col.Count == 0)
+                if (this.isStopping && (col.Count == 0 || stopImmediately))
                     break;
 
                 if (col.TryTake(out a, 50))
@@ -117,7 +118,13 @@ namespace Stacks
 
         public Task Stop()
         {
+            return Stop(stopImmediately: false);
+        }
+
+        public Task Stop(bool stopImmediately)
+        {
             isStopping = true;
+            this.stopImmediately = stopImmediately;
             return tcs.Task as Task;
         }
 

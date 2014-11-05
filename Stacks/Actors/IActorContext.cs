@@ -19,6 +19,9 @@ namespace Stacks.Actors
         IActorContext GetAwaiter();
         void GetResult();
 
+        Task Stop();
+        Task Stop(bool stopImmediately);
+
         event Action<Exception> Error;
     }
 }
