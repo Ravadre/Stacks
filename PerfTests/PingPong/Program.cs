@@ -36,7 +36,7 @@ namespace PingPong
             Console.ReadKey();
         }
 
-        private static async Task Start(uint timesToRun)
+        private static async void Start(uint timesToRun)
         {
             const int repeatFactor = 500;
             const long repeat = 3000L * repeatFactor;
