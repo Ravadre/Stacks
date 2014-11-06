@@ -20,13 +20,16 @@ namespace Stacks
             SupportSynchronizationContext = true;
         }
 
-        private static ActionBlockExecutorSettings @default = new ActionBlockExecutorSettings();
-
         public static ActionBlockExecutorSettings Default
         {
-            get { return @default; }
+            get { return new ActionBlockExecutorSettings(); }
         }
 
-
+        public static ActionBlockExecutorSettings DefaultWith(bool supportSynchronizationContext = true)
+        {
+            var settings = new ActionBlockExecutorSettings();
+            settings.SupportSynchronizationContext = supportSynchronizationContext;
+            return settings;
+        }
     }
 }

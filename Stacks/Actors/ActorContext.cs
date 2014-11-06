@@ -25,6 +25,18 @@ namespace Stacks.Actors
                    new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
+        public ActorContext(ActorContextSettings settings)
+            : this(null,
+                   new ActionBlockExecutor(null, 
+                        ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
+        { }
+
+        public ActorContext(string name, ActorContextSettings settings)
+            : this(name,
+                   new ActionBlockExecutor(null,
+                        ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
+        { }
+
         public ActorContext(string name)
             : this(name,
                    new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
@@ -38,9 +50,14 @@ namespace Stacks.Actors
 
         public Task Completion { get { return executor.Completion; } }
 
+        public Task Stop(bool stopImmediately)
+        {
+            return executor.Stop(stopImmediately);
+        }
+
         public Task Stop()
         {
-            return executor.Stop();
+            return Stop(stopImmediately: false);
         }
 
         public void Post(Action action)

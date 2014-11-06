@@ -13,6 +13,12 @@ namespace Stacks.Actors.Remote.CodeGen
 {
     class ClientActorTypeBuilder : ActorTypeBuilder
     {
+        // Cache is vital because protobuf-net is not reclaiming serializers
+        // therefore, when creating implementation for the same interface 
+        // new serializers are being hold permanently.
+        // For this reason, no eviction mechanism is implemented as well.
+        private static Dictionary<Type, Type> constructedTypesCache = new Dictionary<Type, Type>();
+
 
         public ClientActorTypeBuilder(string assemblyName)
             : base(assemblyName)
@@ -20,6 +26,14 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public Type CreateActorType(Type actorInterface)
         {
+            Type implType = null;
+
+            lock (constructedTypesCache)
+            {
+                if (constructedTypesCache.TryGetValue(actorInterface, out implType))
+                    return implType;
+            }
+
             var proxyTemplateType = typeof(ActorClientProxyTemplate<>).MakeGenericType(actorInterface);
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,
                                         proxyTemplateType, new[] { actorInterface });
@@ -41,7 +55,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                                                 MethodAttributes.SpecialName |
                                                                 MethodAttributes.Virtual,
                                                             actorInterface, Type.EmptyTypes);
-                
+
                 var il = actorGetMethodProperty.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
                 il.Emit(OpCodes.Ret);
@@ -127,7 +141,13 @@ namespace Stacks.Actors.Remote.CodeGen
 
             ctorIl.Emit(OpCodes.Ret);
 
-            return actorImplBuilder.CreateType();
+            implType = actorImplBuilder.CreateType();
+
+            lock (constructedTypesCache)
+            {
+                constructedTypesCache[actorInterface] = implType;
+            }
+            return implType;
         }
 
         private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod, Type proxyTemplateType)

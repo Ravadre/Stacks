@@ -94,6 +94,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Actors\Actor.cs" />
+    <Compile Include="Actors\ActorContextSettings.cs" />
     <Compile Include="Actors\Bit.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />

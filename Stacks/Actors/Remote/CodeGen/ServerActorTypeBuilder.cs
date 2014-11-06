@@ -13,6 +13,13 @@ namespace Stacks.Actors.Remote.CodeGen
 {
     class ServerActorTypeBuilder : ActorTypeBuilder
     {
+        // Cache is vital because protobuf-net is not reclaiming serializers
+        // therefore, when creating implementation for the same interface 
+        // new serializers are being hold permanently.
+        // For this reason, no eviction mechanism is implemented as well.
+        private static Dictionary<Type, Type> constructedTypesCache = new Dictionary<Type, Type>();
+
+
         private Type templateType;
         private Type actorType;
         private TypeBuilder actorImplBuilder;
@@ -23,6 +30,13 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public Type CreateActorType(Type actorType)
         {
+            Type implType = null;
+            lock (constructedTypesCache)
+            {
+                if (constructedTypesCache.TryGetValue(actorType, out implType))
+                    return implType;
+            }
+
             templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
             this.actorType = actorType;
 
@@ -105,8 +119,14 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ret);
             }
 
-            return actorImplBuilder.CreateType();
+            implType = actorImplBuilder.CreateType();
 
+            lock (constructedTypesCache)
+            {
+                constructedTypesCache[actorType] = implType;
+            }
+
+            return implType;
         }
 
         private MethodBuilder CreateErrorHandler(PropertyInfo property)
@@ -204,7 +224,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 //actorImplementation.[methodName](params);
 
                 var sendParams = method.GetParameters();
-                
+
                 // If first parameter is IActorSession, load session for dictionary and 
                 // place it on stack as first parameter.
                 if (sendParams.Length >= 1 &&
