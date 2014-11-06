@@ -36,7 +36,7 @@ namespace PingPong
             Console.ReadKey();
         }
 
-        private static async void Start(uint timesToRun)
+        private static async Task Start(uint timesToRun)
         {
             const int repeatFactor = 500;
             const long repeat = 3000L * repeatFactor;
@@ -86,8 +86,8 @@ namespace PingPong
             Console.WriteLine(" ms");
             Console.WriteLine();
 
-            Console.WriteLine("         Local actor                        Remote actor");
-            Console.WriteLine("Thruput, Msgs/sec, Start [ms], Total [ms],  Msgs/sec, Start [ms], Total [ms]");
+            Console.WriteLine("            Local actor                        Remote actor");
+            Console.WriteLine("Throughput, Msgs/sec, Start [ms], Total [ms],  Msgs/sec, Start [ms], Total [ms]");
             for (var i = 0; i < timesToRun; i++)
             {
                 var redCountLocalActor = 0;
@@ -100,21 +100,20 @@ namespace PingPong
                        (idx, wfs) => Tuple.Create((IActorServerProxy)null, new Destination(wfs)),
                        (idx, d) => d,
                        (idx, wfs, dest, r, latch) => new PingPongActor(wfs, dest, r, latch));
-
                     bestThroughputLocalActor = result1.Item2;
                     redCountLocalActor = result1.Item3;
                     Console.Write(",  ");
 
-                    //var result2 = await Benchmark(throughput, processorCount, repeat, PrintStats.Stats, bestThroughputRemoteActor, redCountRemoteActor,
-                    //    (idx, wfs) =>
-                    //    {
-                    //        var dest = new Destination(wfs);
-                    //        return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest), dest);
-                    //    },
-                    //    (idx, d) => ActorClientProxy.CreateActor<IDestination>("tcp://localhost:" + (54000 + idx)).Result,
-                    //    (idx, wfs, dest, r, latch) => new PingPongActor(wfs, dest, r, latch));
-                    //bestThroughputRemoteActor = result2.Item2;
-                    //redCountRemoteActor = result2.Item3;
+                    var result2 = await Benchmark(throughput, processorCount, repeat, PrintStats.Stats, bestThroughputRemoteActor, redCountRemoteActor,
+                        (idx, wfs) =>
+                        {
+                            var dest = new Destination(wfs);
+                            return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest), dest);
+                        },
+                        (idx, d) => ActorClientProxy.CreateActor<IDestination>("tcp://localhost:" + (54000 + idx)).Result,
+                        (idx, wfs, dest, r, latch) => new PingPongActor(wfs, dest, r, latch));
+                    bestThroughputRemoteActor = result2.Item2;
+                    redCountRemoteActor = result2.Item3;
                     Console.WriteLine();
                 }
             }
@@ -182,6 +181,7 @@ namespace PingPong
             totalWatch.Stop();
 
             dests.ForEach(d => { if (d.Item1 != null) d.Item1.Stop(); });
+            dests.ForEach(d => { d.Item2.Stop(); });
             clients.ForEach(c => c.Stop());
 
             var elapsedMilliseconds = sw.ElapsedMilliseconds;
@@ -205,7 +205,7 @@ namespace PingPong
             else
             {
                 if (printStats.HasFlag(PrintStats.LineStart))
-                    Console.Write("{0,7}, ", factor);
+                    Console.Write("{0,10}, ", factor);
                 if (printStats.HasFlag(PrintStats.Stats))
                     Console.Write("{0,8}, {1,10}, {2,10}", throughput, setupTime.TotalMilliseconds.ToString("F2", CultureInfo.InvariantCulture), totalWatch.Elapsed.TotalMilliseconds.ToString("F2", CultureInfo.InvariantCulture));
             }
@@ -243,6 +243,11 @@ namespace PingPong
             {
                 waitForStartsActor.OnStart();
             }
+
+            public void Stop()
+            {
+                context.Stop(true);
+            }
         }
 
         public class WaitForStarts
@@ -277,13 +282,14 @@ namespace PingPong
         public class PingPongActor
         {
             private ActorContext context = new ActorContext(new ActorContextSettings { SupportSynchronizationContext = false });
-           
+
             private IDestination destination;
             private WaitForStarts waitForStartsActor;
             private long repeat;
             private long sent;
             private long received;
             private TaskCompletionSource<bool> latch;
+            private bool done;
 
             public PingPongActor(WaitForStarts waitForStartsActor, IDestination destination, long repeat, TaskCompletionSource<bool> latch)
             {
@@ -311,8 +317,8 @@ namespace PingPong
 
             private async void PingImpl()
             {
-                await context;
                 await destination.Pong();
+                await context;
                 ++sent;
                 Recv();
             }
@@ -324,12 +330,19 @@ namespace PingPong
                         ++received;
                         if (sent < repeat)
                         {
-                            await destination.Pong();
-                            ++sent;
-                            Recv();
+                            try
+                            {
+                                await destination.Pong();
+                                await context;
+                                if (done) { return; }
+                                ++sent;
+                                Recv();
+                            }
+                            catch { }
                         }
                         else if (received == repeat)
                         {
+                            done = true;
                             latch.SetResult(true);
                         }
                     });
@@ -337,10 +350,12 @@ namespace PingPong
 
             public void Stop()
             {
-                var d = destination as IActorClientProxy<Destination>;
+                context.Stop(true);
+                var d = destination as IActorClientProxy<IDestination>;
 
                 if (d != null)
                     d.Close();
+
             }
         }
 
