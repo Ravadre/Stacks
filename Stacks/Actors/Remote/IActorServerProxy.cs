@@ -12,7 +12,7 @@ namespace Stacks.Actors
         IPEndPoint BindEndPoint { get; }
         
         IObservable<IActorSession> ActorClientConnected { get; }
-        IObservable<IActorSession> ActorClientDisconnected { get; }
+        IObservable<ClientActorDisconnectedData> ActorClientDisconnected { get; }
         
         Task<IActorSession[]> GetCurrentClientSessions();
         

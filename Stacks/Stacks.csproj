@@ -104,6 +104,7 @@
     <Compile Include="Actors\Remote\ActorRemoteMessageClient.cs" />
     <Compile Include="Actors\Remote\ActorServerProxy.cs" />
     <Compile Include="Actors\Remote\ActorServerProxyTemplate.cs" />
+    <Compile Include="Actors\Remote\ClientActorDisconnectedData.cs" />
     <Compile Include="Actors\Remote\CodeGen\ActorTypeBuilder.cs" />
     <Compile Include="Actors\Remote\CodeGen\ClientActorTypeBuilder.cs" />
     <Compile Include="Actors\Remote\CodeGen\Helpers.cs" />
