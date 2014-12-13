@@ -16,6 +16,10 @@ let tryDelDir path =
     with
     | _ -> ()
 
+let myEnsureDir path = 
+    if not (System.IO.Directory.Exists(path)) then
+        System.IO.Directory.CreateDirectory(path) |> ignore
+
 let getVersion file = 
     let betaVer = if betaVer <> "" then "-" + betaVer else betaVer
     let v = System.Reflection.AssemblyName.GetAssemblyName(file).Version
@@ -42,7 +46,7 @@ Target "Rebuild" (fun _ ->
 )
 
 let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile = 
-    let tmp = "$nuget_create"
+    let tmp = ".nuget_create" + projName
     let srcDir = dir projName
 
     logfn "Source directory: %s" srcDir
@@ -51,8 +55,9 @@ let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile =
     let mainDllWithPath = srcDir @@ mainDll 
 
     tryDelDir tmp
-    ensureDirectory (tmp @@ "lib/net45")
-    CopyFiles (tmp @@ "lib/net45") dllsWithPath
+    myEnsureDir (tmp @@ "lib\\net45\\")
+    CopyFiles (tmp @@ "lib\\net45\\") dllsWithPath
+
     NuGet (fun p ->
             { p with
                 OutputPath = "./"
@@ -60,8 +65,12 @@ let BuildPackage projName dllsToCopy mainDll dependencies nuspecFile =
                 Version = getVersion(mainDllWithPath)
                 Dependencies = dependencies
             }) nuspecFile
-    
-    DeleteDir tmp
+    logfn "Built package %s" projName
+        
+    // For some readon this helps clearing directories on new FAKE
+    System.Threading.Thread.Sleep(500)
+    System.GC.Collect()
+    tryDelDir tmp
 
 Target "Nuget" (fun _ ->
     let stacksVer = getVersion(dir("Stacks") @@ "Stacks.dll")
