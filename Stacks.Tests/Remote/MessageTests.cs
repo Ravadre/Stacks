@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -143,6 +145,63 @@ namespace Stacks.Tests.Remote
             await client.PassDataWithClient(1);
             await client2.PassDataWithClient(2);
 
+        }
+
+        [Fact]
+        public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
+        {
+            IExplicitInterfaceActor client;
+            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+
+            await client.Test();
+        }
+
+        [Fact]
+        public async void Explicit_interface_implementation_should_correctly_map_properties_on_server_side()
+        {
+            var receivedValue = new ManualResetEventSlim();
+            IExplicitInterfaceActor client;
+            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+
+            await client.Test();
+
+            client.Values.Subscribe(x => receivedValue.Set());
+
+            Assert.True(receivedValue.Wait(500));
+        }
+    }
+
+    public interface IExplicitInterfaceActor
+    {
+        Task Test();
+        IObservable<long> Values { get; }
+        IObservable<long> ValuesPublic { get; }
+    }
+
+    public class ExplicitInterfaceActor : IExplicitInterfaceActor
+    {
+        private readonly ActorContext ctx = new ActorContext();
+
+        private IObservable<long> values;
+
+        public ExplicitInterfaceActor()
+        {
+            values = Observable.Interval(TimeSpan.FromMilliseconds(50));
+        }
+
+        async Task IExplicitInterfaceActor.Test()
+        {
+            await ctx;
+        }
+
+        IObservable<long> IExplicitInterfaceActor.Values
+        {
+            get { return values.AsObservable(); }
+        }
+
+        public IObservable<long> ValuesPublic
+        {
+            get { return values.AsObservable(); }
         }
     }
 

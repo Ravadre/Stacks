@@ -63,37 +63,37 @@ namespace Stacks.Actors.Remote.CodeGen
                 actorProperty.SetGetMethod(actorGetMethodProperty);
             }
 
-            foreach (var method in actorInterface.FindValidProxyMethods())
+            foreach (var method in actorInterface.FindValidProxyMethods(onlyPublic: true))
             {
-                var mb = actorImplBuilder.DefineMethod(method.Name, MethodAttributes.SpecialName |
+                var mb = actorImplBuilder.DefineMethod(method.PublicName, MethodAttributes.SpecialName |
                                                                     MethodAttributes.Public |
                                                                     MethodAttributes.Virtual |
                                                                     MethodAttributes.HideBySig |
                                                                     MethodAttributes.Final);
-                mb.SetReturnType(method.ReturnType);
-                mb.SetParameters(method.GetParameters().Select(p => p.ParameterType).ToArray());
+                mb.SetReturnType(method.Info.ReturnType);
+                mb.SetParameters(method.Info.GetParameters().Select(p => p.ParameterType).ToArray());
 
-                ImplementSendMethod(mb, method, proxyTemplateType);
+                ImplementSendMethod(mb, method.Info, proxyTemplateType);
             }
 
-            foreach (var property in actorInterface.FindValidObservableProperties())
+            foreach (var property in actorInterface.FindValidObservableProperties(onlyPublic: true))
             {
-                var innerType = property.PropertyType.GetGenericArguments()[0];
+                var innerType = property.Info.PropertyType.GetGenericArguments()[0];
 
                 var fb = actorImplBuilder.DefineField(
-                                            property.Name + "$Field",
+                                            property.PublicName + "$Field",
                                             typeof(Subject<>).MakeGenericType(innerType),
                                             FieldAttributes.Private);
 
-                var pb = actorImplBuilder.DefineProperty(property.Name,
-                            PropertyAttributes.HasDefault, property.PropertyType, null);
+                var pb = actorImplBuilder.DefineProperty(property.PublicName,
+                            PropertyAttributes.HasDefault, property.Info.PropertyType, null);
 
-                var getMethod = actorImplBuilder.DefineMethod("get_" + property.Name,
+                var getMethod = actorImplBuilder.DefineMethod("get_" + property.PublicName,
                                         MethodAttributes.Public |
                                         MethodAttributes.HideBySig |
                                         MethodAttributes.SpecialName |
                                         MethodAttributes.Virtual,
-                                    property.PropertyType, Type.EmptyTypes);
+                                    property.Info.PropertyType, Type.EmptyTypes);
 
                 var il = getMethod.GetILGenerator();
                 il.Emit(OpCodes.Ldarg_0);
@@ -103,10 +103,10 @@ namespace Stacks.Actors.Remote.CodeGen
                 pb.SetGetMethod(getMethod);
 
 
-                Type messageType = moduleBuilder.GetType("Messages." + property.Name + "$ObsMessage");
+                Type messageType = moduleBuilder.GetType("Messages." + property.PublicName + "$ObsMessage");
                 var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
 
-                var handlerMethod = actorImplBuilder.DefineMethod(property.Name + "$ObsHandler",
+                var handlerMethod = actorImplBuilder.DefineMethod(property.PublicName + "$ObsHandler",
                                         MethodAttributes.Private | MethodAttributes.HideBySig,
                                         CallingConventions.HasThis, typeof(void),
                                         new[] { typeof(MemoryStream) });
@@ -132,7 +132,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 ctorIl.Emit(OpCodes.Ldarg_0);
                 ctorIl.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
-                ctorIl.Emit(OpCodes.Ldstr, property.Name);
+                ctorIl.Emit(OpCodes.Ldstr, property.PublicName);
                 ctorIl.Emit(OpCodes.Ldarg_0);
                 ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
                 ctorIl.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));

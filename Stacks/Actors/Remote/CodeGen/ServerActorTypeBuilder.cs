@@ -55,25 +55,25 @@ namespace Stacks.Actors.Remote.CodeGen
                 il.Emit(OpCodes.Ldarg_2);
                 il.Emit(OpCodes.Call, baseCtor);
 
-                foreach (var method in actorType.FindValidProxyMethods())
+                foreach (var miMapping in actorType.FindValidProxyMethods(onlyPublic: false))
                 {
-                    var newMethod = CreateHandlerMethod(method);
+                    var newMethod = CreateHandlerMethod(miMapping);
 
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldfld, templateType.GetField("handlers", BindingFlags.Instance | BindingFlags.NonPublic));
-                    il.Emit(OpCodes.Ldstr, method.Name);
+                    il.Emit(OpCodes.Ldstr, miMapping.PublicName);
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldftn, newMethod);
                     il.Emit(OpCodes.Newobj, typeof(Action<FramedClient, long, MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
                     il.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<FramedClient, long, MemoryStream>>).GetMethod("set_Item"), null);
                 }
 
-                foreach (var property in actorType.FindValidObservableProperties())
+                foreach (var property in actorType.FindValidObservableProperties(onlyPublic: false))
                 {
-                    var newMethod = CreatePropertyHandler(property);
-                    var errMethod = CreateErrorHandler(property);
+                    var newMethod = CreatePropertyHandler(property.InterfaceInfo);
+                    var errMethod = CreateErrorHandler(property.InterfaceInfo);
 
-                    var innerPropType = property.PropertyType.GetGenericArguments()[0];
+                    var innerPropType = property.InterfaceInfo.PropertyType.GetGenericArguments()[0];
                     var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
                     var errorActionType = typeof(Action<>).MakeGenericType(new[] { typeof(Exception) });
 
@@ -105,7 +105,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
-                    il.EmitCall(OpCodes.Call, property.GetGetMethod(), null);
+                    il.EmitCall(OpCodes.Callvirt, property.InterfaceInfo.GetGetMethod(true), null);
                     il.Emit(OpCodes.Ldarg_0);
                     il.Emit(OpCodes.Ldftn, newMethod);
                     il.Emit(OpCodes.Newobj, actionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
@@ -179,22 +179,22 @@ namespace Stacks.Actors.Remote.CodeGen
             return mb;
         }
 
-        private MethodBuilder CreateHandlerMethod(MethodInfo method)
+        private MethodBuilder CreateHandlerMethod(MethodInfoMapping miMapping)
         {
-            var sendMethodTaskRet = method.ReturnType;
+            var sendMethodTaskRet = miMapping.Info.ReturnType;
             bool isNoParamTask = sendMethodTaskRet == typeof(Task);
             var sendMethodInnerRet = sendMethodTaskRet == typeof(Task)
                                         ? typeof(System.Reactive.Unit)
                                         : sendMethodTaskRet.GetGenericArguments()[0];
 
-            var mb = actorImplBuilder.DefineMethod(method.Name + "Handler",
+            var mb = actorImplBuilder.DefineMethod(miMapping.PublicName + "Handler",
                                                  MethodAttributes.Private |
                                                  MethodAttributes.HideBySig,
                                                CallingConventions.HasThis,
                                                typeof(void),
                                                new[] { typeof(FramedClient), typeof(long), typeof(MemoryStream) });
-            Type messageType = moduleBuilder.GetType("Messages." + method.Name + "Message");
-            Type replyMessageType = moduleBuilder.GetType("Messages." + method.Name + "MessageReply");
+            Type messageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "Message");
+            Type replyMessageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "MessageReply");
             var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
 
             var il = mb.GetILGenerator();
@@ -223,7 +223,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 //actorImplementation.[methodName](params);
 
-                var sendParams = method.GetParameters();
+                var sendParams = miMapping.Info.GetParameters();
 
                 // If first parameter is IActorSession, load session for dictionary and 
                 // place it on stack as first parameter.
@@ -249,7 +249,7 @@ namespace Stacks.Actors.Remote.CodeGen
                     ++i;
                 }
 
-                il.EmitCall(OpCodes.Call, method, null);
+                il.EmitCall(OpCodes.Callvirt, miMapping.InterfaceInfo, null);
             }
 
             il.Emit(OpCodes.Newobj, replyMessageType.GetConstructor(Type.EmptyTypes));
