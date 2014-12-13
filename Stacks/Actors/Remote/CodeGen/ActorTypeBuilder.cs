@@ -39,27 +39,27 @@ namespace Stacks.Actors.Remote.CodeGen
 
         public void DefineMessagesFromInterfaceType(Type actorInterface)
         {
-            var methods = actorInterface.FindValidProxyMethods();
+            var methods = actorInterface.FindValidProxyMethods(onlyPublic: false);
             methods.EnsureNamesAreUnique();
 
             for (int i = 0; i < methods.Length; ++i)
             {
                 DefineMessageTypeForActorMethodParams(methods[i]);
-                DefineMessageTypeForActorMethodReturn(methods[i]);
+                DefineMessageTypeForActorMethodReturn(methods[i]); 
             }
 
-            var properties = actorInterface.FindValidObservableProperties();
+            var properties = actorInterface.FindValidObservableProperties(onlyPublic: false);
             properties.EnsureNamesAreUnique();
 
             for (int i = 0; i < properties.Length; ++i)
             {
-                DefineMessageTypeForActorObservable(properties[i]);
+                DefineMessageTypeForActorObservable(properties[i].InterfaceInfo);
             }
         }
 
-        private void DefineMessageTypeForActorMethodParams(MethodInfo methodInfo)
+        private void DefineMessageTypeForActorMethodParams(MethodInfoMapping miMapping)
         {
-            var messageTypeName = methodInfo.Name + "Message";
+            var messageTypeName = miMapping.PublicName + "Message";
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
 
             // Empty ctor
@@ -70,29 +70,34 @@ namespace Stacks.Actors.Remote.CodeGen
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(protoContractCtor, new object[0]));
 
             // Properties
-            var miParams = methodInfo.GetParameters()
-                                     .ToArray();
+            var miParams = miMapping.Info.GetParameters()
+                                               .ToArray();
 
             // Index used for proto member attribute. Must start with 1.
-            for (int i = 1; i <= miParams.Length; ++i)
+            for (int idx = 0, i = 1; idx < miParams.Length; ++idx)
             {
-                var p = miParams[i - 1];
+                var p = miParams[idx];
+
+                // Ommit parameter in message if it is a IActorSession and is on first place
+                if (p.ParameterType == typeof(IActorSession) && idx == 0)
+                    continue;
 
                 var fb = typeBuilder.DefineField(p.Name, p.ParameterType, FieldAttributes.Public);
                 var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
                 fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { i }));
+                ++i;
             }
 
 
             var createdType = typeBuilder.CreateType();
-            this.messageParamTypes[methodInfo.Name] = createdType;
+            this.messageParamTypes[miMapping.PublicName] = createdType;
         }
 
-        private void DefineMessageTypeForActorMethodReturn(MethodInfo methodInfo)
+        private void DefineMessageTypeForActorMethodReturn(MethodInfoMapping miMapping)
         {
             Type returnType = null;
 
-            var returnTypeTask = methodInfo.ReturnType;
+            var returnTypeTask = miMapping.Info.ReturnType;
             bool isEmptyReply = returnTypeTask == typeof(Task);
             if (returnTypeTask == typeof(Task))
                 returnType = typeof(System.Reactive.Unit);
@@ -106,7 +111,7 @@ namespace Stacks.Actors.Remote.CodeGen
                 returnType = genArgs[0];
             }
 
-            var messageTypeName = methodInfo.Name + "MessageReply";
+            var messageTypeName = miMapping.PublicName + "MessageReply";
             var replyInterfaceType = typeof(IReplyMessage<>).MakeGenericType(returnType);
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public, null, new[] { replyInterfaceType });
 
@@ -191,10 +196,9 @@ namespace Stacks.Actors.Remote.CodeGen
 
 
             var createdType = typeBuilder.CreateType();
-            this.messageReturnTypes[methodInfo.Name] = createdType;
+            this.messageReturnTypes[miMapping.PublicName] = createdType;
         }
-
-
+        
         protected FieldInfo GetFieldInfoFromProtobufMessage(Type t, int protoMessageIdx)
         {
             return t.GetFields()

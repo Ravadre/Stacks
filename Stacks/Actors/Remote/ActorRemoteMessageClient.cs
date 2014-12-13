@@ -104,6 +104,9 @@ namespace Stacks.Actors
             handshakeCompleted.OnError(exn);
             disconnectedSubject.OnNext(exn);
             disconnectedSubject.OnCompleted();
+
+            pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            pingTimer.Dispose();
         }
 
         private void FailWithExnAndClose(Exception exn)
@@ -113,7 +116,9 @@ namespace Stacks.Actors
             disconnectedSubject.OnCompleted();
 
             framedClient.Close();
+
             pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            pingTimer.Dispose();
         }
 
         private void CompleteHandshake()
@@ -201,6 +206,7 @@ namespace Stacks.Actors
                         if (disconnectedSubject.IsCompleted)
                         {
                             pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+                            pingTimer.Dispose();
                             return;
                         }
                         else

@@ -4,30 +4,33 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Stacks.Actors.Proto;
 using Stacks.Tcp;
 
 namespace Stacks.Actors
 {
     public abstract class ActorServerProxyTemplate<T> : IActorServerProxy
     {
-        protected IExecutor executor;
-        protected SocketServer server;
-        protected List<FramedClient> clients;
         protected T actorImplementation;
-        protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
-        protected Dictionary<string, object> obsHandlers;
-        protected IStacksSerializer serializer;
-        protected bool isStopped;
-
-        protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
-        
+        protected Dictionary<IFramedClient, IActorSession> actorSessions;
+        protected Dictionary<FramedClient, Exception> clientErrors;
+        protected List<FramedClient> clients;
         protected Dictionary<FramedClient, DateTime> clientTimestamps;
+        protected IExecutor executor;
+        protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
+        protected bool isStopped;
+        protected Dictionary<string, object> obsHandlers;
         protected Timer pingTimer;
-
-        public IPEndPoint BindEndPoint { get { return server.BindEndPoint; } }
+        protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
+        protected IStacksSerializer serializer;
+        protected SocketServer server;
+        private readonly Subject<IActorSession> clientActorConnected;
+        private readonly Subject<ClientActorDisconnectedData> clientActorDisconnected;
 
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
         {
@@ -36,57 +39,82 @@ namespace Stacks.Actors
             serializer = new ProtoBufStacksSerializer();
             clients = new List<FramedClient>();
             handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
+            actorSessions = new Dictionary<IFramedClient, IActorSession>();
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
 
+            clientActorConnected = new Subject<IActorSession>();
+            clientActorDisconnected = new Subject<ClientActorDisconnectedData>();
+
             clientTimestamps = new Dictionary<FramedClient, DateTime>();
+            clientErrors = new Dictionary<FramedClient, Exception>();
             pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
             protocolHandlers = new Dictionary<int, Action<FramedClient, MemoryStream>>();
-            protocolHandlers[Proto.ActorProtocol.HandshakeId] = HandleHandshakeMessage;
-            protocolHandlers[Proto.ActorProtocol.PingId] = HandlePingMessage;
+            protocolHandlers[ActorProtocol.HandshakeId] = HandleHandshakeMessage;
+            protocolHandlers[ActorProtocol.PingId] = HandlePingMessage;
 
             server = new SocketServer(executor, bindEndPoint);
             server.Connected.Subscribe(ClientConnected);
             server.Start();
         }
 
+        public IPEndPoint BindEndPoint
+        {
+            get { return server.BindEndPoint; }
+        }
+
+        public IObservable<IActorSession> ActorClientConnected
+        {
+            get { return clientActorConnected.AsObservable(); }
+        }
+
+        public IObservable<ClientActorDisconnectedData> ActorClientDisconnected
+        {
+            get { return clientActorDisconnected.AsObservable(); }
+        }
+
+        public Task<IActorSession[]> GetCurrentClientSessions()
+        {
+            return executor.PostTask(() => { return actorSessions.Values.ToArray(); });
+        }
+
         public void Stop()
         {
             server.Stop();
             executor.Enqueue(() =>
-                {
-                    isStopped = true;
-                    pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
+            {
+                isStopped = true;
+                pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
 
-                    foreach (var client in clients)
-                    {
-                        client.Close();
-                    }
-                });
+                foreach (var client in clients)
+                {
+                    client.Close();
+                }
+            });
         }
 
         private void OnPingTimer(object _)
         {
             executor.Enqueue(() =>
+            {
+                if (isStopped)
+                    return;
+
+                var now = DateTime.UtcNow;
+                var halfMinute = TimeSpan.FromMinutes(1.0);
+
+                foreach (var kv in clientTimestamps)
                 {
-                    if (isStopped)
-                        return;
+                    var c = kv.Key;
+                    var ts = kv.Value;
 
-                    var now = DateTime.UtcNow;
-                    var halfMinute = TimeSpan.FromMinutes(1.0);
-
-                    foreach (var kv in clientTimestamps)
+                    if (now - ts > halfMinute)
                     {
-                        var c = kv.Key;
-                        var ts = kv.Value;
-
-                        if (now - ts > halfMinute)
-                        {
-                            c.Close();
-                        }
+                        c.Close();
                     }
-                });
+                }
+            });
         }
 
         private void HandleClientReceivedData(FramedClient client, ArraySegment<byte> bs)
@@ -95,16 +123,16 @@ namespace Stacks.Actors
             {
                 fixed (byte* b = bs.Array)
                 {
-                    byte* s = b + bs.Offset;
-                    Proto.ActorProtocolFlags header = *(Proto.ActorProtocolFlags*)s;
+                    var s = b + bs.Offset;
+                    var header = *(ActorProtocolFlags*) s;
 
-                    if (header == Proto.ActorProtocolFlags.StacksProtocol)
+                    if (header == ActorProtocolFlags.StacksProtocol)
                     {
                         HandleProtocolMessage(client, bs, s);
                     }
                     else
                     {
-                        if (header != Proto.ActorProtocolFlags.RequestReponse)
+                        if (header != ActorProtocolFlags.RequestReponse)
                             throw new Exception("Invalid actor protocol header. Expected request-response");
 
                         bs = HandleRequestMessage(client, bs, s);
@@ -115,10 +143,10 @@ namespace Stacks.Actors
 
         private unsafe ArraySegment<byte> HandleRequestMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
         {
-            long reqId = *(long*)(s + 4);
-            int msgNameLength = *(int*)(s + 12);
-            string msgName = new string((sbyte*)s, 16, msgNameLength);
-            int pOffset = 16 + msgNameLength;
+            var reqId = *(long*) (s + 4);
+            var msgNameLength = *(int*) (s + 12);
+            var msgName = new string((sbyte*) s, 16, msgNameLength);
+            var pOffset = 16 + msgNameLength;
 
             using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
             {
@@ -135,33 +163,64 @@ namespace Stacks.Actors
             var client = new FramedClient(socketClient);
 
             client.Disconnected.Subscribe(exn =>
-                {
-                    clients.Remove(client);
-                    clientTimestamps.Remove(client);
-                });
+            {
+                Exception clientError;
+                clientErrors.TryGetValue(client, out clientError);
 
-            client.Received.Subscribe(bs =>
+                clients.Remove(client);
+                clientTimestamps.Remove(client);
+                clientErrors.Remove(client);
+
+                IActorSession isession;
+                if (actorSessions.TryGetValue(client, out isession))
                 {
+                    actorSessions.Remove(client);
                     try
                     {
-                        HandleClientReceivedData(client, bs);
+                        clientActorDisconnected.OnNext(
+                            new ClientActorDisconnectedData(
+                                isession,
+                                clientError ?? exn));
                     }
                     catch
                     {
-                        client.Close();
                     }
-                });
+                }
+            });
+
+            client.Received.Subscribe(bs =>
+            {
+                try
+                {
+                    HandleClientReceivedData(client, bs);
+                }
+                catch (Exception exn)
+                {
+                    clientErrors[client] = exn;
+                    client.Close();
+                }
+            });
 
             clients.Add(client);
             clientTimestamps[client] = DateTime.UtcNow;
+
+            var session = new ActorSession(client);
+            actorSessions[client] = session;
+            try
+            {
+                clientActorConnected.OnNext(session);
+            }
+            catch
+            {
+            }
         }
 
         private unsafe void HandleProtocolMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
         {
-            int pid = *(int*)(s + 4);
+            var pid = *(int*) (s + 4);
 
             Action<FramedClient, MemoryStream> handler;
-            bool hasHandler = protocolHandlers.TryGetValue(pid, out handler);
+            var hasHandler = protocolHandlers.TryGetValue(pid, out handler);
 
             if (!hasHandler)
                 throw new Exception("Invalid actor protocol header.");
@@ -172,31 +231,30 @@ namespace Stacks.Actors
             }
         }
 
-        private unsafe void HandleHandshakeMessage(FramedClient client, MemoryStream ms)
+        private void HandleHandshakeMessage(FramedClient client, MemoryStream ms)
         {
-            var req = serializer.Deserialize<Proto.HandshakeRequest>(ms);
+            var req = serializer.Deserialize<HandshakeRequest>(ms);
 
-            AuxSendProtocolPacket(client, Proto.ActorProtocol.HandshakeId,
-                  new Proto.HandshakeResponse
-                    {
-                        RequestedProtocolVersion = req.ClientProtocolVersion,
-                        ServerProtocolVersion = Proto.ActorProtocol.Version,
-                        ProtocolMatch = req.ClientProtocolVersion == Proto.ActorProtocol.Version
-                    });
+            AuxSendProtocolPacket(client, ActorProtocol.HandshakeId,
+                new HandshakeResponse
+                {
+                    RequestedProtocolVersion = req.ClientProtocolVersion,
+                    ServerProtocolVersion = ActorProtocol.Version,
+                    ProtocolMatch = req.ClientProtocolVersion == ActorProtocol.Version
+                });
         }
 
         private void HandlePingMessage(FramedClient client, MemoryStream ms)
         {
             clientTimestamps[client] = DateTime.UtcNow;
-            
-            var req = serializer.Deserialize<Proto.Ping>(ms);
-            AuxSendProtocolPacket(client, Proto.ActorProtocol.PingId,
-                  new Proto.Ping
-                  {
-                      Timestamp = req.Timestamp
-                  });
-        }
 
+            var req = serializer.Deserialize<Ping>(ms);
+            AuxSendProtocolPacket(client, ActorProtocol.PingId,
+                new Ping
+                {
+                    Timestamp = req.Timestamp
+                });
+        }
 
         private void HandleMessage(FramedClient client, long reqId, string messageName, MemoryStream ms)
         {
@@ -209,13 +267,13 @@ namespace Stacks.Actors
                         "Client {0} sent message for method {1}, which has no handler registered",
                         client.RemoteEndPoint,
                         messageName));
-
             }
 
             handler(client, reqId, ms);
         }
 
-        protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse, IReplyMessage<Unit> msgToSend)
+        protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse,
+            IReplyMessage<Unit> msgToSend)
         {
             if (actorResponse == null)
             {
@@ -244,7 +302,8 @@ namespace Stacks.Actors
             }
         }
 
-        protected void HandleResponse<R>(FramedClient client, long reqId, Task<R> actorResponse, IReplyMessage<R> msgToSend)
+        protected void HandleResponse<R>(FramedClient client, long reqId, Task<R> actorResponse,
+            IReplyMessage<R> msgToSend)
         {
             if (actorResponse == null)
             {
@@ -278,18 +337,18 @@ namespace Stacks.Actors
             {
                 ms.SetLength(12);
                 ms.Position = 12;
-                serializer.Serialize<IReplyMessage<R>>(packet, ms);
+                serializer.Serialize(packet, ms);
                 ms.Position = 0;
 
                 var buffer = ms.GetBuffer();
 
                 fixed (byte* buf = buffer)
                 {
-                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.RequestReponse;
-                    *(long*)(buf + 4) = requestId;
+                    *(ActorProtocolFlags*) buf = ActorProtocolFlags.RequestReponse;
+                    *(long*) (buf + 4) = requestId;
                 }
 
-                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
+                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int) ms.Length));
             }
         }
 
@@ -301,25 +360,25 @@ namespace Stacks.Actors
                 ms.Position = 8;
                 var nameBytes = Encoding.ASCII.GetBytes(name);
                 ms.Write(nameBytes, 0, nameBytes.Length);
-                this.serializer.Serialize(msg, ms);
+                serializer.Serialize(msg, ms);
 
                 ms.Position = 0;
                 var buffer = ms.GetBuffer();
 
                 fixed (byte* buf = buffer)
                 {
-                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.Observable;
-                    *(int*)(buf + 4) = nameBytes.Length;
+                    *(ActorProtocolFlags*) buf = ActorProtocolFlags.Observable;
+                    *(int*) (buf + 4) = nameBytes.Length;
                 }
 
-                var packet = new ArraySegment<byte>(buffer, 0, (int)ms.Length);
+                var packet = new ArraySegment<byte>(buffer, 0, (int) ms.Length);
                 executor.Enqueue(() =>
+                {
+                    foreach (var c in clients)
                     {
-                        foreach (var c in clients)
-                        {
-                            c.SendPacket(packet);
-                        }
-                    });
+                        c.SendPacket(packet);
+                    }
+                });
             }
         }
 
@@ -336,11 +395,11 @@ namespace Stacks.Actors
 
                 fixed (byte* buf = buffer)
                 {
-                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.StacksProtocol;
-                    *(int*)(buf + 4) = packetId;
+                    *(ActorProtocolFlags*) buf = ActorProtocolFlags.StacksProtocol;
+                    *(int*) (buf + 4) = packetId;
                 }
 
-                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int)ms.Length));
+                client.SendPacket(new ArraySegment<byte>(buffer, 0, (int) ms.Length));
             }
         }
     }

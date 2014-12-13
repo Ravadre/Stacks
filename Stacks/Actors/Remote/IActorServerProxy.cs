@@ -10,7 +10,12 @@ namespace Stacks.Actors
     public interface IActorServerProxy
     {
         IPEndPoint BindEndPoint { get; }
-
+        
+        IObservable<IActorSession> ActorClientConnected { get; }
+        IObservable<ClientActorDisconnectedData> ActorClientDisconnected { get; }
+        
+        Task<IActorSession[]> GetCurrentClientSessions();
+        
         void Stop();
     }
 }
