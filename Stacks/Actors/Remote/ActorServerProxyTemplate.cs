@@ -6,6 +6,7 @@ using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -269,7 +270,15 @@ namespace Stacks.Actors
                         messageName));
             }
 
-            handler(client, reqId, ms);
+            try
+            {
+                CallContext.LogicalSetData(ActorSession.ActorSessionCallContextKey, actorSessions[client]); 
+                handler(client, reqId, ms);
+            }
+            finally
+            {
+                CallContext.FreeNamedDataSlot(ActorSession.ActorSessionCallContextKey);
+            }
         }
 
         protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse,

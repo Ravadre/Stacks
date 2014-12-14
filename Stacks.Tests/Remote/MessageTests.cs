@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -148,6 +149,41 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
+        public async void IActorSession_should_get_accessible_from_ActorSession_Current()
+        {
+            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
+
+            await client.PassDataForContext(1);
+            await client.PassDataForContext(1);
+            await client2.PassDataForContext(2);
+            await client.PassDataForContext(1);
+            await client2.PassDataForContext(2);
+
+        }
+
+        [Fact]
+        public void StressTest_IActorSession_should_get_accessible_from_ActorSession_Current()
+        {
+            IMessageActor[] clients = new IMessageActor[20];
+
+            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out clients[0]);
+
+            for (int i = 1; i < 20; ++i)
+                clients[i] = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
+
+            var tasks = new List<Task>();
+
+            for (int i = 0; i < 100; ++i)
+            {
+                int idx = i % 20;
+                tasks.Add(clients[idx].StressTestSession(idx));
+            }
+
+            Task.WaitAll(tasks.ToArray());
+        }
+
+        [Fact]
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
         {
             IExplicitInterfaceActor client;
@@ -212,6 +248,8 @@ namespace Stacks.Tests.Remote
         Task NotProtoContract(InvalidData data);
         Task<IEnumerable<ValidDataResponse>> PassValidData(IEnumerable<ValidData> data);
         Task PassDataWithClient(int c);
+        Task PassDataForContext(int c);
+        Task StressTestSession(int c);
         Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j);
 
         Task<int> LongRunningAdder(int x, int y);
@@ -283,6 +321,50 @@ namespace Stacks.Tests.Remote
         public async Task PassDataWithClient(IActorSession session, int c)
         {
             await Context;
+            await Task.Delay(1);
+
+            var client = session.Client;
+
+            Assert.NotNull(client);
+
+            if (clientCache.ContainsKey(c))
+            {
+                Assert.Equal(clientCache[c], client);
+            }
+            else
+            {
+                clientCache[c] = client;
+            }
+        }
+
+        public async Task StressTestSession(int c)
+        {
+            await Context;
+            await Task.Delay(10);
+
+            var session = ActorSession.Current;
+            Assert.NotNull(session);
+            var client = session.Client;
+            Assert.NotNull(client);
+
+            if (clientCache.ContainsKey(c))
+            {
+                Assert.Equal(clientCache[c], client);
+            }
+            else
+            {
+                clientCache[c] = client;
+            }
+        }
+
+        public async Task PassDataForContext(int c)
+        {
+            await Context;
+            await Task.Delay(1);
+
+            var session = ActorSession.Current;
+
+            Assert.NotNull(session);
 
             var client = session.Client;
 
