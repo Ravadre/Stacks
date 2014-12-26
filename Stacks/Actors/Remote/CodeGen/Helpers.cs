@@ -167,6 +167,23 @@ namespace Stacks.Actors.Remote.CodeGen
             }
         }
 
+        private static string GetObservableMethodName(MethodInfo mi)
+        {
+            // This should handle special F# case.
+            // Interface property is implemented as get_PROPERTYNAME method
+            if (mi.IsSpecialName)
+            {
+                if (mi.Name.StartsWith("get_"))
+                    return mi.Name.Remove(0, 4);
+
+                return mi.Name;
+            }
+            else
+            {
+                return mi.Name;
+            }
+        }
+
         public static MethodInfoMapping[] FindValidObservableMethods(this Type type, bool onlyPublic)
         {
             var propertyMethods =
@@ -185,7 +202,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                                 typeof(IObservable<>) == p.ReturnType.GetGenericTypeDefinition())
                                     .Where(m => m.GetParameters().Length == 0)
                                     .Where(m => !propertyMethods.Contains(m.Name))
-                                    .Select(m => new MethodInfoMapping(m, m, m.Name, m.Name));
+                                    .Select(m => new MethodInfoMapping(m, m, GetObservableMethodName(m), m.Name));
 
             if (onlyPublic)
             {
@@ -214,7 +231,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                         .Where(m => m.GetParameters().Length == 0)
                                         .Where(m => mappings.ContainsKey(m.Name))
                                         .Where(m => !propertyMethods.Contains(m.Name))
-                                        .Select(m => new MethodInfoMapping(m, mappings[m.Name], mappings[m.Name].Name, m.Name));
+                                        .Select(m => new MethodInfoMapping(m, mappings[m.Name], GetObservableMethodName(mappings[m.Name]), m.Name));
 
                 return publicMethods
                     .Concat(overridenMethods)
