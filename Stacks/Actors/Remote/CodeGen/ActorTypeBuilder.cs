@@ -62,8 +62,8 @@ namespace Stacks.Actors.Remote.CodeGen
 
             for (int i = 0; i < obsMethods.Length; ++i)
             {
-                var ii = obsMethods[i].InterfaceInfo;
-                DefineMessageTypeForActorObservable(ii.Name, ii.ReturnType);
+                var mi = obsMethods[i];
+                DefineMessageTypeForActorObservable(mi.PublicName, mi.InterfaceInfo.ReturnType);
             }
         }
 

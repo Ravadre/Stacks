@@ -59,8 +59,8 @@ namespace Stacks.Actors.Remote.CodeGen
 
                 foreach (var property in actorType.FindValidObservableProperties(onlyPublic: false))
                 {
-                    var newMethod = CreateObservableItemHandler(property.InterfaceInfo.Name, property.InterfaceInfo.PropertyType);
-                    var errMethod = CreateObservableErrorHandler(property.InterfaceInfo.Name);
+                    var newMethod = CreateObservableItemHandler(property.PublicName, property.InterfaceInfo.PropertyType);
+                    var errMethod = CreateObservableErrorHandler(property.PublicName);
 
                     var innerPropType = property.InterfaceInfo.PropertyType.GetGenericArguments()[0];
                     var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
@@ -84,8 +84,8 @@ namespace Stacks.Actors.Remote.CodeGen
                 foreach (var method in actorType.FindValidObservableMethods(onlyPublic: false))
                 {
                     var iInfo = method.InterfaceInfo;
-                    var newMethod = CreateObservableItemHandler(iInfo.Name, iInfo.ReturnType);
-                    var errMethod = CreateObservableErrorHandler(iInfo.Name);
+                    var newMethod = CreateObservableItemHandler(method.PublicName, iInfo.ReturnType);
+                    var errMethod = CreateObservableErrorHandler(method.PublicName);
 
                     var innerPropType = iInfo.ReturnType.GetGenericArguments()[0];
                     var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
