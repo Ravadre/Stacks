@@ -166,5 +166,61 @@ namespace Stacks.Actors.Remote.CodeGen
                     .ToArray();
             }
         }
+
+        public static MethodInfoMapping[] FindValidObservableMethods(this Type type, bool onlyPublic)
+        {
+            var propertyMethods =
+                new HashSet<string>(
+                    type.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                        .SelectMany(p => new[]
+                        {
+                            p.GetMethod != null ? p.GetMethod.Name : null,
+                            p.SetMethod != null ? p.SetMethod.Name : null
+                        })
+                        .Where(n => n != null));
+
+            var t = type;
+            var publicMethods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                                    .Where(p => p.ReturnType.IsGenericType &&
+                                                typeof(IObservable<>) == p.ReturnType.GetGenericTypeDefinition())
+                                    .Where(m => m.GetParameters().Length == 0)
+                                    .Where(m => !propertyMethods.Contains(m.Name))
+                                    .Select(m => new MethodInfoMapping(m, m, m.Name, m.Name));
+
+            if (onlyPublic)
+            {
+                return publicMethods.OrderBy(p => p.PublicName).ToArray();
+            }
+            else
+            {
+                var mappings = new Dictionary<string, MethodInfo>();
+
+                // Role of this method is to take not only public methods, but also
+                // private ones, as long as those methods are explicit interface implementations.
+                // To check for this case, interface maps are checked.
+                // This makes standard interface implementation pattern for F# viable
+                // for server side proxies.
+                foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
+                {
+                    for (var i = 0; i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length); ++i)
+                    {
+                        mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                    }
+                }
+
+                var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
+                                        .Where(p => p.ReturnType.IsGenericType &&
+                                                typeof(IObservable<>) == p.ReturnType.GetGenericTypeDefinition())
+                                        .Where(m => m.GetParameters().Length == 0)
+                                        .Where(m => mappings.ContainsKey(m.Name))
+                                        .Where(m => !propertyMethods.Contains(m.Name))
+                                        .Select(m => new MethodInfoMapping(m, mappings[m.Name], mappings[m.Name].Name, m.Name));
+
+                return publicMethods
+                    .Concat(overridenMethods)
+                    .OrderBy(m => m.PublicName)
+                    .ToArray();
+            }
+        }
     }
 }

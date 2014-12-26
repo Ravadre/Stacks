@@ -67,6 +67,12 @@ namespace Stacks.Tests.Remote
 
             Assert.Equal(output, input);
         }
+
+        [Fact]
+        public void Normal_methods_that_return_IObservable_should_be_allowed()
+        {
+            
+        }
     }
 
 
@@ -100,6 +106,8 @@ namespace Stacks.Tests.Remote
     {
         IObservable<int> IntStream { get; }
         IObservable<ComplexData> ComplexStream { get; }
+
+        IObservable<int> IntMethod();
     }
 
     public class ObservableActorServer : IObservableActor
@@ -133,6 +141,11 @@ namespace Stacks.Tests.Remote
         {
             foreach (var x in data)
                 complexStream.OnNext(x);
+        }
+
+        public IObservable<int> IntMethod()
+        {
+            return intStream;
         }
     }
 }

@@ -78,6 +78,7 @@ namespace Stacks.Actors.Remote.CodeGen
 
             foreach (var property in actorInterface.FindValidObservableProperties(onlyPublic: true))
             {
+                var publicName = property.PublicName;
                 var innerType = property.Info.PropertyType.GetGenericArguments()[0];
 
                 var fb = actorImplBuilder.DefineField(
@@ -85,58 +86,25 @@ namespace Stacks.Actors.Remote.CodeGen
                                             typeof(Subject<>).MakeGenericType(innerType),
                                             FieldAttributes.Private);
 
-                var pb = actorImplBuilder.DefineProperty(property.PublicName,
-                            PropertyAttributes.HasDefault, property.Info.PropertyType, null);
+                ImplementObservableProperty(actorImplBuilder, property.PublicName, property.Info.PropertyType, fb);
+                var handlerMethod = ImplementObservableHandlerMethod(actorImplBuilder, publicName, fb, proxyTemplateType, innerType);
+                ImplementObservableConstructorHandler(ctorIl, innerType, fb, proxyTemplateType, publicName, handlerMethod);
+            }
 
-                var getMethod = actorImplBuilder.DefineMethod("get_" + property.PublicName,
-                                        MethodAttributes.Public |
-                                        MethodAttributes.HideBySig |
-                                        MethodAttributes.SpecialName |
-                                        MethodAttributes.Virtual,
-                                    property.Info.PropertyType, Type.EmptyTypes);
+            foreach (var method in actorInterface.FindValidObservableMethods(onlyPublic: true))
+            {
+                var publicName = method.PublicName;
+                var innerType = method.Info.ReturnType.GetGenericArguments()[0];
 
-                var il = getMethod.GetILGenerator();
-                il.Emit(OpCodes.Ldarg_0);
-                il.Emit(OpCodes.Ldfld, fb);
-                il.Emit(OpCodes.Ret);
+                var fb = actorImplBuilder.DefineField(
+                                         method.PublicName + "$Field",
+                                         typeof(Subject<>).MakeGenericType(innerType),
+                                         FieldAttributes.Private);
 
-                pb.SetGetMethod(getMethod);
-
-
-                Type messageType = moduleBuilder.GetType("Messages." + property.PublicName + "$ObsMessage");
-                var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
-
-                var handlerMethod = actorImplBuilder.DefineMethod(property.PublicName + "$ObsHandler",
-                                        MethodAttributes.Private | MethodAttributes.HideBySig,
-                                        CallingConventions.HasThis, typeof(void),
-                                        new[] { typeof(MemoryStream) });
-
-                var hil = handlerMethod.GetILGenerator();
-                hil.Emit(OpCodes.Ldarg_0);
-                hil.Emit(OpCodes.Ldfld, fb);
-                hil.Emit(OpCodes.Ldarg_0);
-                hil.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
-                hil.Emit(OpCodes.Ldarg_1);
-                hil.EmitCall(OpCodes.Callvirt, desMethod, null);
-                hil.Emit(OpCodes.Ldfld, messageType.GetField("$Value"));
-                hil.EmitCall(OpCodes.Call, typeof(Subject<>).MakeGenericType(innerType).GetMethod("OnNext"), null);
-                hil.Emit(OpCodes.Ret);
-
-
-
-
-                ctorIl.Emit(OpCodes.Ldarg_0);
-                ctorIl.Emit(OpCodes.Newobj, typeof(Subject<>).MakeGenericType(innerType).GetConstructor(Type.EmptyTypes));
-                ctorIl.Emit(OpCodes.Stfld, fb);
-
-
-                ctorIl.Emit(OpCodes.Ldarg_0);
-                ctorIl.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
-                ctorIl.Emit(OpCodes.Ldstr, property.PublicName);
-                ctorIl.Emit(OpCodes.Ldarg_0);
-                ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
-                ctorIl.Emit(OpCodes.Newobj, typeof(Action<MemoryStream>).GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
-                ctorIl.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+                ImplementObservableMethod(actorImplBuilder, method.PublicName, method.Info.ReturnType, fb);
+                //ImplementObservableProperty(actorImplBuilder, method.PublicName, method.Info.ReturnType, fb);
+                var handlerMethod = ImplementObservableHandlerMethod(actorImplBuilder, publicName, fb, proxyTemplateType, innerType);
+                ImplementObservableConstructorHandler(ctorIl, innerType, fb, proxyTemplateType, publicName, handlerMethod);
             }
 
             ctorIl.Emit(OpCodes.Ret);
@@ -148,6 +116,82 @@ namespace Stacks.Actors.Remote.CodeGen
                 constructedTypesCache[actorInterface] = implType;
             }
             return implType;
+        }
+
+        private void ImplementObservableConstructorHandler(ILGenerator ctorIl, Type innerType, FieldBuilder fb,
+            Type proxyTemplateType, string publicName, MethodBuilder handlerMethod)
+        {
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            ctorIl.Emit(OpCodes.Newobj, typeof (Subject<>).MakeGenericType(innerType).GetConstructor(Type.EmptyTypes));
+            ctorIl.Emit(OpCodes.Stfld, fb);
+
+
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            ctorIl.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("obsHandlers", BindingFlags.Instance | BindingFlags.NonPublic));
+            ctorIl.Emit(OpCodes.Ldstr, publicName);
+            ctorIl.Emit(OpCodes.Ldarg_0);
+            ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
+            ctorIl.Emit(OpCodes.Newobj, typeof (Action<MemoryStream>).GetConstructor(new[] {typeof (object), typeof (IntPtr)}));
+            ctorIl.EmitCall(OpCodes.Call, typeof (Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+        }
+
+        private MethodBuilder ImplementObservableHandlerMethod(TypeBuilder actorImplBuilder, string publicName,
+            FieldBuilder fb, Type proxyTemplateType, Type innerType)
+        {
+            Type messageType = moduleBuilder.GetType("Messages." + publicName + "$ObsMessage");
+            var handlerMethod = actorImplBuilder.DefineMethod(publicName + "$ObsHandler",
+                MethodAttributes.Private | MethodAttributes.HideBySig,
+                CallingConventions.HasThis, typeof (void),
+                new[] {typeof (MemoryStream)});
+
+            var desMethod = typeof (IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+            var hil = handlerMethod.GetILGenerator();
+            hil.Emit(OpCodes.Ldarg_0);
+            hil.Emit(OpCodes.Ldfld, fb);
+            hil.Emit(OpCodes.Ldarg_0);
+            hil.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
+            hil.Emit(OpCodes.Ldarg_1);
+            hil.EmitCall(OpCodes.Callvirt, desMethod, null);
+            hil.Emit(OpCodes.Ldfld, messageType.GetField("$Value"));
+            hil.EmitCall(OpCodes.Call, typeof (Subject<>).MakeGenericType(innerType).GetMethod("OnNext"), null);
+            hil.Emit(OpCodes.Ret);
+            return handlerMethod;
+        }
+
+        private static void ImplementObservableMethod(TypeBuilder actorImplBuilder, string publicName, Type type,
+        FieldBuilder fb)
+        {
+            var getMethod = actorImplBuilder.DefineMethod(publicName,
+                MethodAttributes.Public |
+                MethodAttributes.HideBySig |
+                MethodAttributes.Virtual,
+                type, Type.EmptyTypes);
+
+            var il = getMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, fb);
+            il.Emit(OpCodes.Ret);
+        }
+
+        private static void ImplementObservableProperty(TypeBuilder actorImplBuilder, string publicName, Type type,
+            FieldBuilder fb)
+        {
+            var pb = actorImplBuilder.DefineProperty(publicName,
+                PropertyAttributes.HasDefault, type, null);
+
+            var getMethod = actorImplBuilder.DefineMethod("get_" + publicName,
+                MethodAttributes.Public |
+                MethodAttributes.HideBySig |
+                MethodAttributes.SpecialName |
+                MethodAttributes.Virtual,
+                type, Type.EmptyTypes);
+
+            var il = getMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldfld, fb);
+            il.Emit(OpCodes.Ret);
+
+            pb.SetGetMethod(getMethod);
         }
 
         private void ImplementSendMethod(MethodBuilder mb, MethodInfo sendMethod, Type proxyTemplateType)
