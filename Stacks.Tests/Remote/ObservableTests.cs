@@ -69,9 +69,24 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public void Normal_methods_that_return_IObservable_should_be_allowed()
+        public void Normal_methods_that_return_IObservable_should_be_allowed_as_observable()
         {
-            
+            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+
+            List<int> input = new List<int>() { 3, 1, 4, 1, 5 };
+            List<int> output = new List<int>();
+
+            client.IntMethod().Subscribe(x => output.Add(x));
+
+            serverImpl.RunIntStream(input);
+
+            for (int i = 0; i < 10; ++i)
+            {
+                if (output.Count == input.Count) break;
+                Thread.Sleep(100);
+            }
+
+            Assert.Equal(output, input);
         }
     }
 

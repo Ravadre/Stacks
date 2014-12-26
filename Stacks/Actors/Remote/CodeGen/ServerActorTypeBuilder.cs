@@ -66,35 +66,36 @@ namespace Stacks.Actors.Remote.CodeGen
                     var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
                     var errorActionType = typeof(Action<>).MakeGenericType(new[] { typeof(Exception) });
 
-                    var obsMethod = typeof(ObservableExtensions)
-                                        .GetMethods(BindingFlags.Static | BindingFlags.Public)
-                                        .Where(m => m.Name == "Subscribe")
-                                        .Select(m => new
-                                        {
-                                            Method = m,
-                                            Params = m.GetParameters(),
-                                            Args = m.GetGenericArguments()
-                                        })
-                                        .Where(x =>
-                                        {
-                                            var m = x.Method;
-                                            var p = x.Params;
-                                            if (m.IsGenericMethod && p.Length == 3)
-                                            {
-                                                if (p[0].ParameterType.GetGenericTypeDefinition() == typeof(IObservable<>) &&
-                                                    p[1].ParameterType.GetGenericTypeDefinition() == typeof(Action<>) &&
-                                                    p[2].ParameterType.GetGenericTypeDefinition() == typeof(Action<>))
-                                                    return true;
-                                            }
-                                            return false;
-                                        })
-                                        .Select(x => x.Method)
-                                        .First()
-                                        .MakeGenericMethod(innerPropType);
+                    var obsMethod = EmitObservableSubscribeMethod(innerPropType);
 
                     ctIl.Emit(OpCodes.Ldarg_0);
                     ctIl.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
                     ctIl.EmitCall(OpCodes.Callvirt, property.InterfaceInfo.GetGetMethod(true), null);
+                    ctIl.Emit(OpCodes.Ldarg_0);
+                    ctIl.Emit(OpCodes.Ldftn, newMethod);
+                    ctIl.Emit(OpCodes.Newobj, actionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    ctIl.Emit(OpCodes.Ldarg_0);
+                    ctIl.Emit(OpCodes.Ldftn, errMethod);
+                    ctIl.Emit(OpCodes.Newobj, errorActionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+                    ctIl.EmitCall(OpCodes.Call, obsMethod, null);
+                    ctIl.Emit(OpCodes.Pop);
+                }
+
+                foreach (var method in actorType.FindValidObservableMethods(onlyPublic: false))
+                {
+                    var iInfo = method.InterfaceInfo;
+                    var newMethod = CreateObservableItemHandler(iInfo.Name, iInfo.ReturnType);
+                    var errMethod = CreateObservableErrorHandler(iInfo.Name);
+
+                    var innerPropType = iInfo.ReturnType.GetGenericArguments()[0];
+                    var actionType = typeof(Action<>).MakeGenericType(new[] { innerPropType });
+                    var errorActionType = typeof(Action<>).MakeGenericType(new[] { typeof(Exception) });
+
+                    var obsMethod = EmitObservableSubscribeMethod(innerPropType);
+
+                    ctIl.Emit(OpCodes.Ldarg_0);
+                    ctIl.Emit(OpCodes.Ldfld, templateType.GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
+                    ctIl.EmitCall(OpCodes.Callvirt, iInfo, null);
                     ctIl.Emit(OpCodes.Ldarg_0);
                     ctIl.Emit(OpCodes.Ldftn, newMethod);
                     ctIl.Emit(OpCodes.Newobj, actionType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
@@ -116,6 +117,36 @@ namespace Stacks.Actors.Remote.CodeGen
             }
 
             return implType;
+        }
+
+        private static MethodInfo EmitObservableSubscribeMethod(Type innerPropType)
+        {
+            var obsMethod = typeof (ObservableExtensions)
+                .GetMethods(BindingFlags.Static | BindingFlags.Public)
+                .Where(m => m.Name == "Subscribe")
+                .Select(m => new
+                {
+                    Method = m,
+                    Params = m.GetParameters(),
+                    Args = m.GetGenericArguments()
+                })
+                .Where(x =>
+                {
+                    var m = x.Method;
+                    var p = x.Params;
+                    if (m.IsGenericMethod && p.Length == 3)
+                    {
+                        if (p[0].ParameterType.GetGenericTypeDefinition() == typeof (IObservable<>) &&
+                            p[1].ParameterType.GetGenericTypeDefinition() == typeof (Action<>) &&
+                            p[2].ParameterType.GetGenericTypeDefinition() == typeof (Action<>))
+                            return true;
+                    }
+                    return false;
+                })
+                .Select(x => x.Method)
+                .First()
+                .MakeGenericMethod(innerPropType);
+            return obsMethod;
         }
 
         private void EmitSetHandlerForMethod(MethodInfoMapping miMapping, ILGenerator ctIl)
