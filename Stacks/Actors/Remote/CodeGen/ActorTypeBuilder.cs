@@ -53,7 +53,17 @@ namespace Stacks.Actors.Remote.CodeGen
 
             for (int i = 0; i < properties.Length; ++i)
             {
-                DefineMessageTypeForActorObservable(properties[i].InterfaceInfo);
+                var ii = properties[i].InterfaceInfo;
+                DefineMessageTypeForActorObservable(ii.Name, ii.PropertyType);
+            }
+
+            var obsMethods = actorInterface.FindValidObservableMethods(onlyPublic: false);
+            obsMethods.EnsureNamesAreUnique();
+
+            for (int i = 0; i < obsMethods.Length; ++i)
+            {
+                var mi = obsMethods[i];
+                DefineMessageTypeForActorObservable(mi.PublicName, mi.InterfaceInfo.ReturnType);
             }
         }
 
@@ -213,9 +223,9 @@ namespace Stacks.Actors.Remote.CodeGen
         }
 
 
-        private void DefineMessageTypeForActorObservable(PropertyInfo propertyInfo)
+        private void DefineMessageTypeForActorObservable(string name, Type obsType)
         {
-            var messageTypeName = propertyInfo.Name + "$ObsMessage";
+            var messageTypeName = name + "$ObsMessage";
             var typeBuilder = this.moduleBuilder.DefineType("Messages." + messageTypeName, TypeAttributes.Public);
 
             var protoMemberCtor = typeof(ProtoBuf.ProtoMemberAttribute).GetConstructor(new[] { typeof(int) });
@@ -227,14 +237,14 @@ namespace Stacks.Actors.Remote.CodeGen
             var protoContractCtor = typeof(ProtoBuf.ProtoContractAttribute).GetConstructor(Type.EmptyTypes);
             typeBuilder.SetCustomAttribute(new CustomAttributeBuilder(protoContractCtor, new object[0]));
 
-            var propTypeObs = propertyInfo.PropertyType;
+            var propTypeObs = obsType;
             var p = propTypeObs.GetGenericArguments()[0];
 
             var fb = typeBuilder.DefineField("$Value", p, FieldAttributes.Public);
             fb.SetCustomAttribute(new CustomAttributeBuilder(protoMemberCtor, new object[] { 1 }));
 
             var createdType = typeBuilder.CreateType();
-            this.messageParamTypes[propertyInfo.Name] = createdType;
+            this.messageParamTypes[name] = createdType;
         }
     }
 }
