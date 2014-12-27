@@ -44,10 +44,10 @@ namespace Stacks.Actors.Remote.CodeGen
                                         templateType, Type.EmptyTypes);
 
             {
-                var baseCtor = templateType.GetConstructor(new[] { actorType, typeof(IPEndPoint) });
+                var baseCtor = templateType.GetConstructor(new[] { actorType, typeof(IPEndPoint), typeof(ActorServerProxyOptions) });
 
                 var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
-                                        CallingConventions.HasThis, new[] { actorType, typeof(IPEndPoint) });
+                                        CallingConventions.HasThis, new[] { actorType, typeof(IPEndPoint), typeof(ActorServerProxyOptions) });
 
                 var ctIl = ctorBuilder.GetILGenerator();
                 EmitCallBaseCtor(ctIl, baseCtor);
@@ -169,6 +169,7 @@ namespace Stacks.Actors.Remote.CodeGen
             ctIl.Emit(OpCodes.Ldarg_0);
             ctIl.Emit(OpCodes.Ldarg_1);
             ctIl.Emit(OpCodes.Ldarg_2);
+            ctIl.Emit(OpCodes.Ldarg_3);
             ctIl.Emit(OpCodes.Call, baseCtor);
         }
 

@@ -55,6 +55,8 @@ namespace PingPong
                 Console.ResetColor();
             }
 
+            var serverProxyOptions = new ActorServerProxyOptions(actorSessionInjectionEnabled: false);
+
             int workerThreads;
             int completionPortThreads;
             ThreadPool.GetAvailableThreads(out workerThreads, out completionPortThreads);
@@ -108,7 +110,7 @@ namespace PingPong
                         (idx, wfs) =>
                         {
                             var dest = new Destination(wfs);
-                            return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest), dest);
+                            return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest, serverProxyOptions), dest);
                         },
                         (idx, d) => ActorClientProxy.CreateActor<IDestination>("tcp://localhost:" + (54000 + idx)).Result,
                         (idx, wfs, dest, r, latch) => new PingPongActor(wfs, dest, r, latch));
