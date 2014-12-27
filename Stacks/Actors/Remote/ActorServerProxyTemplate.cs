@@ -18,6 +18,7 @@ namespace Stacks.Actors
     public abstract class ActorServerProxyTemplate<T> : IActorServerProxy
     {
         protected T actorImplementation;
+        protected readonly ActorServerProxyOptions options;
         protected Dictionary<IFramedClient, IActorSession> actorSessions;
         protected Dictionary<FramedClient, Exception> clientErrors;
         protected List<FramedClient> clients;
@@ -33,7 +34,7 @@ namespace Stacks.Actors
         private readonly Subject<IActorSession> clientActorConnected;
         private readonly Subject<ClientActorDisconnectedData> clientActorDisconnected;
 
-        public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
+        public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint, ActorServerProxyOptions options)
         {
             isStopped = false;
             executor = new ActionBlockExecutor();
@@ -43,6 +44,7 @@ namespace Stacks.Actors
             actorSessions = new Dictionary<IFramedClient, IActorSession>();
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
+            this.options = options;
 
             clientActorConnected = new Subject<IActorSession>();
             clientActorDisconnected = new Subject<ClientActorDisconnectedData>();
@@ -77,7 +79,7 @@ namespace Stacks.Actors
 
         public Task<IActorSession[]> GetCurrentClientSessions()
         {
-            return executor.PostTask(() => { return actorSessions.Values.ToArray(); });
+            return executor.PostTask(() => actorSessions.Values.ToArray());
         }
 
         public void Stop()
@@ -270,15 +272,23 @@ namespace Stacks.Actors
                         messageName));
             }
 
-            try
+            if (options.ActorSessionInjectionEnabled)
             {
-                CallContext.LogicalSetData(ActorSession.ActorSessionCallContextKey, actorSessions[client]); 
+                try
+                {
+                    CallContext.LogicalSetData(ActorSession.ActorSessionCallContextKey, actorSessions[client]);
+                    handler(client, reqId, ms);
+                }
+                finally
+                {
+                    CallContext.FreeNamedDataSlot(ActorSession.ActorSessionCallContextKey);
+                }                
+            }
+            else
+            {
                 handler(client, reqId, ms);
             }
-            finally
-            {
-                CallContext.FreeNamedDataSlot(ActorSession.ActorSessionCallContextKey);
-            }
+
         }
 
         protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse,

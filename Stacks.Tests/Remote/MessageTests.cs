@@ -148,40 +148,7 @@ namespace Stacks.Tests.Remote
 
         }
 
-        [Fact]
-        public async void IActorSession_should_get_accessible_from_ActorSession_Current()
-        {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
-            var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
-
-            await client.PassDataForContext(1);
-            await client.PassDataForContext(1);
-            await client2.PassDataForContext(2);
-            await client.PassDataForContext(1);
-            await client2.PassDataForContext(2);
-
-        }
-
-        [Fact]
-        public void StressTest_IActorSession_should_get_accessible_from_ActorSession_Current()
-        {
-            IMessageActor[] clients = new IMessageActor[20];
-
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out clients[0]);
-
-            for (int i = 1; i < 20; ++i)
-                clients[i] = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
-
-            var tasks = new List<Task>();
-
-            for (int i = 0; i < 100; ++i)
-            {
-                int idx = i % 20;
-                tasks.Add(clients[idx].StressTestSession(idx));
-            }
-
-            Task.WaitAll(tasks.ToArray());
-        }
+       
 
         [Fact]
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
@@ -251,6 +218,7 @@ namespace Stacks.Tests.Remote
         Task PassDataForContext(int c);
         Task StressTestSession(int c);
         Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j);
+        Task AssertActorSessionIsNull();
 
         Task<int> LongRunningAdder(int x, int y);
     }
@@ -406,6 +374,12 @@ namespace Stacks.Tests.Remote
             await Context;
             await Task.Delay(5000);
             return x + y;
+        }
+
+        public async Task AssertActorSessionIsNull()
+        {
+            await Context;
+            Assert.Null(ActorSession.Current);
         }
     }
 }
