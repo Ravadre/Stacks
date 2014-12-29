@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -147,6 +148,8 @@ namespace Stacks.Tests.Remote
 
         }
 
+       
+
         [Fact]
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
         {
@@ -212,7 +215,10 @@ namespace Stacks.Tests.Remote
         Task NotProtoContract(InvalidData data);
         Task<IEnumerable<ValidDataResponse>> PassValidData(IEnumerable<ValidData> data);
         Task PassDataWithClient(int c);
+        Task PassDataForContext(int c);
+        Task StressTestSession(int c);
         Task ValidateMonotonic(int x, double y, float z, int k, long l, int m, int n, int i, int j);
+        Task AssertActorSessionIsNull();
 
         Task<int> LongRunningAdder(int x, int y);
     }
@@ -283,6 +289,50 @@ namespace Stacks.Tests.Remote
         public async Task PassDataWithClient(IActorSession session, int c)
         {
             await Context;
+            await Task.Delay(1);
+
+            var client = session.Client;
+
+            Assert.NotNull(client);
+
+            if (clientCache.ContainsKey(c))
+            {
+                Assert.Equal(clientCache[c], client);
+            }
+            else
+            {
+                clientCache[c] = client;
+            }
+        }
+
+        public async Task StressTestSession(int c)
+        {
+            await Context;
+            await Task.Delay(10);
+
+            var session = ActorSession.Current;
+            Assert.NotNull(session);
+            var client = session.Client;
+            Assert.NotNull(client);
+
+            if (clientCache.ContainsKey(c))
+            {
+                Assert.Equal(clientCache[c], client);
+            }
+            else
+            {
+                clientCache[c] = client;
+            }
+        }
+
+        public async Task PassDataForContext(int c)
+        {
+            await Context;
+            await Task.Delay(1);
+
+            var session = ActorSession.Current;
+
+            Assert.NotNull(session);
 
             var client = session.Client;
 
@@ -324,6 +374,12 @@ namespace Stacks.Tests.Remote
             await Context;
             await Task.Delay(5000);
             return x + y;
+        }
+
+        public async Task AssertActorSessionIsNull()
+        {
+            await Context;
+            Assert.Null(ActorSession.Current);
         }
     }
 }

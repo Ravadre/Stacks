@@ -6,6 +6,7 @@ using System.Net;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.Remoting.Messaging;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace Stacks.Actors
     public abstract class ActorServerProxyTemplate<T> : IActorServerProxy
     {
         protected T actorImplementation;
+        protected readonly ActorServerProxyOptions options;
         protected Dictionary<IFramedClient, IActorSession> actorSessions;
         protected Dictionary<FramedClient, Exception> clientErrors;
         protected List<FramedClient> clients;
@@ -32,7 +34,7 @@ namespace Stacks.Actors
         private readonly Subject<IActorSession> clientActorConnected;
         private readonly Subject<ClientActorDisconnectedData> clientActorDisconnected;
 
-        public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint)
+        public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint, ActorServerProxyOptions options)
         {
             isStopped = false;
             executor = new ActionBlockExecutor();
@@ -42,6 +44,7 @@ namespace Stacks.Actors
             actorSessions = new Dictionary<IFramedClient, IActorSession>();
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
+            this.options = options;
 
             clientActorConnected = new Subject<IActorSession>();
             clientActorDisconnected = new Subject<ClientActorDisconnectedData>();
@@ -76,7 +79,7 @@ namespace Stacks.Actors
 
         public Task<IActorSession[]> GetCurrentClientSessions()
         {
-            return executor.PostTask(() => { return actorSessions.Values.ToArray(); });
+            return executor.PostTask(() => actorSessions.Values.ToArray());
         }
 
         public void Stop()
@@ -269,7 +272,23 @@ namespace Stacks.Actors
                         messageName));
             }
 
-            handler(client, reqId, ms);
+            if (options.ActorSessionInjectionEnabled)
+            {
+                try
+                {
+                    CallContext.LogicalSetData(ActorSession.ActorSessionCallContextKey, actorSessions[client]);
+                    handler(client, reqId, ms);
+                }
+                finally
+                {
+                    CallContext.FreeNamedDataSlot(ActorSession.ActorSessionCallContextKey);
+                }                
+            }
+            else
+            {
+                handler(client, reqId, ms);
+            }
+
         }
 
         protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse,
