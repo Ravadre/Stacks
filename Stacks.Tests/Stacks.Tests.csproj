@@ -115,6 +115,7 @@
     <Compile Include="Client\RawBytesClientTests.cs" />
     <Compile Include="Remote\ActorSessionTests.cs" />
     <Compile Include="Remote\ConnectionTests.cs" />
+    <Compile Include="Remote\CustomSerializerTests.cs" />
     <Compile Include="Remote\MessageTests.cs" />
     <Compile Include="Remote\ObservableTests.cs" />
     <Compile Include="Remote\TimeoutTests.cs" />

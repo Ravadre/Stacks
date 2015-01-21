@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.Proto;
 
 namespace Stacks.Actors.Remote.CodeGen
 {
@@ -38,13 +39,14 @@ namespace Stacks.Actors.Remote.CodeGen
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,
                                         proxyTemplateType, new[] { actorInterface });
 
-            var baseCtor = proxyTemplateType.GetConstructor(new[] { typeof(IPEndPoint) });
+            var baseCtor = proxyTemplateType.GetConstructor(new[] { typeof(IPEndPoint), typeof(ActorClientProxyOptions) });
 
             var ctorBuilder = actorImplBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName,
-                                    CallingConventions.HasThis, new[] { typeof(IPEndPoint) });
+                                    CallingConventions.HasThis, new[] { typeof(IPEndPoint), typeof(ActorClientProxyOptions) });
             var ctorIl = ctorBuilder.GetILGenerator();
             ctorIl.Emit(OpCodes.Ldarg_0);
             ctorIl.Emit(OpCodes.Ldarg_1);
+            ctorIl.Emit(OpCodes.Ldarg_2);
             ctorIl.Emit(OpCodes.Call, baseCtor);
 
             {
@@ -131,8 +133,8 @@ namespace Stacks.Actors.Remote.CodeGen
             ctorIl.Emit(OpCodes.Ldstr, publicName);
             ctorIl.Emit(OpCodes.Ldarg_0);
             ctorIl.Emit(OpCodes.Ldftn, handlerMethod);
-            ctorIl.Emit(OpCodes.Newobj, typeof (Action<MemoryStream>).GetConstructor(new[] {typeof (object), typeof (IntPtr)}));
-            ctorIl.EmitCall(OpCodes.Call, typeof (Dictionary<string, Action<MemoryStream>>).GetMethod("set_Item"), null);
+            ctorIl.Emit(OpCodes.Newobj, typeof (Action<ActorProtocolFlags, string, MemoryStream>).GetConstructor(new[] {typeof (object), typeof (IntPtr)}));
+            ctorIl.EmitCall(OpCodes.Call, typeof(Dictionary<string, Action<ActorProtocolFlags, string, MemoryStream>>).GetMethod("set_Item"), null);
         }
 
         private MethodBuilder ImplementObservableHandlerMethod(TypeBuilder actorImplBuilder, string publicName,
@@ -142,15 +144,17 @@ namespace Stacks.Actors.Remote.CodeGen
             var handlerMethod = actorImplBuilder.DefineMethod(publicName + "$ObsHandler",
                 MethodAttributes.Private | MethodAttributes.HideBySig,
                 CallingConventions.HasThis, typeof (void),
-                new[] {typeof (MemoryStream)});
+                new[] {typeof(ActorProtocolFlags), typeof(string), typeof (MemoryStream)});
 
-            var desMethod = typeof (IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+            var desMethod = typeof (ActorPacketSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
             var hil = handlerMethod.GetILGenerator();
             hil.Emit(OpCodes.Ldarg_0);
             hil.Emit(OpCodes.Ldfld, fb);
             hil.Emit(OpCodes.Ldarg_0);
             hil.Emit(OpCodes.Ldfld, proxyTemplateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
             hil.Emit(OpCodes.Ldarg_1);
+            hil.Emit(OpCodes.Ldarg_2);
+            hil.Emit(OpCodes.Ldarg_3);
             hil.EmitCall(OpCodes.Callvirt, desMethod, null);
             hil.Emit(OpCodes.Ldfld, messageType.GetField("$Value"));
             hil.EmitCall(OpCodes.Call, typeof (Subject<>).MakeGenericType(innerType).GetMethod("OnNext"), null);

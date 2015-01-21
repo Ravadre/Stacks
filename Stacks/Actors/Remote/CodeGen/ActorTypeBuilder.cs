@@ -28,13 +28,13 @@ namespace Stacks.Actors.Remote.CodeGen
 
             //TODO: Change to RunAndCollect when more stable
             this.asmBuilder = AppDomain.CurrentDomain
-                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
+                                       .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
         }
 
         public void SaveToFile()
         {
-            //asmBuilder.Save(asmName.Name + ".dll");
+            asmBuilder.Save(asmName.Name + ".dll");
         }
 
         public void DefineMessagesFromInterfaceType(Type actorInterface)

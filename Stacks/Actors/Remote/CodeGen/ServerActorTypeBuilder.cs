@@ -32,11 +32,11 @@ namespace Stacks.Actors.Remote.CodeGen
         public Type CreateActorType(Type actorType)
         {
             Type implType = null;
-//            lock (constructedTypesCache)
-//            {
-//                if (constructedTypesCache.TryGetValue(actorType, out implType))
-//                    return implType;
-//            }
+            lock (constructedTypesCache)
+            {
+                if (constructedTypesCache.TryGetValue(actorType, out implType))
+                    return implType;
+            }
 
             templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
             this.actorType = actorType;
@@ -240,7 +240,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                                new[] { typeof(FramedClient), typeof(ActorProtocolFlags), typeof(string), typeof(long), typeof(MemoryStream) });
             Type messageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "Message");
             Type replyMessageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "MessageReply");
-            var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
+            var desMethod = typeof(ActorPacketSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
 
             var il = mb.GetILGenerator();
 

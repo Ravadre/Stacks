@@ -97,6 +97,7 @@
     <Compile Include="Actors\ActorContextSettings.cs" />
     <Compile Include="Actors\Bit.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />
+    <Compile Include="Actors\Remote\ActorClientProxyOptions.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\IActorContext.cs" />

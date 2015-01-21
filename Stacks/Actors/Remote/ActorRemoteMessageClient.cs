@@ -10,6 +10,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
+using Stacks.Actors.Proto;
+using Stacks.Actors.Remote;
 using Stacks.Tcp;
 
 namespace Stacks.Actors
@@ -17,7 +19,7 @@ namespace Stacks.Actors
     class ActorRemoteMessageClient
     {
         protected readonly IFramedClient framedClient;
-        protected readonly IStacksSerializer packetSerializer;
+        protected readonly ActorPacketSerializer packetSerializer;
 
         private AsyncSubject<Unit> handshakeCompleted;
         private AsyncSubject<Exception> disconnectedSubject;
@@ -71,10 +73,10 @@ namespace Stacks.Actors
         public event Action<long, MemoryStream> MessageReceived;
         public event Action<string, MemoryStream> ObsMessageReceived;
 
-        public ActorRemoteMessageClient(IFramedClient client)
+        public ActorRemoteMessageClient(ActorPacketSerializer serializer, IFramedClient client)
         {
             framedClient = client;
-            packetSerializer = new ProtoBufStacksSerializer();
+            packetSerializer = serializer;
 
             framedClient.Received.Subscribe(PacketReceived);
             framedClient.Connected.Subscribe(OnConnected);
@@ -92,7 +94,7 @@ namespace Stacks.Actors
 
         private void OnConnected(Unit _)
         {
-            AuxSendProtocolPacket(Proto.ActorProtocol.HandshakeId,
+            AuxSendProtocolPacket(Proto.ActorProtocol.HandshakeId, "Handshake",
                     new Proto.HandshakeRequest
                     {
                         ClientProtocolVersion = Proto.ActorProtocol.Version
@@ -182,7 +184,7 @@ namespace Stacks.Actors
 
         private unsafe void HandleHandshakeMessage(IntPtr p, MemoryStream ms)
         {
-            var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ms);
+            var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ActorProtocolFlags.StacksProtocol, "Handshake", ms);
 
             if (resp.ProtocolMatch)
             {
@@ -211,7 +213,7 @@ namespace Stacks.Actors
                         }
                         else
                         {
-                            AuxSendProtocolPacket(Proto.ActorProtocol.PingId,
+                            AuxSendProtocolPacket(Proto.ActorProtocol.PingId, "Ping",
                                 new Proto.Ping
                                 {
                                     Timestamp = System.Diagnostics.Stopwatch.GetTimestamp()
@@ -265,7 +267,7 @@ namespace Stacks.Actors
                 ms.SetLength(16);
                 ms.Position = 16;
                 ms.Write(msgNameBytes, 0, msgNameBytes.Length);
-                this.packetSerializer.Serialize(obj, ms);
+                this.packetSerializer.Serialize(ActorProtocolFlags.RequestReponse, msgName, obj, ms);
                 ms.Position = 0;
 
                 var buffer = ms.GetBuffer();
@@ -286,14 +288,14 @@ namespace Stacks.Actors
             this.framedClient.Close();
         }
 
-        private void AuxSendProtocolPacket<T>(int packetId, T packet)
+        private void AuxSendProtocolPacket<T>(int packetId, string packetName, T packet)
         {
             using (var ms = new MemoryStream())
             {
                 ms.SetLength(8);
                 ms.Position = 8;
 
-                packetSerializer.Serialize(packet, ms);
+                packetSerializer.Serialize(ActorProtocolFlags.StacksProtocol, packetName, packet, ms);
 
                 ms.Position = 0;
 

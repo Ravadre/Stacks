@@ -7,6 +7,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks;
+using Stacks.Actors.Remote;
 using Stacks.Tcp;
 
 namespace Stacks.Actors
@@ -17,14 +18,24 @@ namespace Stacks.Actors
     {
         public static Task<IActorClientProxy<T>> CreateProxy<T>(IPEndPoint remoteEndPoint)
         {
+            return CreateProxy<T>(remoteEndPoint, null);
+        }
+
+        public static Task<IActorClientProxy<T>> CreateProxy<T>(IPEndPoint remoteEndPoint, ActorClientProxyOptions options)
+        {
             var proxyCreator = new ActorClientProxy();
 
-            return proxyCreator.AuxCreate<T>(remoteEndPoint);
+            return proxyCreator.AuxCreate<T>(remoteEndPoint, options);
         }
 
         public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint)
         {
             return CreateProxy<T>(IPHelpers.Parse(endPoint));
+        }
+
+        public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint, ActorClientProxyOptions options)
+        {
+            return CreateProxy<T>(IPHelpers.Parse(endPoint), options);
         }
 
 
@@ -49,13 +60,18 @@ namespace Stacks.Actors
 
         public static Task<T> CreateActor<T>(IPEndPoint remoteEndPoint)
         {
-            return CreateProxy<T>(remoteEndPoint).ContinueWith(t =>
-                {
-                    if (t.Exception == null)
-                        return t.Result.Actor;
-                    else
-                        throw t.Exception.InnerException;
-                });
+            return CreateActor<T>(remoteEndPoint, null);
+        }
+
+        public static Task<T> CreateActor<T>(IPEndPoint remoteEndPoint, ActorClientProxyOptions options)
+        {
+            return CreateProxy<T>(remoteEndPoint, options).ContinueWith(t =>
+            {
+                if (t.Exception == null)
+                    return t.Result.Actor;
+                else
+                    throw t.Exception.InnerException;
+            });
         }
 
         public static Task<T> CreateActor<T>(string remoteEndPoint)
@@ -63,6 +79,10 @@ namespace Stacks.Actors
             return CreateActor<T>(IPHelpers.Parse(remoteEndPoint));
         }
 
+        public static Task<T> CreateActor<T>(string remoteEndPoint, ActorClientProxyOptions options)
+        {
+            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint), options);
+        }
 
 
         [Obsolete("This method is obsolete. Choose between CreateActor and CreateProxy.")]
@@ -74,7 +94,7 @@ namespace Stacks.Actors
 
         private ClientActorTypeBuilder tBuilder;
 
-        private Task<IActorClientProxy<T>> AuxCreate<T>(IPEndPoint remoteEndPoint)
+        private Task<IActorClientProxy<T>> AuxCreate<T>(IPEndPoint remoteEndPoint, ActorClientProxyOptions options = null)
         {
             var actorType = typeof(T);
             Ensure.IsInterface(actorType, "actorType", "Only interfaces can be used to create actor client proxy");
@@ -85,7 +105,7 @@ namespace Stacks.Actors
 
             tBuilder.SaveToFile();
 
-            var actor = Activator.CreateInstance(actorImplType, new[] { remoteEndPoint });
+            var actor = Activator.CreateInstance(actorImplType, new object[] { remoteEndPoint, options ??  ActorClientProxyOptions.Default });
     
             return ((ActorClientProxyTemplate<T>)actor).Connect()
                         .ContinueWith(t =>

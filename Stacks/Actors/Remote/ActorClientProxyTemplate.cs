@@ -10,6 +10,8 @@ using Stacks;
 using System.Reactive.Linq;
 using Stacks.Tcp;
 using System.Reactive.Subjects;
+using Stacks.Actors.Proto;
+using Stacks.Actors.Remote;
 
 namespace Stacks.Actors
 {
@@ -18,7 +20,7 @@ namespace Stacks.Actors
         private IPEndPoint endPoint;
         private ActorRemoteMessageClient client;
         private ActionBlockExecutor exec;
-        protected IStacksSerializer serializer;
+        protected ActorPacketSerializer serializer;
 
         private Dictionary<long, Action<MemoryStream, Exception>> replyHandlersByRequest;
         private long requestId;
@@ -28,22 +30,26 @@ namespace Stacks.Actors
         private AsyncSubject<Exception> disconnectedSubject;
         public IObservable<Exception> Disconnected { get { return disconnectedSubject.AsObservable(); } }
 
-        protected Dictionary<string, Action<MemoryStream>> obsHandlers;
+        protected Dictionary<string, Action<ActorProtocolFlags, string, MemoryStream>> obsHandlers;
 
         public abstract T Actor { get; }
 
-        public ActorClientProxyTemplate(IPEndPoint endPoint)
+        public ActorClientProxyTemplate(IPEndPoint endPoint, ActorClientProxyOptions options)
         {
             this.endPoint = endPoint;
             this.disconnected = false;
 
             this.disconnectedSubject = new AsyncSubject<Exception>();
-            serializer = new ProtoBufStacksSerializer();
+            serializer = options.SerializerProvider == null
+                ? new ActorPacketSerializer(new ProtoBufStacksSerializer())
+                : options.SerializerProvider(new ProtoBufStacksSerializer());
+                 
             replyHandlersByRequest = new Dictionary<long, Action<MemoryStream, Exception>>();
-            obsHandlers = new Dictionary<string, Action<MemoryStream>>();
+            obsHandlers = new Dictionary<string, Action<ActorProtocolFlags, string, MemoryStream>>();
             exec = new ActionBlockExecutor();
             exec.Error += ExecutionError;
             client = new ActorRemoteMessageClient(
+                        serializer,
                         new FramedClient(
                             new SocketClient(exec)));
 
@@ -76,12 +82,12 @@ namespace Stacks.Actors
 
         private void ObsMessageReceived(string name, MemoryStream ms)
         {
-            Action<MemoryStream> handler;
+            Action<ActorProtocolFlags, string, MemoryStream> handler;
 
             if (!obsHandlers.TryGetValue(name, out handler))
                 return;
 
-            handler(ms);
+            handler(ActorProtocolFlags.Observable, name, ms);
         }
 
         private void HandleDisconnection(Exception exn)
@@ -130,7 +136,7 @@ namespace Stacks.Actors
                         {
                             try
                             {
-                                var p = (IReplyMessage<R>)serializer.Deserialize<P>(ms);
+                                var p = (IReplyMessage<R>)serializer.Deserialize<P>(ActorProtocolFlags.RequestReponse, msgName, ms);
                                 var v = p.GetResult();
                                 tcs.SetResult(v);
                             }

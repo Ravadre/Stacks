@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks.Actors;
+using Stacks.Actors.Remote;
 
 namespace Stacks.Tests.Remote
 {
@@ -33,6 +34,17 @@ namespace Stacks.Tests.Remote
 
             client = ActorClientProxy.CreateActor<I>("tcp://localhost:" + port).Result;
         }
+
+        public static void CreateServerAndClient<T, I>(ActorServerProxyOptions options, ActorClientProxyOptions cOptions,
+            out IActorServerProxy server, out I client)
+          where T : new()
+        {
+            server = ActorServerProxy.Create<T>("tcp://*:0", options);
+            int port = server.BindEndPoint.Port;
+
+            client = ActorClientProxy.CreateActor<I>("tcp://localhost:" + port, cOptions).Result;
+        }
+
 
         public static void CreateServerAndClient<T, I>(T impl, out IActorServerProxy server, out IActorClientProxy<I> client)
         {
