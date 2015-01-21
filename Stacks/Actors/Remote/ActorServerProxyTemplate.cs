@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors.Proto;
+using Stacks.Actors.Remote;
 using Stacks.Tcp;
 
 namespace Stacks.Actors
@@ -24,12 +25,12 @@ namespace Stacks.Actors
         protected List<FramedClient> clients;
         protected Dictionary<FramedClient, DateTime> clientTimestamps;
         protected IExecutor executor;
-        protected Dictionary<string, Action<FramedClient, long, MemoryStream>> handlers;
+        protected Dictionary<string, Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>> handlers;
         protected bool isStopped;
         protected Dictionary<string, object> obsHandlers;
         protected Timer pingTimer;
-        protected Dictionary<int, Action<FramedClient, MemoryStream>> protocolHandlers;
-        protected IStacksSerializer serializer;
+        protected Dictionary<int, Action<FramedClient, ActorProtocolFlags, MemoryStream>> protocolHandlers;
+        protected ActorPacketSerializer serializer;
         protected SocketServer server;
         private readonly Subject<IActorSession> clientActorConnected;
         private readonly Subject<ClientActorDisconnectedData> clientActorDisconnected;
@@ -38,9 +39,10 @@ namespace Stacks.Actors
         {
             isStopped = false;
             executor = new ActionBlockExecutor();
-            serializer = new ProtoBufStacksSerializer();
+            serializer = options.SerializerProvider == null ? new ActorPacketSerializer(new ProtoBufStacksSerializer()) : 
+                options.SerializerProvider(new ProtoBufStacksSerializer());
             clients = new List<FramedClient>();
-            handlers = new Dictionary<string, Action<FramedClient, long, MemoryStream>>();
+            handlers = new Dictionary<string, Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>>();
             actorSessions = new Dictionary<IFramedClient, IActorSession>();
             obsHandlers = new Dictionary<string, object>();
             this.actorImplementation = actorImplementation;
@@ -53,7 +55,7 @@ namespace Stacks.Actors
             clientErrors = new Dictionary<FramedClient, Exception>();
             pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
-            protocolHandlers = new Dictionary<int, Action<FramedClient, MemoryStream>>();
+            protocolHandlers = new Dictionary<int, Action<FramedClient, ActorProtocolFlags, MemoryStream>>();
             protocolHandlers[ActorProtocol.HandshakeId] = HandleHandshakeMessage;
             protocolHandlers[ActorProtocol.PingId] = HandlePingMessage;
 
@@ -131,20 +133,20 @@ namespace Stacks.Actors
 
                     if (header == ActorProtocolFlags.StacksProtocol)
                     {
-                        HandleProtocolMessage(client, bs, s);
+                        HandleProtocolMessage(client, header, bs, s);
                     }
                     else
                     {
                         if (header != ActorProtocolFlags.RequestReponse)
                             throw new Exception("Invalid actor protocol header. Expected request-response");
 
-                        bs = HandleRequestMessage(client, bs, s);
+                        bs = HandleRequestMessage(client, header, bs, s);
                     }
                 }
             }
         }
 
-        private unsafe ArraySegment<byte> HandleRequestMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
+        private unsafe ArraySegment<byte> HandleRequestMessage(FramedClient client, ActorProtocolFlags flags, ArraySegment<byte> bs, byte* s)
         {
             var reqId = *(long*) (s + 4);
             var msgNameLength = *(int*) (s + 12);
@@ -153,7 +155,7 @@ namespace Stacks.Actors
 
             using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
             {
-                HandleMessage(client, reqId, msgName, ms);
+                HandleMessage(client, flags, reqId, msgName, ms);
             }
             return bs;
         }
@@ -218,11 +220,11 @@ namespace Stacks.Actors
             }
         }
 
-        private unsafe void HandleProtocolMessage(FramedClient client, ArraySegment<byte> bs, byte* s)
+        private unsafe void HandleProtocolMessage(FramedClient client, ActorProtocolFlags flags, ArraySegment<byte> bs, byte* s)
         {
             var pid = *(int*) (s + 4);
 
-            Action<FramedClient, MemoryStream> handler;
+            Action<FramedClient, ActorProtocolFlags, MemoryStream> handler;
             var hasHandler = protocolHandlers.TryGetValue(pid, out handler);
 
             if (!hasHandler)
@@ -230,15 +232,15 @@ namespace Stacks.Actors
 
             using (var ms = new MemoryStream(bs.Array, bs.Offset + 8, bs.Count - 8))
             {
-                handler(client, ms);
+                handler(client, flags, ms);
             }
         }
 
-        private void HandleHandshakeMessage(FramedClient client, MemoryStream ms)
+        private void HandleHandshakeMessage(FramedClient client, ActorProtocolFlags flags, MemoryStream ms)
         {
-            var req = serializer.Deserialize<HandshakeRequest>(ms);
+            var req = serializer.Deserialize<HandshakeRequest>(flags, "Handshake", ms);
 
-            AuxSendProtocolPacket(client, ActorProtocol.HandshakeId,
+            AuxSendProtocolPacket(client, "Handshake", ActorProtocol.HandshakeId,
                 new HandshakeResponse
                 {
                     RequestedProtocolVersion = req.ClientProtocolVersion,
@@ -247,21 +249,21 @@ namespace Stacks.Actors
                 });
         }
 
-        private void HandlePingMessage(FramedClient client, MemoryStream ms)
+        private void HandlePingMessage(FramedClient client, ActorProtocolFlags flags, MemoryStream ms)
         {
             clientTimestamps[client] = DateTime.UtcNow;
 
-            var req = serializer.Deserialize<Ping>(ms);
-            AuxSendProtocolPacket(client, ActorProtocol.PingId,
+            var req = serializer.Deserialize<Ping>(flags, "Ping", ms);
+            AuxSendProtocolPacket(client, "Handshake", ActorProtocol.PingId,
                 new Ping
                 {
                     Timestamp = req.Timestamp
                 });
         }
 
-        private void HandleMessage(FramedClient client, long reqId, string messageName, MemoryStream ms)
+        private void HandleMessage(FramedClient client, ActorProtocolFlags flags, long reqId, string messageName, MemoryStream ms)
         {
-            Action<FramedClient, long, MemoryStream> handler;
+            Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream> handler;
 
             if (!handlers.TryGetValue(messageName, out handler))
             {
@@ -277,7 +279,7 @@ namespace Stacks.Actors
                 try
                 {
                     CallContext.LogicalSetData(ActorSession.ActorSessionCallContextKey, actorSessions[client]);
-                    handler(client, reqId, ms);
+                    handler(client, flags, messageName, reqId, ms);
                 }
                 finally
                 {
@@ -286,17 +288,17 @@ namespace Stacks.Actors
             }
             else
             {
-                handler(client, reqId, ms);
+                handler(client, flags, messageName, reqId, ms);
             }
 
         }
 
-        protected void HandleResponseNoResult(FramedClient client, long reqId, Task actorResponse,
+        protected void HandleResponseNoResult(FramedClient client, ActorProtocolFlags flags, string messageName, long reqId, Task actorResponse,
             IReplyMessage<Unit> msgToSend)
         {
             if (actorResponse == null)
             {
-                Send(client, reqId, msgToSend);
+                Send(client, flags, messageName, reqId, msgToSend);
             }
             else
             {
@@ -316,17 +318,17 @@ namespace Stacks.Actors
                         msgToSend.SetError(exc.Message);
                     }
 
-                    Send(client, reqId, msgToSend);
+                    Send(client, flags, messageName, reqId, msgToSend);
                 });
             }
         }
 
-        protected void HandleResponse<R>(FramedClient client, long reqId, Task<R> actorResponse,
+        protected void HandleResponse<R>(FramedClient client, ActorProtocolFlags flags, string messageName, long reqId, Task<R> actorResponse,
             IReplyMessage<R> msgToSend)
         {
             if (actorResponse == null)
             {
-                Send(client, reqId, msgToSend);
+                Send(client, flags, messageName, reqId, msgToSend);
             }
             else
             {
@@ -345,18 +347,18 @@ namespace Stacks.Actors
                         msgToSend.SetError(exc.Message);
                     }
 
-                    Send(client, reqId, msgToSend);
+                    Send(client, flags, messageName, reqId, msgToSend);
                 });
             }
         }
 
-        private unsafe void Send<R>(FramedClient client, long requestId, IReplyMessage<R> packet)
+        private unsafe void Send<R>(FramedClient client, ActorProtocolFlags flags, string messageName, long requestId, IReplyMessage<R> packet)
         {
             using (var ms = new MemoryStream())
             {
                 ms.SetLength(12);
                 ms.Position = 12;
-                serializer.Serialize(packet, ms);
+                serializer.Serialize(flags, messageName, packet, ms);
                 ms.Position = 0;
 
                 var buffer = ms.GetBuffer();
@@ -379,7 +381,7 @@ namespace Stacks.Actors
                 ms.Position = 8;
                 var nameBytes = Encoding.ASCII.GetBytes(name);
                 ms.Write(nameBytes, 0, nameBytes.Length);
-                serializer.Serialize(msg, ms);
+                serializer.Serialize(ActorProtocolFlags.Observable, name, msg, ms);
 
                 ms.Position = 0;
                 var buffer = ms.GetBuffer();
@@ -401,13 +403,13 @@ namespace Stacks.Actors
             }
         }
 
-        private unsafe void AuxSendProtocolPacket<P>(FramedClient client, int packetId, P packet)
+        private unsafe void AuxSendProtocolPacket<P>(FramedClient client, string messageName, int packetId, P packet)
         {
             using (var ms = new MemoryStream())
             {
                 ms.SetLength(8);
                 ms.Position = 8;
-                serializer.Serialize(packet, ms);
+                serializer.Serialize(ActorProtocolFlags.StacksProtocol, messageName, packet, ms);
                 ms.Position = 0;
 
                 var buffer = ms.GetBuffer();

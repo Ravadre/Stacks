@@ -100,6 +100,7 @@
     <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
     <Compile Include="Actors\ActorContext.cs" />
     <Compile Include="Actors\IActorContext.cs" />
+    <Compile Include="Actors\Remote\ActorPacketSerializer.cs" />
     <Compile Include="Actors\Remote\ActorProtocol.cs" />
     <Compile Include="Actors\Remote\ActorRemoteMessageClient.cs" />
     <Compile Include="Actors\Remote\ActorServerProxy.cs" />

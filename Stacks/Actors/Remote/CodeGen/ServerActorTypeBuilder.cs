@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.Proto;
 using Stacks.Tcp;
 
 namespace Stacks.Actors.Remote.CodeGen
@@ -31,11 +32,11 @@ namespace Stacks.Actors.Remote.CodeGen
         public Type CreateActorType(Type actorType)
         {
             Type implType = null;
-            lock (constructedTypesCache)
-            {
-                if (constructedTypesCache.TryGetValue(actorType, out implType))
-                    return implType;
-            }
+//            lock (constructedTypesCache)
+//            {
+//                if (constructedTypesCache.TryGetValue(actorType, out implType))
+//                    return implType;
+//            }
 
             templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
             this.actorType = actorType;
@@ -159,9 +160,9 @@ namespace Stacks.Actors.Remote.CodeGen
             ctIl.Emit(OpCodes.Ldarg_0);
             ctIl.Emit(OpCodes.Ldftn, newMethod);
             ctIl.Emit(OpCodes.Newobj,
-                typeof (Action<FramedClient, long, MemoryStream>).GetConstructor(new[] {typeof (object), typeof (IntPtr)}));
+                typeof (Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>).GetConstructor(new[] {typeof (object), typeof (IntPtr)}));
             ctIl.EmitCall(OpCodes.Call,
-                typeof (Dictionary<string, Action<FramedClient, long, MemoryStream>>).GetMethod("set_Item"), null);
+                typeof(Dictionary<string, Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>>).GetMethod("set_Item"), null);
         }
 
         private static void EmitCallBaseCtor(ILGenerator ctIl, ConstructorInfo baseCtor)
@@ -236,7 +237,7 @@ namespace Stacks.Actors.Remote.CodeGen
                                                  MethodAttributes.HideBySig,
                                                CallingConventions.HasThis,
                                                typeof(void),
-                                               new[] { typeof(FramedClient), typeof(long), typeof(MemoryStream) });
+                                               new[] { typeof(FramedClient), typeof(ActorProtocolFlags), typeof(string), typeof(long), typeof(MemoryStream) });
             Type messageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "Message");
             Type replyMessageType = moduleBuilder.GetType("Messages." + miMapping.PublicName + "MessageReply");
             var desMethod = typeof(IStacksSerializer).GetMethod("Deserialize").MakeGenericMethod(messageType);
@@ -252,14 +253,18 @@ namespace Stacks.Actors.Remote.CodeGen
             //var msg = base.serializer.Deserialize<P>(ms);
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, templateType.GetField("serializer", BindingFlags.Instance | BindingFlags.NonPublic));
+            il.Emit(OpCodes.Ldarg_2);
             il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg, 5);
             il.EmitCall(OpCodes.Callvirt, desMethod, null);
             il.Emit(OpCodes.Stloc_0);
 
 
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_0); // this
+            il.Emit(OpCodes.Ldarg_1); // FramedClient
+            il.Emit(OpCodes.Ldarg_2); // flags
+            il.Emit(OpCodes.Ldarg_3); // message name
+            il.Emit(OpCodes.Ldarg, 4); // request number
 
             {
                 il.Emit(OpCodes.Ldarg_0);
@@ -321,6 +326,8 @@ namespace Stacks.Actors.Remote.CodeGen
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
             il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldarg_3);
+            il.Emit(OpCodes.Ldarg, 4);
             il.Emit(OpCodes.Ldnull);
             il.Emit(OpCodes.Newobj, replyMessageType.GetConstructor(Type.EmptyTypes));
             il.Emit(OpCodes.Stloc, replyMsgLocal);

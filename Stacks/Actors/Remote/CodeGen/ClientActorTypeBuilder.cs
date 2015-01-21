@@ -28,11 +28,11 @@ namespace Stacks.Actors.Remote.CodeGen
         {
             Type implType = null;
 
-            lock (constructedTypesCache)
-            {
-                if (constructedTypesCache.TryGetValue(actorInterface, out implType))
-                    return implType;
-            }
+//            lock (constructedTypesCache)
+//            {
+//                if (constructedTypesCache.TryGetValue(actorInterface, out implType))
+//                    return implType;
+//            }
 
             var proxyTemplateType = typeof(ActorClientProxyTemplate<>).MakeGenericType(actorInterface);
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,

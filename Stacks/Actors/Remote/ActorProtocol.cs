@@ -8,7 +8,7 @@ using ProtoBuf;
 namespace Stacks.Actors.Proto
 {
     [Flags]
-    enum ActorProtocolFlags : int
+    public enum ActorProtocolFlags : int
     {
         RequestReponse = 0x01,
         Observable = 0x02,
@@ -24,14 +24,14 @@ namespace Stacks.Actors.Proto
     }
 
     [ProtoContract]
-    class HandshakeRequest
+    public class HandshakeRequest
     {
         [ProtoMember(1)]
         public int ClientProtocolVersion { get; set; }
     }
 
     [ProtoContract]
-    class HandshakeResponse
+    public class HandshakeResponse
     {
         [ProtoMember(1)]
         public int RequestedProtocolVersion { get; set; }
@@ -42,7 +42,7 @@ namespace Stacks.Actors.Proto
     }
 
     [ProtoContract]
-    class Ping
+    public class Ping
     {
         [ProtoMember(1)]
         public long Timestamp { get; set; }
