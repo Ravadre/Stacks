@@ -1,20 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive;
-using System.Text;
-using System.Threading.Tasks;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Net;
+using System.Reactive;
+using System.Reactive.Subjects;
 
 namespace Stacks.Tcp
 {
     public class FramedClient : IFramedClient
     {
-        private IRawByteClient client;
-        private ResizableCyclicBuffer recvBuffer;
-        private Subject<ArraySegment<byte>> received;
+        private readonly IRawByteClient client;
+        private readonly Subject<ArraySegment<byte>> received;
+        private readonly ResizableCyclicBuffer recvBuffer;
+
+        public FramedClient(IRawByteClient client)
+        {
+            received = new Subject<ArraySegment<byte>>();
+            this.client = client;
+            recvBuffer = new ResizableCyclicBuffer(4096);
+
+            this.client.Received.Subscribe(ClientReceivedData);
+        }
 
         public IObservable<Unit> Connected
         {
@@ -46,25 +50,6 @@ namespace Stacks.Tcp
             get { return client.RemoteEndPoint; }
         }
 
-        public FramedClient(IRawByteClient client)
-        {
-            this.received = new Subject<ArraySegment<byte>>();
-            this.client = client;
-            this.recvBuffer = new ResizableCyclicBuffer(4096);
-
-            this.client.Received.Subscribe(ClientReceivedData);
-        }
-
-        private void ClientReceivedData(ArraySegment<byte> data)
-        {
-            recvBuffer.AddData(data);
-
-            foreach (var packet in recvBuffer.GetPackets())
-            {
-                OnReceived(packet);
-            }
-        }
-
         public void SendPacket(byte[] packet)
         {
             Ensure.IsNotNull(packet, "packet");
@@ -79,10 +64,11 @@ namespace Stacks.Tcp
             var buffer = FramedClientBuffer.FromPacket(packet);
             SendPacket(buffer);
         }
-
+      
         public void SendPacket(FramedClientBuffer packet)
         {
-            this.client.Send(packet.InternalBuffer);
+            packet = OnBeforeSendPacket(packet);
+            client.Send(packet.InternalBuffer);
         }
 
         public FramedClientBuffer PreparePacketBuffer(int packetBytes)
@@ -92,12 +78,7 @@ namespace Stacks.Tcp
 
         public void Close()
         {
-            this.client.Close();
-        }
-
-        private void OnReceived(ArraySegment<byte> data)
-        {
-            received.OnNext(data);
+            client.Close();
         }
 
         public IExecutor Executor
@@ -110,7 +91,7 @@ namespace Stacks.Tcp
             get { return client.IsConnected; }
         }
 
-        public IObservable<Unit> Connect(System.Net.IPEndPoint remoteEndPoint)
+        public IObservable<Unit> Connect(IPEndPoint remoteEndPoint)
         {
             return client.Connect(remoteEndPoint);
         }
@@ -119,5 +100,32 @@ namespace Stacks.Tcp
         {
             return Connect(IPHelpers.Parse(endPoint));
         }
+
+        private void ClientReceivedData(ArraySegment<byte> data)
+        {
+            recvBuffer.AddData(data);
+
+            foreach (var packet in recvBuffer.GetPackets())
+            {
+                OnReceived(packet);
+            }
+        }
+
+        private void OnReceived(ArraySegment<byte> data)
+        {
+            data = OnBeforeReceivePacket(data);
+            received.OnNext(data);
+        }
+
+        protected virtual ArraySegment<byte> OnBeforeReceivePacket(ArraySegment<byte> data)
+        {
+            return data;
+        }
+
+        protected virtual FramedClientBuffer OnBeforeSendPacket(FramedClientBuffer packet)
+        {
+            return packet;
+        }
+
     }
 }

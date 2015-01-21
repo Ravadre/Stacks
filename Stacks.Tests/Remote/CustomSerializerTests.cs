@@ -151,6 +151,7 @@ namespace Stacks.Tests.Remote
             serializer.Serialize(packet, decMs);
 
             byte[] data = new byte[decMs.Length];
+            decMs.Position = 0;
             decMs.Read(data, 0, (int)decMs.Length);
 
             using (var rijndael = new RijndaelManaged())
