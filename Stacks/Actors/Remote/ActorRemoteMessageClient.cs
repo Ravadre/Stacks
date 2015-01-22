@@ -135,7 +135,7 @@ namespace Stacks.Actors
         {
             long requestId = *(long*)(b + 4);
 
-            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12, buffer.Count - 12))
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 12, buffer.Count - 12, true, true))
             {
                 OnMessageReceived(requestId, ms);
             }
@@ -160,7 +160,7 @@ namespace Stacks.Actors
             var nameLen = *(int*)(b + 4);
             var name = new string((sbyte*)b, 8, nameLen);
 
-            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen))
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8 + nameLen, buffer.Count - 8 - nameLen, true, true))
             {
                 OnObsMessageReceived(name, ms);
             }
@@ -176,7 +176,7 @@ namespace Stacks.Actors
             if (!hasHandler)
                 FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
 
-            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8))
+            using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8, true, true))
             {
                 handler(new IntPtr(b), ms);
             }

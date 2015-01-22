@@ -153,7 +153,7 @@ namespace Stacks.Actors
             var msgName = new string((sbyte*) s, 16, msgNameLength);
             var pOffset = 16 + msgNameLength;
 
-            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset))
+            using (var ms = new MemoryStream(bs.Array, bs.Offset + pOffset, bs.Count - pOffset, true, true))
             {
                 HandleMessage(client, flags, reqId, msgName, ms);
             }
@@ -230,7 +230,7 @@ namespace Stacks.Actors
             if (!hasHandler)
                 throw new Exception("Invalid actor protocol header.");
 
-            using (var ms = new MemoryStream(bs.Array, bs.Offset + 8, bs.Count - 8))
+            using (var ms = new MemoryStream(bs.Array, bs.Offset + 8, bs.Count - 8, true, true))
             {
                 handler(client, flags, ms);
             }
