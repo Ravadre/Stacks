@@ -302,6 +302,7 @@ namespace Stacks.Actors
             }
             else
             {
+                var exec = SynchronizationContext.Current as IExecutor;
                 actorResponse.ContinueWith(t =>
                 {
                     try
@@ -318,7 +319,17 @@ namespace Stacks.Actors
                         msgToSend.SetError(exc.Message);
                     }
 
-                    Send(client, flags, messageName, reqId, msgToSend);
+                    if (exec != null)
+                    {
+                        exec.Enqueue(() =>
+                        {
+                            Send(client, flags, messageName, reqId, msgToSend);
+                        });
+                    }
+                    else
+                    {
+                        Send(client, flags, messageName, reqId, msgToSend);                        
+                    }
                 });
             }
         }
@@ -332,6 +343,8 @@ namespace Stacks.Actors
             }
             else
             {
+                var exec = SynchronizationContext.Current as IExecutor;
+            
                 actorResponse.ContinueWith(t =>
                 {
                     try
@@ -347,7 +360,17 @@ namespace Stacks.Actors
                         msgToSend.SetError(exc.Message);
                     }
 
-                    Send(client, flags, messageName, reqId, msgToSend);
+                    if (exec != null)
+                    {
+                        exec.Enqueue(() =>
+                        {
+                            Send(client, flags, messageName, reqId, msgToSend);
+                        });
+                    }
+                    else
+                    {
+                        Send(client, flags, messageName, reqId, msgToSend);
+                    }
                 });
             }
         }
