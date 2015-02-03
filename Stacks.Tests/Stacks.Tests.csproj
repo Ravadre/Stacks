@@ -59,7 +59,7 @@
     </Reference>
     <Reference Include="MsgPack, Version=0.5.0.0, Culture=neutral, PublicKeyToken=a2625990d5dc0167, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\MsgPack.Cli.0.5.4\lib\net45\MsgPack.dll</HintPath>
+      <HintPath>..\packages\MsgPack.Cli.0.5.9\lib\net45\MsgPack.dll</HintPath>
     </Reference>
     <Reference Include="protobuf-net">
       <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
