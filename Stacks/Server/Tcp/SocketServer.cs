@@ -38,7 +38,7 @@ namespace Stacks.Tcp
         { }
 
         public SocketServer(string bindEndPoint)
-            : this(new ActionBlockExecutor(), IPHelpers.Parse(bindEndPoint))
+            : this(new ActionBlockExecutor(), AddressHelpers.Parse(bindEndPoint))
         { }
 
         private static bool IsWinVistaOrHigher()
@@ -53,7 +53,7 @@ namespace Stacks.Tcp
         }
 
         public SocketServer(IExecutor executor, string bindEndPoint)
-            : this(executor, IPHelpers.Parse(bindEndPoint))
+            : this(executor, AddressHelpers.Parse(bindEndPoint))
         { }
 
         public SocketServer(IExecutor executor, IPEndPoint bindEndPoint)

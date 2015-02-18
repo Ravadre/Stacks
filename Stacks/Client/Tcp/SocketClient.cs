@@ -175,7 +175,7 @@ namespace Stacks.Tcp
         /// </param>
         public IObservable<Unit> Connect(string remoteEndPoint)
         {
-            return Connect(IPHelpers.Parse(remoteEndPoint));
+            return Connect(AddressHelpers.Parse(remoteEndPoint));
         }
 
         /// <summary>

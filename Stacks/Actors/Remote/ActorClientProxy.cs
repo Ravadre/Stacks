@@ -30,12 +30,12 @@ namespace Stacks.Actors
 
         public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint)
         {
-            return CreateProxy<T>(IPHelpers.Parse(endPoint));
+            return CreateProxy<T>(AddressHelpers.Parse(endPoint));
         }
 
         public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint, ActorClientProxyOptions options)
         {
-            return CreateProxy<T>(IPHelpers.Parse(endPoint), options);
+            return CreateProxy<T>(AddressHelpers.Parse(endPoint), options);
         }
 
 
@@ -53,7 +53,7 @@ namespace Stacks.Actors
 
         public static Task<IActorClientProxy> CreateProxy(Type actorType, string remoteEndPoint)
         {
-            return CreateProxy(actorType, IPHelpers.Parse(remoteEndPoint));
+            return CreateProxy(actorType, AddressHelpers.Parse(remoteEndPoint));
         }
 
 
@@ -76,12 +76,12 @@ namespace Stacks.Actors
 
         public static Task<T> CreateActor<T>(string remoteEndPoint)
         {
-            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint));
+            return CreateActor<T>(AddressHelpers.Parse(remoteEndPoint));
         }
 
         public static Task<T> CreateActor<T>(string remoteEndPoint, ActorClientProxyOptions options)
         {
-            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint), options);
+            return CreateActor<T>(AddressHelpers.Parse(remoteEndPoint), options);
         }
 
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    public static class IPHelpers
+    public static class AddressHelpers
     {
         private static Regex protoRegex = new Regex(@"(?<proto>.+)\://(?<address>([\d+*.]+)|(localhost))(\:(?<port>\d{1,5}))(?<path>/.*)?", 
                                                     RegexOptions.Compiled);
