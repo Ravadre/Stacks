@@ -243,7 +243,7 @@ namespace Stacks.Tests.Remote
         public int Result { get; set; }
     }
 
-    public class MessageActor : Actor
+    public class MessageActor : Actor, IMessageActor
     {
         private Random rng = new Random();
         private Dictionary<int, IFramedClient> clientCache = new Dictionary<int, IFramedClient>();
@@ -284,12 +284,12 @@ namespace Stacks.Tests.Remote
             return data.Select(d => new ValidDataResponse { Result = d.X + d.Y });
         }
 
-        public async Task PassDataWithClient(IActorSession session, int c)
+        public async Task PassDataWithClient(int c)
         {
             await Context;
             await Task.Delay(1);
 
-            var client = session.Client;
+            var client = ActorSession.Current.Client;
 
             Assert.NotNull(client);
 

@@ -27,20 +27,53 @@ namespace Stacks.Actors
             registeredActors = new ConcurrentDictionary<string, IActor>();
         }
 
+        private Type GuessActorInterfaceType<T>()
+        {
+            var t = typeof(T);
+            var implementedInterfaces = typeof(T).GetInterfaces();
+
+            var matchedInterface = implementedInterfaces.FirstOrDefault(
+                ii => ii.Name.Equals(t.Name, StringComparison.InvariantCultureIgnoreCase) ||
+                      ("I" + ii.Name).Equals(t.Name, StringComparison.InvariantCultureIgnoreCase));
+
+            if (matchedInterface != null)
+                return matchedInterface;
+
+            throw new Exception(string.Format("When creating an actor and providing only implementation type, " +
+                "this type must implement a contract interface. Interface name must follow one of conventions: \r\n" +
+                " - It must have the same name as implementation\r\n" +
+                " - It must begin with \"I\" followed by implementation name"));
+        }
+
+        public T CreateActor<T>(Func<T> implementationProvider, string name = null)
+            where T : class
+        {
+            var interfaceType = GuessActorInterfaceType<T>();
+            return (T)CreateActor(interfaceType, implementationProvider, name);
+        }
+
+        public T CreateActor<T>(string name = null)
+            where T : class, new()
+        {
+            var interfaceType = GuessActorInterfaceType<T>();
+            return (T)CreateActor(interfaceType, () => new T(), name);
+        }
+
+
         /// <summary>
         /// Creates a new actor, using I as an interface and TImpl as an implementation.
         /// I must be an interface. TImpl must implement this interface. 
         /// TImpl is an actual implementation that will be created, therefore it must support empty constructor.
         /// Name is optional, however, empty or null name will result in not registereing created actor in the actor system.
         /// </summary>
-        /// <typeparam name="I">Actor interface.</typeparam>
         /// <typeparam name="TImpl">Actor implementation type.</typeparam>
+        /// <typeparam name="I">Actor interface.</typeparam>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<I, TImpl>(string name = null)
+        public I CreateActor<TImpl, I>(string name = null)
             where TImpl : class, I, new()
         {
-            return CreateActor<I, TImpl>(() => new TImpl(), name);
+            return (I)CreateActor(typeof(I), () => new TImpl(), name);
         }
 
         /// <summary>
@@ -49,19 +82,24 @@ namespace Stacks.Actors
         /// TImpl is an actual implementation that will be created, therefore it must support empty constructor.
         /// Name is optional, however, empty or null name will result in not registereing created actor in the actor system.
         /// </summary>
-        /// <typeparam name="I">Actor interface</typeparam>
         /// <typeparam name="TImpl">Actor implementation type.</typeparam>
+        /// <typeparam name="I">Actor interface</typeparam>
         /// <param name="implementationProvider">Actual implementation of an actor. Must inherit from Actor class.</param>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null)
+        public I CreateActor<TImpl, I>(Func<TImpl> implementationProvider, string name = null)
             where TImpl: class, I
         {
+            return (I)CreateActor(typeof (I), implementationProvider, name);
+        }
+
+        private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name = null)
+        {
             Ensure.IsNotNull(implementationProvider, "implementationProvider");
-            EnsureInheritsActor<TImpl>();
+            EnsureInheritsActor<T>();
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
-            
+
             var implementationAsActor = CastImplementationToActor(actorImplementation);
             RegisterActorToSystem(implementationAsActor, name);
 

@@ -13,7 +13,7 @@ namespace ActorSample2
     {
         static void Main(string[] args)
         {
-            var weather = ActorSystem.Default.CreateActor<IWeather, Weather>();
+            var weather = ActorSystem.Default.CreateActor<Weather, IWeather>();
 
             try
             {
