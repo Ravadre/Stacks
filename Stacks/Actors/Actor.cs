@@ -8,22 +8,22 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class Actor : IScheduler
+    public class Actor : IActor, IScheduler
     {
         private readonly ActorContext context;
         private readonly string name;
 
-        public Actor()
+        internal Actor()
             : this(null, 
                    new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
-        public Actor(string name)
+        internal Actor(string name)
             : this(name, 
                    new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
         { }
 
-        public Actor(string name, IExecutor executor)
+        internal Actor(string name, IExecutor executor)
         {
             this.name = name;
             this.context = new ActorContext(name, executor);

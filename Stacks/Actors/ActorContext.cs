@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class ActorContext : IActorContext, INotifyCompletion
+    internal class ActorContext : IActorContext, INotifyCompletion
     {
         private IExecutor executor;
         private string name;

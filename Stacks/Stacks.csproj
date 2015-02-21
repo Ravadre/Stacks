@@ -95,7 +95,9 @@
     </Compile>
     <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContextSettings.cs" />
+    <Compile Include="Actors\ActorSystem.cs" />
     <Compile Include="Actors\Bit.cs" />
+    <Compile Include="Actors\IActor.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyOptions.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyTemplate.cs" />
@@ -138,7 +140,7 @@
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\ExecutorHelper.cs" />
     <Compile Include="Executors\IExecutor.cs" />
-    <Compile Include="IPHelpers.cs" />
+    <Compile Include="AddressHelpers.cs" />
     <Compile Include="MessageClient\ImperativeMessageIdCache.cs" />
     <Compile Include="MessageClient\IMessageIdCache.cs" />
     <Compile Include="MessageClient\MessageIdCache.cs" />
