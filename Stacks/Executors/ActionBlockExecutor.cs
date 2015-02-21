@@ -15,27 +15,21 @@ namespace Stacks
 #if !MONO
     public class ActionBlockExecutor : SynchronizationContext, IExecutor
     {
-        private ActionBlock<Action> queue;
-        private string name;
-        private bool supportSynchronizationContext;
+        private readonly ActionBlock<Action> queue;
+        private readonly bool supportSynchronizationContext;
         private volatile bool stopImmediately;
 
         public Task Completion { get { return queue.Completion; } }
         public event Action<Exception> Error;
-        public string Name { get { return name; } }
-        
+        public string Name { get; set; }
+
 
         public ActionBlockExecutor()
-            : this(null, new ActionBlockExecutorSettings())
+            : this(new ActionBlockExecutorSettings())
         { }
-
-        public ActionBlockExecutor(string name)
-            : this(name, new ActionBlockExecutorSettings())
-        { }
-
-        public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
+        
+        public ActionBlockExecutor(ActionBlockExecutorSettings settings)
         {
-            this.name = name == null ? string.Empty : name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
@@ -146,7 +140,7 @@ namespace Stacks
         public override string ToString()
         {
             return "ActionBlock Executor " +
-                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
+                (string.IsNullOrWhiteSpace(Name) ? "" : string.Format("({0})", Name));
         }
 
 

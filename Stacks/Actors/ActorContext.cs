@@ -11,7 +11,7 @@ namespace Stacks.Actors
 {
     internal class ActorContext : IActorContext, INotifyCompletion
     {
-        private IExecutor executor;
+        private readonly IExecutor executor;
         private string name;
 
         public event Action<Exception> Error
@@ -21,31 +21,22 @@ namespace Stacks.Actors
         }
 
         public ActorContext()
-            : this(null, 
-                   new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
+            : this(new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(ActorContextSettings settings)
-            : this(null,
-                   new ActionBlockExecutor(null, 
+            : this(new ActionBlockExecutor(null, 
                         ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
         { }
 
-        public ActorContext(string name, ActorContextSettings settings)
-            : this(name,
-                   new ActionBlockExecutor(null,
-                        ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
-        { }
+        public ActorContext(IExecutor executor)
+        {
+            this.executor = executor;
+        }
 
-        public ActorContext(string name)
-            : this(name,
-                   new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
-        { }
-
-        public ActorContext(string name, IExecutor executor)
+        internal void SetName(string name)
         {
             this.name = name;
-            this.executor = executor;
         }
 
         public Task Completion { get { return executor.Completion; } }
