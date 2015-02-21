@@ -21,15 +21,10 @@ namespace Stacks
 
         public event Action<Exception> Error;
 
-        public string Name { get { return name; } }
+        public string Name { get; set; }
 
         public BusyWaitExecutor()
-            : this(null)
-        { }
-
-        public BusyWaitExecutor(string name)
         {
-            this.name = name == null ? string.Empty : name;
             col = new BlockingCollection<Action>();
             tcs = new TaskCompletionSource<int>();
             runner = new Thread(new ThreadStart(Run));

@@ -6,18 +6,18 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    internal class ActorContextSettings
+    public class ActorSettings
     {
         public bool SupportSynchronizationContext { get; set; }
 
-        public ActorContextSettings()
+        public ActorSettings()
         {
             SupportSynchronizationContext = true;
         }
 
-        public static ActorContextSettings Default
+        public static ActorSettings Default
         {
-            get { return new ActorContextSettings(); }
+            get { return new ActorSettings(); }
         }
     }
 }

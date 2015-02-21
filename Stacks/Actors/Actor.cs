@@ -17,6 +17,12 @@ namespace Stacks.Actors
             : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         { }
 
+        protected Actor(ActorSettings settings)
+            : this(
+                new ActionBlockExecutor(
+                    ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
+        { }
+
         private Actor(IExecutor executor)
         {
             this.context = new ActorContext(executor);

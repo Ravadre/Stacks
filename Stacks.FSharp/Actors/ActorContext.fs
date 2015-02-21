@@ -3,7 +3,7 @@
 
 [<AutoOpen>]
 module Actors = 
-    type Stacks.Actors.ActorContext with
+    type Stacks.Actors.IActorContext with
     
         /// <summary>
         /// Creates a wrapper async expression which will execute

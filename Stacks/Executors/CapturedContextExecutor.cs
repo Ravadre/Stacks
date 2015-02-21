@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
@@ -11,9 +12,8 @@ namespace Stacks
 {
     public class CapturedContextExecutor : SynchronizationContext, IExecutor
     {
-        private string name;
-        private SynchronizationContext context;
-        private TaskCompletionSource<int> tcs;
+        private readonly SynchronizationContext context;
+        private readonly TaskCompletionSource<int> tcs;
 
         public Task Completion { get { return tcs.Task; } }
 
@@ -21,12 +21,11 @@ namespace Stacks
         public event Action<Exception> Error;
 #pragma warning restore 67
 
-        public string Name { get { return name; } }
+        public string Name { get; set; }
 
-        public CapturedContextExecutor(string name, SynchronizationContext context)
+        public CapturedContextExecutor(SynchronizationContext context)
         {
             Error = null;
-            this.name = name == null ? string.Empty : name;
             this.context = context;
             tcs = new TaskCompletionSource<int>();
         }
@@ -80,7 +79,7 @@ namespace Stacks
         public override string ToString()
         {
             return "CapturedContext Executor " +
-                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
+                (string.IsNullOrWhiteSpace(Name) ? "" : string.Format("({0})", Name));
         }
 
 

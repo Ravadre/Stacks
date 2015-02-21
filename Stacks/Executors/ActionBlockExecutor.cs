@@ -24,12 +24,17 @@ namespace Stacks
         public string Name { get; set; }
 
 
-        public ActionBlockExecutor()
-            : this(new ActionBlockExecutorSettings())
+        public ActionBlockExecutor(string name)
+            : this(name, new ActionBlockExecutorSettings())
         { }
-        
-        public ActionBlockExecutor(ActionBlockExecutorSettings settings)
+
+        public ActionBlockExecutor()
+            : this(null, new ActionBlockExecutorSettings())
+        { }
+
+        public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
+            Name = name;
             this.supportSynchronizationContext = settings.SupportSynchronizationContext;
             this.queue = new ActionBlock<Action>(a =>
             {
@@ -42,6 +47,10 @@ namespace Stacks
                 MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism,
             });
         }
+
+        public ActionBlockExecutor(ActionBlockExecutorSettings settings)
+            : this(null, settings)
+        { }
 
         private void ExecuteAction(Action a)
         {

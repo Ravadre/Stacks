@@ -181,10 +181,8 @@ namespace Stacks.Tests.Remote
         IObservable<long> ValuesPublic { get; }
     }
 
-    public class ExplicitInterfaceActor : IExplicitInterfaceActor
+    public class ExplicitInterfaceActor : Actor, IExplicitInterfaceActor
     {
-        private readonly ActorContext ctx = new ActorContext();
-
         private IObservable<long> values;
 
         public ExplicitInterfaceActor()
@@ -194,7 +192,7 @@ namespace Stacks.Tests.Remote
 
         async Task IExplicitInterfaceActor.Test()
         {
-            await ctx;
+            await Context;
         }
 
         IObservable<long> IExplicitInterfaceActor.Values

@@ -226,19 +226,19 @@ namespace PingPong
             Task Pong();
         }
 
-        public class Destination : IDestination
+        public class Destination : Actor, IDestination
         {
-            private ActorContext context = new ActorContext(new ActorContextSettings { SupportSynchronizationContext = false });
             private WaitForStarts waitForStartsActor;
 
             public Destination(WaitForStarts waitForStartsActor)
+                : base(new ActorSettings { SupportSynchronizationContext = false })
             {
                 this.waitForStartsActor = waitForStartsActor;
             }
 
             public Task Pong()
             {
-                return context.PostTask(null);
+                return Context.PostTask(null);
             }
 
             public void Start()
@@ -248,7 +248,7 @@ namespace PingPong
 
             public void Stop()
             {
-                context.Stop(true);
+                Context.Stop(true);
             }
         }
 

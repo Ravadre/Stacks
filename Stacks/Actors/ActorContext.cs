@@ -21,12 +21,11 @@ namespace Stacks.Actors
         }
 
         public ActorContext()
-            : this(new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
+            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         { }
 
         public ActorContext(ActorContextSettings settings)
-            : this(new ActionBlockExecutor(null, 
-                        ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
+            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
         { }
 
         public ActorContext(IExecutor executor)
@@ -97,7 +96,7 @@ namespace Stacks.Actors
             if (context == null)
                 throw new InvalidOperationException("No Synchronization context is set");
 
-            return new ActorContext(null, new CapturedContextExecutor(null, context));
+            return new ActorContext(new CapturedContextExecutor(context));
         }
 
 
