@@ -25,6 +25,12 @@ namespace Stacks.Actors
 
         private Actor(IExecutor executor)
         {
+            if (!ActorCtorGuardian.IsGuarded())
+            {
+                throw new Exception(string.Format("Tried to created actor of {0} using constructor. Please, use ActorSystem.CreateActor method instead.", 
+                    this.GetType().FullName));
+            }
+
             this.context = new ActorContext(executor);
         }
         

@@ -40,7 +40,7 @@ namespace Stacks.Actors
         public I CreateActor<I, TImpl>(string name = null)
             where TImpl : class, I, new()
         {
-            return CreateActor<I, TImpl>(new TImpl(), name);
+            return CreateActor<I, TImpl>(() => new TImpl(), name);
         }
 
         /// <summary>
@@ -51,19 +51,34 @@ namespace Stacks.Actors
         /// </summary>
         /// <typeparam name="I">Actor interface</typeparam>
         /// <typeparam name="TImpl">Actor implementation type.</typeparam>
-        /// <param name="actorImplementation">Actual implementation of an actor. Must inherit from Actor class.</param>
+        /// <param name="implementationProvider">Actual implementation of an actor. Must inherit from Actor class.</param>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<I, TImpl>(TImpl actorImplementation, string name = null)
+        public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null)
             where TImpl: class, I
         {
-            Ensure.IsNotNull(actorImplementation, "actorImplementation");
-            EnsureInheritsActor<TImpl>(); 
+            Ensure.IsNotNull(implementationProvider, "implementationProvider");
+            EnsureInheritsActor<TImpl>();
+
+            var actorImplementation = ResolveImplementationProvider(implementationProvider);
             
             var implementationAsActor = CastImplementationToActor(actorImplementation);
             RegisterActorToSystem(implementationAsActor, name);
 
             return actorImplementation;
+        }
+
+        private TImpl ResolveImplementationProvider<TImpl>(Func<TImpl> implementationProvider)
+        {
+            try
+            {
+                ActorCtorGuardian.SetGuard();
+                return implementationProvider();
+            }
+            finally
+            {
+                ActorCtorGuardian.ClearGuard();
+            }
         }
 
         private Actor CastImplementationToActor<TImpl>(TImpl actorImplementation)
