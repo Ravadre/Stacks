@@ -80,7 +80,7 @@ namespace Stacks.Actors
 
         public void GetResult() { }
 
-        public SynchronizationContext Context { get { return executor.Context; } }
+        public SynchronizationContext SynchronizationContext { get { return executor.Context; } }
 
         public override string ToString()
         {

@@ -95,6 +95,7 @@
     </Compile>
     <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContextSettings.cs" />
+    <Compile Include="Actors\ActorSettings.cs" />
     <Compile Include="Actors\ActorSystem.cs" />
     <Compile Include="Actors\Bit.cs" />
     <Compile Include="Actors\IActor.cs" />

@@ -252,21 +252,24 @@ namespace PingPong
             }
         }
 
-        public class WaitForStarts
+        public interface IWaitForStarts
         {
-            private ActorContext context;
-            private readonly CountdownEvent _countdown;
+            void OnStart();
+        }
+
+        public class WaitForStarts : Actor, IWaitForStarts
+        {
+            private readonly CountdownEvent countdown;
 
             public WaitForStarts(CountdownEvent countdown)
             {
-                _countdown = countdown;
-                context = new ActorContext();
+                this.countdown = countdown;
             }
 
             public async void OnStart()
             {
-                await context;
-                _countdown.Signal();
+                await Context;
+                countdown.Signal();
             }
         }
 
@@ -280,11 +283,14 @@ namespace PingPong
         }
 
 
-
-        public class PingPongActor
+        public interface IPingPongActor
         {
-            private ActorContext context = new ActorContext(new ActorContextSettings { SupportSynchronizationContext = false });
+            void Ping();
+            void Recv();
+        }
 
+        public class PingPongActor : Actor, IPingPongActor
+        {
             private IDestination destination;
             private WaitForStarts waitForStartsActor;
             private long repeat;
@@ -294,6 +300,7 @@ namespace PingPong
             private bool done;
 
             public PingPongActor(WaitForStarts waitForStartsActor, IDestination destination, long repeat, TaskCompletionSource<bool> latch)
+                : base(new ActorSettings { SupportSynchronizationContext = false})
             {
                 this.waitForStartsActor = waitForStartsActor;
                 this.destination = destination;
@@ -308,7 +315,7 @@ namespace PingPong
 
             public async void Ping()
             {
-                await context;
+                await Context;
 
                 for (int i = 0; i < Math.Min(1000, repeat); ++i)
                 {
@@ -320,14 +327,14 @@ namespace PingPong
             private async void PingImpl()
             {
                 await destination.Pong();
-                await context;
+                await Context;
                 ++sent;
                 Recv();
             }
 
             public void Recv()
             {
-                context.Post(async () =>
+                Context.Post(async () =>
                     {
                         ++received;
                         if (sent < repeat)
@@ -335,7 +342,7 @@ namespace PingPong
                             try
                             {
                                 await destination.Pong();
-                                await context;
+                                await Context;
                                 if (done) { return; }
                                 ++sent;
                                 Recv();
@@ -352,7 +359,7 @@ namespace PingPong
 
             public void Stop()
             {
-                context.Stop(true);
+                Context.Stop(true);
                 var d = destination as IActorClientProxy<IDestination>;
 
                 if (d != null)

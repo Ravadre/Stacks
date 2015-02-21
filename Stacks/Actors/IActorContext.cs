@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stacks.Actors
@@ -21,6 +22,8 @@ namespace Stacks.Actors
 
         Task Stop();
         Task Stop(bool stopImmediately);
+
+        SynchronizationContext SynchronizationContext { get; }
 
         event Action<Exception> Error;
     }

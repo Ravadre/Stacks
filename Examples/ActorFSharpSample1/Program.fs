@@ -2,7 +2,7 @@
 open Stacks.Actors
 
 type Formatter() =
-    inherit Actor("Formatter")
+    inherit Actor()
 
     member this.GetContext() = 
         base.GetActorSynchronizationContext()

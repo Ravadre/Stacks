@@ -5,14 +5,14 @@ open System.Xml.Linq
 open Stacks
 
 
-type Weather() = 
-    let actor = ActorContext("Weather")
+type Weather()  = 
+    inherit Actor()
     let httpClient = new HttpClient()
 
     let xn s = XName.Get(s)
 
     member __.GetTemperature(city: string) =
-        actor.MakeAsync(async {
+        base.Context.MakeAsync(async {
             let! response = sprintf "http://api.openweathermap.org/data/2.5/\
                                      weather?q=%s&mode=xml&units=metric" city
                             |> httpClient.GetStringAsync

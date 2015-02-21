@@ -13,7 +13,7 @@ module Actors =
         /// Async.StartImmediate are recommended to start it.
         /// </summary>
         member this.MakeAsync<'T>(wf: Async<'T>) = async {
-            do! Async.SwitchToContext(this.Context)
+            do! Async.SwitchToContext(this.SynchronizationContext)
 
             return! wf
         }

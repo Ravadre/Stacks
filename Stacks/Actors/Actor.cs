@@ -47,7 +47,7 @@ namespace Stacks.Actors
         protected IActorContext Context { get { return context; } }
         protected SynchronizationContext GetActorSynchronizationContext()
         {
-            return context.Context;
+            return context.SynchronizationContext;
         }
 
         public DateTimeOffset Now
