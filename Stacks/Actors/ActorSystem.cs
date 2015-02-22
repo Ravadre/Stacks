@@ -19,11 +19,24 @@ namespace Stacks.Actors
 
         public string Name { get; private set; }
 
-        private readonly ConcurrentDictionary<string, IActor> registeredActors;
+        private ConcurrentDictionary<string, IActor> registeredActors;
 
         internal ActorSystem(string name)
         {
             Name = name;
+            Initialize();
+        }
+
+        /// <summary>
+        /// Resets whole actor system by removing any references to existing actors.
+        /// </summary>
+        public void ResetSystem()
+        {
+            Initialize();
+        }
+
+        private void Initialize()
+        {
             registeredActors = new ConcurrentDictionary<string, IActor>();
         }
 
@@ -144,7 +157,7 @@ namespace Stacks.Actors
         private static void EnsureInheritsActor<TImpl>()
         {
             if (!typeof(Actor).IsAssignableFrom(typeof(TImpl)))
-                throw new ArgumentException(
+                throw new Exception(
                     string.Format(
                         "Implementation type (TImpl) is of type {0} which does not inherits from Stacks.Actors.Actor.",
                         typeof(TImpl).FullName));
