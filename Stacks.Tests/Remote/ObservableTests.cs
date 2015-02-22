@@ -13,26 +13,30 @@ namespace Stacks.Tests.Remote
 {
     public class ObservableTests
     {
-        private ObservableActorServer serverImpl;
+        private IObservableActor serverImpl;
+        private ObservableActorServer realServerImpl;
         private IActorServerProxy server;
         private IObservableActor client;
 
         public ObservableTests()
         {
-            serverImpl = new ObservableActorServer();
+            serverImpl = ActorSystem.Default.CreateActor<ObservableActorServer, IObservableActor>(() =>
+            {
+                return realServerImpl = new ObservableActorServer();
+            });
         }
 
         [Fact]
         public void Client_should_receive_integer_stream_from_server_with_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             List<int> input = new List<int>() { 3, 1, 4, 1, 5 };
             List<int> output = new List<int>();
 
             client.IntStream.Subscribe(x => output.Add(x));
 
-            serverImpl.RunIntStream(input);
+            realServerImpl.RunIntStream(input);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -46,7 +50,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Client_should_receive_complex_data_stream_via_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             var input = new List<ComplexData>()
             {
@@ -57,7 +61,7 @@ namespace Stacks.Tests.Remote
 
             client.ComplexStream.Subscribe(x => output.Add(x));
 
-            serverImpl.RunComplexStream(input);
+            realServerImpl.RunComplexStream(input);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -71,14 +75,14 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Normal_methods_that_return_IObservable_should_be_allowed_as_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             List<int> input = new List<int>() { 3, 1, 4, 1, 5 };
             List<int> output = new List<int>();
 
             client.IntMethod().Subscribe(x => output.Add(x));
 
-            serverImpl.RunIntStream(input);
+            realServerImpl.RunIntStream(input);
 
             for (int i = 0; i < 10; ++i)
             {

@@ -45,18 +45,18 @@ namespace Stacks.Actors
                 " - It must begin with \"I\" followed by implementation name"));
         }
 
-        public T CreateActor<T>(Func<T> implementationProvider, string name = null)
+        public IActor CreateActor<T>(Func<T> implementationProvider, string name = null)
             where T : class
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (T)CreateActor(interfaceType, implementationProvider, name);
+            return (IActor)CreateActor(interfaceType, implementationProvider, name);
         }
 
-        public T CreateActor<T>(string name = null)
+        public IActor CreateActor<T>(string name = null)
             where T : class, new()
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (T)CreateActor(interfaceType, () => new T(), name);
+            return (IActor)CreateActor(interfaceType, () => new T(), name);
         }
 
 

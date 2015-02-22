@@ -22,7 +22,7 @@ namespace RemoteActorsSample
 
             // Creating and starting server proxy for an actor is easy.
             // Returned reference can be used to stop server.
-            var actorServer = ActorServerProxy.Create<CalculatorActor>("tcp://*:4632");
+            var actorServer = ActorServerProxy.Create<CalculatorActor, ICalculatorActor>("tcp://*:4632");
 
             // To create client proxy and connect to the server just pass an interface which describes
             // what method actor supports. Returned object implements given interface,

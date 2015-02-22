@@ -22,9 +22,9 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_should_call_it_on_server()
         {
-            var impl = new MessageActor();
-
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(impl, out server, out client);
+            MessageActor impl = null;
+            var sImpl = ActorSystem.Default.CreateActor<MessageActor, IMessageActor>(() => impl = new MessageActor());
+            Utils.CreateServerAndClient(sImpl, out server, out client);
 
             client.Ping().Wait();
 
@@ -133,22 +133,6 @@ namespace Stacks.Tests.Remote
                     }
                 });
         }
-
-        [Fact]
-        public async void If_first_parameter_is_IActorSession_it_should_be_filled_with_reference_to_an_client()
-        {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
-            var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
-
-            await client.PassDataWithClient(1);
-            await client.PassDataWithClient(1);
-            await client2.PassDataWithClient(2);
-            await client.PassDataWithClient(1);
-            await client2.PassDataWithClient(2);
-
-        }
-
-       
 
         [Fact]
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
