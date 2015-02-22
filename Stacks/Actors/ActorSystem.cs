@@ -106,6 +106,35 @@ namespace Stacks.Actors
             return (I)CreateActor(typeof (I), implementationProvider, name);
         }
 
+        /// <summary>
+        /// Returns reference to already created actor. Actors that were created without name can not be accessed.
+        /// </summary>
+        /// <typeparam name="T">Actor's interface type.</typeparam>
+        /// <param name="name">Name of actor. Required.</param>
+        /// <returns></returns>
+        public T GetActor<T>(string name)
+            where T: class
+        {
+            Ensure.IsNotNull(name, "name");
+
+            IActor actor;
+            if (!registeredActors.TryGetValue(name, out actor))
+            {
+                throw new Exception(string.Format("Could not get actor with name {0}. It was not previously created in system {1}",
+                    name, this.Name));
+            }
+
+            var actorTyped = actor as T;
+
+            if (actorTyped == null)
+            {
+                throw new Exception(string.Format("Received actor {0} in system {1}. However, it does not implement interface {2}",
+                    name, this.Name, typeof(T).FullName));
+            }
+
+            return actorTyped;
+        }
+
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name = null)
         {
             Ensure.IsNotNull(implementationProvider, "implementationProvider");

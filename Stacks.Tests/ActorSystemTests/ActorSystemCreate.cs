@@ -58,6 +58,38 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.IsAssignableFrom(typeof(ITestActor), actor);
         }
+
+        [Fact]
+        public void Actor_once_created_in_system_can_be_get_many_times()
+        {
+            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+            var actor2 = ActorSystem.Default.GetActor<ITestActor>("Name");
+            var actor3 = ActorSystem.Default.GetActor<ITestActor>("Name");
+            var actor4 = ActorSystem.Default.GetActor<ITestActor>("Name");
+        }
+
+        [Fact]
+        public void Getting_actor_with_invalid_name_should_throw()
+        {
+            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+
+            Assert.Throws<Exception>(() =>
+            {
+                var actor2 = ActorSystem.Default.GetActor<ITestActor>("Name2");
+            });
+        }
+
+        //TODO: Should work after adding code gen for local actors
+//        [Fact]
+//        public void Getting_actor_with_invalid_interface_should_throw()
+//        {
+//            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+//
+//            Assert.Throws<Exception>(() =>
+//            {
+//                var actor2 = ActorSystem.Default.GetActor<ITestActorInterface>("Name");
+//            });
+//        }   
     }
 
     public interface ITestActor
