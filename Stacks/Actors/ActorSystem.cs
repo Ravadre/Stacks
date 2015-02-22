@@ -125,7 +125,6 @@ namespace Stacks.Actors
             }
 
             var actorTyped = actor as T;
-
             if (actorTyped == null)
             {
                 throw new Exception(string.Format("Received actor {0} in system {1}. However, it does not implement interface {2}",
