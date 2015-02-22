@@ -129,7 +129,7 @@ namespace Stacks.Tests.Remote
         IObservable<int> IntMethod();
     }
 
-    public class ObservableActorServer : IObservableActor
+    public class ObservableActorServer : Actor, IObservableActor
     {
         private Subject<int> intStream;
         private Subject<ComplexData> complexStream;

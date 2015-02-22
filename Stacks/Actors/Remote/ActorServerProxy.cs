@@ -68,7 +68,7 @@ namespace Stacks.Actors
             tBuilder.SaveToFile();
 
             var actor = Activator.CreateInstance(actorImplType, actorImplementation, bindEndPoint, options);
-            return (ActorServerProxyTemplate<I>) actor;
+            return (IActorServerProxy)actor;
         }
     }
 }

@@ -59,7 +59,7 @@ namespace Stacks.Tests.Remote
         Task<int> Add(int x, int y);
     }
 
-    public class SerializerActor : ISerializerActor
+    public class SerializerActor : Actor, ISerializerActor
     {
         public async Task<int> Add(int x, int y)
         {
