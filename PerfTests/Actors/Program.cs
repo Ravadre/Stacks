@@ -50,14 +50,14 @@ namespace Actors
             var repeatsPerClient = repeat / numberOfClients;
             //var system = new ActorSystem("PingPong");
 
-            var clients = new List<Client>();
+            var clients = new List<IClient>();
             var tasks = new List<Task>();
             for (int i = 0; i < numberOfClients; i++)
             {
-                var destination = new Destination();
+                var destination = ActorSystem.Default.CreateActor<Destination, IDestination>();
                 var ts = new TaskCompletionSource<bool>();
                 tasks.Add(ts.Task);
-                var client = new Client(destination, repeatsPerClient, ts);
+                var client = ActorSystem.Default.CreateActor<Client, IClient>(() => new Client(destination, repeatsPerClient, ts));
                 clients.Add(client);
             }
 
@@ -101,7 +101,12 @@ namespace Actors
             Task.WaitAll(tasks);
         }
 
-        public class Destination : Actor
+        public interface IDestination
+        {
+            void Ping(Client c);
+        }
+
+        public class Destination : Actor, IDestination
         {
             public async void Ping(Client c)
             {
@@ -111,16 +116,22 @@ namespace Actors
             }
         }
 
-        public class Client : Actor
+        public interface IClient
+        {
+            void Pong();
+            void Start();
+        }
+
+        public class Client : Actor, IClient
         {
             public long received;
             public long sent;
 
             public long repeat;
-            private Destination actor;
+            private IDestination actor;
             private TaskCompletionSource<bool> latch;
 
-            public Client(Destination actor, long repeat, TaskCompletionSource<bool> latch)
+            public Client(IDestination actor, long repeat, TaskCompletionSource<bool> latch)
             {
                 this.actor = actor;
                 this.repeat = repeat;

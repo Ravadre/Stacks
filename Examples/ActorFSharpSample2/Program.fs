@@ -5,30 +5,34 @@ open System.Xml.Linq
 open Stacks
 
 
+type IWeather =
+    abstract member GetTemperature: string -> Async<double>
+
 type Weather()  = 
     inherit Actor()
     let httpClient = new HttpClient()
 
     let xn s = XName.Get(s)
 
-    member __.GetTemperature(city: string) =
-        base.Context.MakeAsync(async {
-            let! response = sprintf "http://api.openweathermap.org/data/2.5/\
-                                     weather?q=%s&mode=xml&units=metric" city
-                            |> httpClient.GetStringAsync
-                            |> Async.AwaitTask
+    interface IWeather with
+        member __.GetTemperature(city: string) =
+            base.Context.MakeAsync(async {
+                let! response = sprintf "http://api.openweathermap.org/data/2.5/\
+                                         weather?q=%s&mode=xml&units=metric" city
+                                |> httpClient.GetStringAsync
+                                |> Async.AwaitTask
 
-            return double (XDocument.Parse(response)
-                                    .Element(xn"current")
-                                    .Element(xn"temperature")
-                                    .Attribute(xn"value"))
-        })
+                return double (XDocument.Parse(response)
+                                        .Element(xn"current")
+                                        .Element(xn"temperature")
+                                        .Attribute(xn"value"))
+            })
 
 
 [<EntryPoint>]
 let main _ = 
     
-    let weather = Weather()
+    let weather = ActorSystem.Default.CreateActor<Weather>() :?> IWeather
 
     try
         let temp = weather.GetTemperature("Warsaw") |> Async.RunSynchronously

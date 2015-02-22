@@ -12,7 +12,7 @@ namespace ActorSample1
     {
         static void Main(string[] args)
         {
-            var formatter = new Formatter();
+            var formatter = ActorSystem.Default.CreateActor<Formatter, IFormatter>();
             var helloPrinter = new Hello(formatter);
 
             helloPrinter.SayHelloToFriends(new[] { "Stan", "Scott", "John" });
@@ -21,9 +21,9 @@ namespace ActorSample1
 
     class Hello
     {
-        private Formatter formatter;
+        private readonly IFormatter formatter;
 
-        public Hello(Formatter formatter)
+        public Hello(IFormatter formatter)
         {
             this.formatter = formatter;
         }
@@ -37,9 +37,14 @@ namespace ActorSample1
         }
     }
 
+    public interface IFormatter
+    {
+        Task<string> SayHello(string name);
+    }
+
     //One of the ways of defining an actor is to 
     //inherit from Actor class
-    class Formatter : Actor
+    class Formatter : Actor, IFormatter
     {
         //Because every call has to be scheduled on
         //actor's context, answer will not be ready instantly,

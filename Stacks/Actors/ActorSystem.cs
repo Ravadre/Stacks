@@ -34,7 +34,7 @@ namespace Stacks.Actors
 
             var matchedInterface = implementedInterfaces.FirstOrDefault(
                 ii => ii.Name.Equals(t.Name, StringComparison.InvariantCultureIgnoreCase) ||
-                      ("I" + ii.Name).Equals(t.Name, StringComparison.InvariantCultureIgnoreCase));
+                      ii.Name.Equals("I" + t.Name, StringComparison.InvariantCultureIgnoreCase));
 
             if (matchedInterface != null)
                 return matchedInterface;
