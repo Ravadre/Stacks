@@ -99,6 +99,7 @@
     <Compile Include="Actors\ActorSettings.cs" />
     <Compile Include="Actors\ActorSystem.cs" />
     <Compile Include="Actors\Bit.cs" />
+    <Compile Include="Actors\CodeGen\IActorCompilerStrategy.cs" />
     <Compile Include="Actors\CodeGen\ActorTypeGenerator.cs" />
     <Compile Include="Actors\IActor.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />

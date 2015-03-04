@@ -135,16 +135,20 @@ namespace Stacks.Actors
         }
 
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name = null)
+            where T: class
         {
             Ensure.IsNotNull(implementationProvider, "implementationProvider");
             EnsureInheritsActor<T>();
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
+            var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
+            RegisterActorToSystem(actorWrapper, name);
+            return actorWrapper;
+        }
 
-            var implementationAsActor = CastImplementationToActor(actorImplementation);
-            RegisterActorToSystem(implementationAsActor, name);
-
-            return actorImplementation;
+        private IActor CreateActorWrapper(object actorImplementation, Type actorInterface)
+        {
+            return actorImplementation as IActor;
         }
 
         private TImpl ResolveImplementationProvider<TImpl>(Func<TImpl> implementationProvider)
@@ -160,17 +164,7 @@ namespace Stacks.Actors
             }
         }
 
-        private Actor CastImplementationToActor<TImpl>(TImpl actorImplementation)
-        {
-            var implementationAsActor = actorImplementation as Actor;
-
-            if (implementationAsActor == null)
-                throw new Exception("Created implementation could not be casted to Stacks.Actors.Actor type.");
-
-            return implementationAsActor;
-        }
-
-        private void RegisterActorToSystem(Actor actorImplementation, string name)
+        private void RegisterActorToSystem(IActor actorImplementation, string name)
         {
             if (string.IsNullOrEmpty(name))
                 return;

@@ -26,7 +26,6 @@ namespace Stacks.Actors.Remote.CodeGen
         
             this.asmName = new AssemblyName(assemblyName);
 
-            //TODO: Change to RunAndCollect when more stable
             this.asmBuilder = AppDomain.CurrentDomain
                                        .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
