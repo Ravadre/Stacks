@@ -23,7 +23,7 @@ namespace Stacks.Actors
         protected Dictionary<IFramedClient, IActorSession> actorSessions;
         protected Dictionary<FramedClient, Exception> clientErrors;
         protected List<FramedClient> clients;
-        protected Dictionary<FramedClient, DateTime> clientTimestamps;
+        protected Dictionary<FramedClient, TimeSpan> clientTimestamps;
         protected IExecutor executor;
         protected Dictionary<string, Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>> handlers;
         protected bool isStopped;
@@ -51,7 +51,7 @@ namespace Stacks.Actors
             clientActorConnected = new Subject<IActorSession>();
             clientActorDisconnected = new Subject<ClientActorDisconnectedData>();
 
-            clientTimestamps = new Dictionary<FramedClient, DateTime>();
+            clientTimestamps = new Dictionary<FramedClient, TimeSpan>();
             clientErrors = new Dictionary<FramedClient, Exception>();
             pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
@@ -106,15 +106,21 @@ namespace Stacks.Actors
                 if (isStopped)
                     return;
 
-                var now = DateTime.UtcNow;
-                var halfMinute = TimeSpan.FromMinutes(1.0);
+                var now = TimeSpan.FromMilliseconds(Environment.TickCount);
+                var oneMinute = TimeSpan.FromMinutes(1.0);
 
                 foreach (var kv in clientTimestamps)
                 {
                     var c = kv.Key;
                     var ts = kv.Value;
 
-                    if (now - ts > halfMinute)
+                    // Make sure that if tick count leaps we're ok.
+                    if (now <= ts)
+                    {
+                        continue;
+                    }
+
+                    if (now - ts > oneMinute)
                     {
                         c.Close();
                     }
@@ -207,7 +213,7 @@ namespace Stacks.Actors
             });
 
             clients.Add(client);
-            clientTimestamps[client] = DateTime.UtcNow;
+            clientTimestamps[client] = TimeSpan.FromMilliseconds(Environment.TickCount);
 
             var session = new ActorSession(client);
             actorSessions[client] = session;
@@ -251,7 +257,7 @@ namespace Stacks.Actors
 
         private void HandlePingMessage(FramedClient client, ActorProtocolFlags flags, MemoryStream ms)
         {
-            clientTimestamps[client] = DateTime.UtcNow;
+            clientTimestamps[client] = TimeSpan.FromMilliseconds(Environment.TickCount);
 
             var req = serializer.Deserialize<Ping>(flags, "Ping", ms);
             AuxSendProtocolPacket(client, "Handshake", ActorProtocol.PingId,
