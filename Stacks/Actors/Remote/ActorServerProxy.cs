@@ -10,30 +10,30 @@ namespace Stacks.Actors
     {
         private static ServerActorTypeBuilder tBuilder;
 
-        public static IActorServerProxy Create<T, I>(IPEndPoint bindEndPoint)
+        public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint)
             where T : class, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<T, I>(() => new T()), bindEndPoint,
+            return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), bindEndPoint,
                 ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T, I>(string bindEndPoint)
+        public static IActorServerProxy Create<I, T>(string bindEndPoint)
             where T : class, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<T, I>(() => new T()), IPHelpers.Parse(bindEndPoint),
+            return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), IPHelpers.Parse(bindEndPoint),
                 ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T, I>(IPEndPoint bindEndPoint, ActorServerProxyOptions options)
+        public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint, ActorServerProxyOptions options)
             where T : class, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<T, I>(() => new T()), bindEndPoint, options);
+            return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), bindEndPoint, options);
         }
 
-        public static IActorServerProxy Create<T, I>(string bindEndPoint, ActorServerProxyOptions options)
+        public static IActorServerProxy Create<I, T>(string bindEndPoint, ActorServerProxyOptions options)
             where T : class, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<T, I>(() => new T()), IPHelpers.Parse(bindEndPoint), options);
+            return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), IPHelpers.Parse(bindEndPoint), options);
         }
 
         public static IActorServerProxy Create<I>(IPEndPoint bindEndPoint, I actorImpl)

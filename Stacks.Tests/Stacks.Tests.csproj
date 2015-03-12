@@ -105,6 +105,7 @@
     <Compile Include="..\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
+    <Compile Include="ActorSystemTests\ActorCodeGeneration.cs" />
     <Compile Include="ActorSystemTests\ActorSystemCreate.cs" />
     <Compile Include="Client\ReactiveMessageClientTests.cs" />
     <Compile Include="Client\SslClientTests.cs" />

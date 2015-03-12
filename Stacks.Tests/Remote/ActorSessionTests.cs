@@ -18,7 +18,7 @@ namespace Stacks.Tests.Remote
         public async void If_Enabled_IActorSession_should_get_accessible_from_ActorSession_Current()
         {
             var opts = new ActorServerProxyOptions(actorSessionInjectionEnabled: true);
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(opts, out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(opts, out server, out client);
 
             var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
 
@@ -36,7 +36,7 @@ namespace Stacks.Tests.Remote
             var opts = new ActorServerProxyOptions(actorSessionInjectionEnabled: true);
             IMessageActor[] clients = new IMessageActor[20];
 
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(opts, out server, out clients[0]);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(opts, out server, out clients[0]);
 
             for (int i = 1; i < 20; ++i)
                 clients[i] = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
@@ -55,7 +55,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public async void If_Not_Enabled_ActorSession_Current_should_be_null()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             await client.AssertActorSessionIsNull();
         }

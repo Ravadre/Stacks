@@ -83,7 +83,7 @@ namespace Stacks.Actors
         /// <typeparam name="I">Actor interface.</typeparam>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<TImpl, I>(string name = null)
+        public I CreateActor<I, TImpl>(string name = null)
             where TImpl : class, I, new()
         {
             return (I)CreateActor(typeof(I), () => new TImpl(), name);
@@ -100,7 +100,7 @@ namespace Stacks.Actors
         /// <param name="implementationProvider">Actual implementation of an actor. Must inherit from Actor class.</param>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<TImpl, I>(Func<TImpl> implementationProvider, string name = null)
+        public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null)
             where TImpl: class, I
         {
             return (I)CreateActor(typeof (I), implementationProvider, name);

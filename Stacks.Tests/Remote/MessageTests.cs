@@ -23,7 +23,7 @@ namespace Stacks.Tests.Remote
         public void Calling_method_should_call_it_on_server()
         {
             MessageActor impl = null;
-            var sImpl = ActorSystem.Default.CreateActor<MessageActor, IMessageActor>(() => impl = new MessageActor());
+            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(() => impl = new MessageActor());
             Utils.CreateServerAndClient(sImpl, out server, out client);
 
             client.Ping().Wait();
@@ -34,7 +34,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_with_primitive_type_as_return_parameter_should_work_correctly()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var random = client.Random().Result;
         }
@@ -42,7 +42,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_with_object_that_isnt_protocontract_should_return_failed_task()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             Assert.Throws(typeof(InvalidOperationException), () =>
                 {
@@ -61,7 +61,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_with_enumerable_of_proto_contract_data_should_be_accepted()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var res = client.PassValidData(new[]
                 {
@@ -75,7 +75,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Multiple_parameters_should_be_serialized_properly()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312).Wait();
         }
@@ -83,7 +83,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Errors_on_server_side_should_propagate_exception_messages()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             try
             {
@@ -98,7 +98,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Errors_on_server_side_methods_should_not_disconnect_client()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             try
             {
@@ -115,7 +115,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Request_should_fail_if_server_goes_down_while_processing_an_event()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var addResult = client.LongRunningAdder(5, 6);
             Thread.Sleep(50);
@@ -138,7 +138,7 @@ namespace Stacks.Tests.Remote
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
         {
             IExplicitInterfaceActor client;
-            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+            Utils.CreateServerAndClient<IExplicitInterfaceActor, ExplicitInterfaceActor>(out server, out client);
 
             await client.Test();
         }
@@ -148,7 +148,7 @@ namespace Stacks.Tests.Remote
         {
             var receivedValue = new ManualResetEventSlim();
             IExplicitInterfaceActor client;
-            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+            Utils.CreateServerAndClient<IExplicitInterfaceActor, ExplicitInterfaceActor>(out server, out client);
 
             await client.Test();
 

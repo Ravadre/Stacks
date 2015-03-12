@@ -27,18 +27,18 @@ namespace Stacks.Tests.ActorSystemTests
         [Fact]
         public void Creating_actors_using_different_names_should_succeed()
         {
-            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
-            var actor2 = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name2");
+            var actor = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
+            var actor2 = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name2");
         }
 
         [Fact]
         public void Creating_actors_using_name_twice_should_throw()
         {
-            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+            var actor = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
 
             Assert.Throws<Exception>(() =>
             {
-                var actor2 = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+                var actor2 = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
             });
         }
 
@@ -47,7 +47,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             Assert.Throws<Exception>(() =>
             {
-                var actor = ActorSystem.Default.CreateActor<NotAnActor, ITestActor>("Name");
+                var actor = ActorSystem.Default.CreateActor<ITestActor, NotAnActor>("Name");
             });
         }
 
@@ -62,7 +62,7 @@ namespace Stacks.Tests.ActorSystemTests
         [Fact]
         public void Actor_once_created_in_system_can_be_get_many_times()
         {
-            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+            var actor = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
             var actor2 = ActorSystem.Default.GetActor<ITestActor>("Name");
             var actor3 = ActorSystem.Default.GetActor<ITestActor>("Name");
             var actor4 = ActorSystem.Default.GetActor<ITestActor>("Name");
@@ -71,7 +71,7 @@ namespace Stacks.Tests.ActorSystemTests
         [Fact]
         public void Getting_actor_with_invalid_name_should_throw()
         {
-            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
+            var actor = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
 
             Assert.Throws<Exception>(() =>
             {

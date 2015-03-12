@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -69,11 +70,29 @@ namespace Stacks.Actors.CodeGen
 
         }
 
+        [Conditional("DEBUG")]
+        private void SaveWrapperToFile()
+        {
+            asmBuilder.Save(asmName.Name + ".dll");
+        }
+
+        private AssemblyBuilder CreateAssemblyBuilder()
+        {
+#if DEBUG
+            return AppDomain.CurrentDomain
+                            .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
+#else
+            return AppDomain.CurrentDomain
+                            .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
+#endif
+        }
+
+
         private Type FinishWrapperCreation()
         {
             var wrapperType = wrapperBuilder.CreateType();
             SaveWrapperToCache(wrapperType);
-            asmBuilder.Save(asmName.Name + ".dll");
+            SaveWrapperToFile();
 
             return wrapperType;
         }
@@ -84,8 +103,7 @@ namespace Stacks.Actors.CodeGen
                 new AssemblyName("Stacks_LocalActorWrapper_" + actorImplementation.GetType().FullName + "_" +
                                  actorInterface.FullName);
 
-            asmBuilder = AppDomain.CurrentDomain
-                                  .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
+            asmBuilder = CreateAssemblyBuilder();
             moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
             
         }

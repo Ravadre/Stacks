@@ -12,7 +12,7 @@ namespace ActorSample1
     {
         static void Main(string[] args)
         {
-            var formatter = ActorSystem.Default.CreateActor<Formatter, IFormatter>();
+            var formatter = ActorSystem.Default.CreateActor<IFormatter, Formatter>();
             var helloPrinter = new Hello(formatter);
 
             helloPrinter.SayHelloToFriends(new[] { "Stan", "Scott", "John" });

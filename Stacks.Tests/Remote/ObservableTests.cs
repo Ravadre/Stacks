@@ -20,7 +20,7 @@ namespace Stacks.Tests.Remote
 
         public ObservableTests()
         {
-            serverImpl = ActorSystem.Default.CreateActor<ObservableActorServer, IObservableActor>(() =>
+            serverImpl = ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(() =>
             {
                 return realServerImpl = new ObservableActorServer();
             });
