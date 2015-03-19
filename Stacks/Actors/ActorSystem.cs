@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.CodeGen;
+
 // ReSharper disable InconsistentNaming
 
 namespace Stacks.Actors
@@ -148,7 +150,18 @@ namespace Stacks.Actors
 
         private IActor CreateActorWrapper(object actorImplementation, Type actorInterface)
         {
-            return actorImplementation as IActor;
+            var typeGenerator = new ActorTypeGenerator();
+            var wrapperType = typeGenerator.GenerateType(actorImplementation, actorInterface);
+            var wrapperObject = Activator.CreateInstance(wrapperType) as IActor;
+
+            if (wrapperObject == null)
+            {
+                throw new Exception("Internal error occured when creating wrapper for implementation of " 
+                    + actorImplementation.GetType().FullName + ", interface type: " 
+                    + actorInterface.FullName);
+            }
+
+            return wrapperObject;
         }
 
         private TImpl ResolveImplementationProvider<TImpl>(Func<TImpl> implementationProvider)

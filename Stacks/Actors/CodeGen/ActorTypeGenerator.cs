@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.SqlServer.Server;
 
 namespace Stacks.Actors.CodeGen
 {
@@ -20,9 +21,15 @@ namespace Stacks.Actors.CodeGen
         private object actorImplementation;
         private Type actorInterface;
 
+        private List<IActorCompilerStrategy> actorCompilers; 
+
         public ActorTypeGenerator()
         {
-            
+            actorCompilers = new List<IActorCompilerStrategy>
+            {
+                new TaskMethodsCompiler()  
+            };
+
         }
 
         private bool TryGetCachedType(out Type wrapperType)
@@ -61,13 +68,32 @@ namespace Stacks.Actors.CodeGen
             return FinishWrapperCreation();
         }
 
+        private void GenerateMethodsImplementation()
+        {
+            foreach (var method in actorInterface.GetMethods())
+            {
+                var compiler = actorCompilers.FirstOrDefault(c => c.CanCompile(method));
+
+                if (compiler == null)
+                {
+                    throw new Exception(
+                        string.Format("Could not find compiler for method {0}. " +
+                                      "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
+                                      "Additional strategies can be registered using ActorCompilerStrategry.",
+                            method.FormatDeclaration()));
+                }
+
+                compiler.Implement(method, wrapperBuilder);
+            }
+        }
+
         private void CreateWrapperType()
         {
             wrapperBuilder = moduleBuilder.DefineType(actorInterface.Name + "$Wrapper",
                 TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public,
                 null, new [] { typeof(IActor), actorInterface } );
 
-
+            
         }
 
         [Conditional("DEBUG")]
