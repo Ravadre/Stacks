@@ -34,6 +34,8 @@ namespace Stacks.Actors.CodeGen
 
         private bool TryGetCachedType(out Type wrapperType)
         {
+            wrapperType = null;
+            return false;
             var actorType = actorImplementation.GetType();
             var key = Tuple.Create(actorType, actorInterface);
 
@@ -82,7 +84,7 @@ namespace Stacks.Actors.CodeGen
                         "Additional strategies can be registered using ActorCompilerStrategy.");
                 }
 
-                compiler.Implement(method, wrapperBuilder);
+                compiler.Implement(method, actorInterface, wrapperBuilder);
             }
         }
 
@@ -100,13 +102,13 @@ namespace Stacks.Actors.CodeGen
                         "Additional strategies can be registered using ActorCompilerStrategy.");
                 }
 
-                compiler.Implement(property, wrapperBuilder);
+                compiler.Implement(property, actorInterface, wrapperBuilder);
             }
         }
 
         private void ImplementWrapperConstructor()
         {
-            var ctor = wrapperBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard,
+            var ctor = wrapperBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.SpecialName, CallingConventions.HasThis,
                 new[] {typeof (IActor)});
 
             var il = ctor.GetILGenerator();

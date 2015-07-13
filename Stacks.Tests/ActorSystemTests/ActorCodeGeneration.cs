@@ -19,7 +19,8 @@ namespace Stacks.Tests.ActorSystemTests
         public void Actor_with_single_method_returning_task_should_compile_successfully()
         {
             var actor = ActorSystem.Default.CreateActor<ISingleMethodActor, SingleMethodActor>();
-
+            var t = actor.Test();
+            Assert.Equal(5, actor.Test().Result);
         }
     }
 
@@ -32,6 +33,8 @@ namespace Stacks.Tests.ActorSystemTests
     {
         public async Task<int> Test()
         {
+            await Context;
+
             return 5;
         }
     }

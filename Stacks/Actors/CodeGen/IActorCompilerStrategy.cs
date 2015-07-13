@@ -12,7 +12,7 @@ namespace Stacks.Actors.CodeGen
     {
         bool CanCompile(MethodInfo method);
         bool CanCompile(PropertyInfo property);
-        void Implement(MethodInfo method, TypeBuilder wrapperBuilder);
-        void Implement(PropertyInfo property, TypeBuilder wrapperBuilder);
+        void Implement(MethodInfo method, Type actorInterface, TypeBuilder wrapperBuilder);
+        void Implement(PropertyInfo property, Type actorInterface, TypeBuilder wrapperBuilder);
     }
 }

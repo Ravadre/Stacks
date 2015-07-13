@@ -153,7 +153,7 @@ namespace Stacks.Actors
         {
             var typeGenerator = new ActorTypeGenerator();
             var wrapperType = typeGenerator.GenerateType(actorImplementation, actorInterface);
-            var wrapperObject = Activator.CreateInstance(wrapperType, 0, null, actorImplementation) as IActor;
+            var wrapperObject = Activator.CreateInstance(wrapperType, actorImplementation) as IActor;
 
             if (wrapperObject == null)
             {
