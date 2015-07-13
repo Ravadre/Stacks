@@ -21,7 +21,7 @@ namespace Stacks.Actors.CodeGen
         private object actorImplementation;
         private Type actorInterface;
 
-        private List<IActorCompilerStrategy> actorCompilers; 
+        private readonly List<IActorCompilerStrategy> actorCompilers; 
 
         public ActorTypeGenerator()
         {
@@ -77,23 +77,56 @@ namespace Stacks.Actors.CodeGen
                 if (compiler == null)
                 {
                     throw new Exception(
-                        string.Format("Could not find compiler for method {0}. " +
-                                      "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
-                                      "Additional strategies can be registered using ActorCompilerStrategry.",
-                            method.FormatDeclaration()));
+                        $"Could not find compiler for method {method.FormatDeclaration()}. " +
+                        "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
+                        "Additional strategies can be registered using ActorCompilerStrategy.");
                 }
 
                 compiler.Implement(method, wrapperBuilder);
             }
         }
 
+        private void GeneratePropertiesImplementation()
+        {
+            foreach (var property in actorInterface.GetProperties())
+            {
+                var compiler = actorCompilers.FirstOrDefault(p => p.CanCompile(property));
+
+                if (compiler == null)
+                {
+                    throw new Exception(
+                        $"Could not find compiler for method {property.FormatDeclaration()}. " +
+                        "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
+                        "Additional strategies can be registered using ActorCompilerStrategy.");
+                }
+
+                compiler.Implement(property, wrapperBuilder);
+            }
+        }
+
+        private void ImplementWrapperConstructor()
+        {
+            var ctor = wrapperBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard,
+                new[] {typeof (IActor)});
+
+            var il = ctor.GetILGenerator();
+
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Call, typeof(ActorWrapperBase).GetConstructor(new [] { typeof(IActor) }));
+            il.Emit(OpCodes.Ret);
+        }
+
+        
         private void CreateWrapperType()
         {
             wrapperBuilder = moduleBuilder.DefineType(actorInterface.Name + "$Wrapper",
                 TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.Public,
-                null, new [] { typeof(IActor), actorInterface } );
+                typeof(ActorWrapperBase), new [] { typeof(IActor), actorInterface } );
 
-            
+            ImplementWrapperConstructor();
+            GenerateMethodsImplementation();
+            GeneratePropertiesImplementation();
         }
 
         [Conditional("DEBUG")]

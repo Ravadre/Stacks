@@ -13,5 +13,10 @@ namespace Stacks.Actors.CodeGen
         {
             return method.Name;
         }
+
+        public static string FormatDeclaration(this PropertyInfo property)
+        {
+            return property.Name;
+        }
     }
 }

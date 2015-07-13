@@ -19,13 +19,13 @@ namespace Stacks.Actors
             Default = new ActorSystem("Default");
         }
 
-        public string Name { get; private set; }
+        public string SystemName { get; }
 
         private ConcurrentDictionary<string, IActor> registeredActors;
 
-        internal ActorSystem(string name)
+        internal ActorSystem(string systemName)
         {
-            Name = name;
+            SystemName = systemName;
             Initialize();
         }
 
@@ -104,6 +104,7 @@ namespace Stacks.Actors
         /// <returns></returns>
         public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null)
             where TImpl: class, I
+            //where I: IActor
         {
             return (I)CreateActor(typeof (I), implementationProvider, name);
         }
@@ -117,20 +118,20 @@ namespace Stacks.Actors
         public T GetActor<T>(string name)
             where T: class
         {
-            Ensure.IsNotNull(name, "name");
+            Ensure.IsNotNull(name, nameof(name));
 
             IActor actor;
             if (!registeredActors.TryGetValue(name, out actor))
             {
-                throw new Exception(string.Format("Could not get actor with name {0}. It was not previously created in system {1}",
-                    name, this.Name));
+                throw new Exception(
+                    $"Could not get actor with name {name}. It was not previously created in system {SystemName}");
             }
 
             var actorTyped = actor as T;
             if (actorTyped == null)
             {
-                throw new Exception(string.Format("Received actor {0} in system {1}. However, it does not implement interface {2}",
-                    name, this.Name, typeof(T).FullName));
+                throw new Exception(
+                    $"Received actor {name} in system {SystemName}. However, it does not implement interface {typeof (T).FullName}");
             }
 
             return actorTyped;
@@ -139,7 +140,7 @@ namespace Stacks.Actors
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name = null)
             where T: class
         {
-            Ensure.IsNotNull(implementationProvider, "implementationProvider");
+            Ensure.IsNotNull(implementationProvider, nameof(implementationProvider));
             EnsureInheritsActor<T>();
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
@@ -152,7 +153,7 @@ namespace Stacks.Actors
         {
             var typeGenerator = new ActorTypeGenerator();
             var wrapperType = typeGenerator.GenerateType(actorImplementation, actorInterface);
-            var wrapperObject = Activator.CreateInstance(wrapperType) as IActor;
+            var wrapperObject = Activator.CreateInstance(wrapperType, 0, null, actorImplementation) as IActor;
 
             if (wrapperObject == null)
             {
@@ -177,15 +178,15 @@ namespace Stacks.Actors
             }
         }
 
-        private void RegisterActorToSystem(IActor actorImplementation, string name)
+        private void RegisterActorToSystem(IActor actorImplementation, string actorName)
         {
-            if (string.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(actorName))
                 return;
 
-            if (!registeredActors.TryAdd(name, actorImplementation))
+            if (!registeredActors.TryAdd(actorName, actorImplementation))
             {
-                throw new Exception(string.Format("Tried to create actor named {0} inside system {1}. Actor with such name is already added",
-                    name, this.Name));
+                throw new Exception(
+                    $"Tried to create actor named {actorName} inside system {SystemName}. Actor with such name is already added");
             }
         }
 
@@ -193,9 +194,7 @@ namespace Stacks.Actors
         {
             if (!typeof(Actor).IsAssignableFrom(typeof(TImpl)))
                 throw new Exception(
-                    string.Format(
-                        "Implementation type (TImpl) is of type {0} which does not inherits from Stacks.Actors.Actor.",
-                        typeof(TImpl).FullName));
+                    $"Implementation type (TImpl) is of type {typeof (TImpl).FullName} which does not inherits from Stacks.Actors.Actor.");
         }
     }
 }
