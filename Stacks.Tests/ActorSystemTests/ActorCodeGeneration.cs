@@ -28,6 +28,18 @@ namespace Stacks.Tests.ActorSystemTests
             var actor = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
             Assert.Equal(30, actor.Div(150, 5).Result);
         }
+
+        [Fact]
+        public async Task Actor_error_should_be_propagated_in_returned_task()
+        {
+            await Assert.ThrowsAsync<DivideByZeroException>(async () =>
+            {
+                var actor = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
+                var res = actor.Div(5.0, .0);
+                
+                await res;
+            });
+        }
     }
 
     public interface ICalculatorActor
@@ -55,6 +67,11 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task<double> Div(double x, double y)
         {
             await Context;
+
+            await Task.Delay(50);
+
+            if (y == 0.0)
+                throw new DivideByZeroException();
 
             return x / y;
         }

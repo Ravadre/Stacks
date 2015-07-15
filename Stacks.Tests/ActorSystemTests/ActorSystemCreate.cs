@@ -79,17 +79,16 @@ namespace Stacks.Tests.ActorSystemTests
             });
         }
 
-        //TODO: Should work after adding code gen for local actors
-//        [Fact]
-//        public void Getting_actor_with_invalid_interface_should_throw()
-//        {
-//            var actor = ActorSystem.Default.CreateActor<TestActor, ITestActor>("Name");
-//
-//            Assert.Throws<Exception>(() =>
-//            {
-//                var actor2 = ActorSystem.Default.GetActor<ITestActorInterface>("Name");
-//            });
-//        }   
+        [Fact]
+        public void Getting_actor_with_invalid_interface_should_throw()
+        {
+            var actor = ActorSystem.Default.CreateActor<ITestActor, TestActor>("Name");
+
+            Assert.Throws<Exception>(() =>
+            {
+                var actor2 = ActorSystem.Default.GetActor<ITestActorInterface>("Name");
+            });
+        }   
     }
 
     public interface ITestActor

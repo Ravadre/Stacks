@@ -31,12 +31,10 @@ namespace Stacks.Actors.CodeGen
 
             var il = mBuilder.GetILGenerator();
 
-            //il.Emit(OpCodes.Ldnull);
-
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, typeof(ActorWrapperBase).GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
             il.Emit(OpCodes.Castclass, actorInterface);
-            for (int i = 1; i <= method.GetParameters().Length; ++i)
+            for (var i = 1; i <= method.GetParameters().Length; ++i)
             {
                 il.Emit(OpCodes.Ldarg, i);
             }
