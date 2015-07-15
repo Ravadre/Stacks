@@ -10,25 +10,27 @@ namespace Stacks.Actors.CodeGen
 {
     public class TaskMethodsCompiler : IActorCompilerStrategy
     {
-        public bool CanCompile(MethodInfo method)
+        public bool CanCompile(MethodInfoMapping method)
         {
-            var retType = method.ReturnType;
+            var retType = method.InterfaceInfo.ReturnType;
             return typeof (Task).IsAssignableFrom(retType) ||
                    typeof (Task<>).IsAssignableFrom(retType);
         }
 
-        public bool CanCompile(PropertyInfo property)
+        public bool CanCompile(PropertyInfoMapping property)
         {
             return false;
         }
 
-        public void Implement(MethodInfo method, Type actorInterface, TypeBuilder wrapperBuilder)
+        public void Implement(MethodInfoMapping method, Type actorInterface, TypeBuilder wrapperBuilder)
         {
-            var mBuilder = wrapperBuilder.DefineMethod(method.Name,
+            var mi = method.Info;
+
+            var mBuilder = wrapperBuilder.DefineMethod(mi.Name,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot,
-                CallingConventions.HasThis, method.ReturnType,
-                method.GetParameters().Select(p => p.ParameterType).ToArray());
-            var mParams = method.GetParameters();
+                CallingConventions.HasThis, mi.ReturnType,
+                mi.GetParameters().Select(p => p.ParameterType).ToArray());
+            var mParams = mi.GetParameters();
 
             for (var i = 1; i <= mParams.Length; ++i)
             {
@@ -40,16 +42,16 @@ namespace Stacks.Actors.CodeGen
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldfld, typeof(ActorWrapperBase).GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
             il.Emit(OpCodes.Castclass, actorInterface);
-            for (var i = 1; i <= method.GetParameters().Length; ++i)
+            for (var i = 1; i <= mi.GetParameters().Length; ++i)
             {
                 il.Emit(OpCodes.Ldarg, i);
             }
 
-            il.EmitCall(OpCodes.Call, method, null);
+            il.EmitCall(OpCodes.Call, mi, null);
             il.Emit(OpCodes.Ret);
         }
 
-        public void Implement(PropertyInfo property, Type actorInterface, TypeBuilder wrapperBuilder)
+        public void Implement(PropertyInfoMapping property, Type actorInterface, TypeBuilder wrapperBuilder)
         {
             throw new NotSupportedException();
         }

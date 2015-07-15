@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.CodeGen;
 using Stacks.Actors.Proto;
 
 namespace Stacks.Actors.Remote.CodeGen

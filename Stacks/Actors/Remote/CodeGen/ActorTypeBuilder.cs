@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.CodeGen;
 
 namespace Stacks.Actors.Remote.CodeGen
 {

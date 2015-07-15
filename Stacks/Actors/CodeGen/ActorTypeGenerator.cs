@@ -75,14 +75,14 @@ namespace Stacks.Actors.CodeGen
 
         private void GenerateMethodsImplementation()
         {
-            foreach (var method in actorInterface.GetMethods())
+            foreach (var method in actorImplementation.GetType().FindValidProxyMethods(onlyPublic: false))
             {
                 var compiler = actorCompilers.FirstOrDefault(c => c.CanCompile(method));
 
                 if (compiler == null)
                 {
                     throw new Exception(
-                        $"Could not find compiler for method {method.FormatDeclaration()}. " +
+                        $"Could not find compiler for method {method.Info.FormatDeclaration()}. " +
                         "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
                         "Additional strategies can be registered using ActorCompilerStrategy.");
                 }
@@ -93,14 +93,14 @@ namespace Stacks.Actors.CodeGen
 
         private void GeneratePropertiesImplementation()
         {
-            foreach (var property in actorInterface.GetProperties())
+            foreach (var property in actorImplementation.GetType().FindValidObservableProperties(onlyPublic: false))
             {
                 var compiler = actorCompilers.FirstOrDefault(p => p.CanCompile(property));
 
                 if (compiler == null)
                 {
                     throw new Exception(
-                        $"Could not find compiler for method {property.FormatDeclaration()}. " +
+                        $"Could not find compiler for method {property.Info.FormatDeclaration()}. " +
                         "If method has non standard declaration, maybe appropriate compiler strategy was not registered? " +
                         "Additional strategies can be registered using ActorCompilerStrategy.");
                 }

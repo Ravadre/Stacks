@@ -10,9 +10,9 @@ namespace Stacks.Actors.CodeGen
 {
     public interface IActorCompilerStrategy
     {
-        bool CanCompile(MethodInfo method);
-        bool CanCompile(PropertyInfo property);
-        void Implement(MethodInfo method, Type actorInterface, TypeBuilder wrapperBuilder);
-        void Implement(PropertyInfo property, Type actorInterface, TypeBuilder wrapperBuilder);
+        bool CanCompile(MethodInfoMapping method);
+        bool CanCompile(PropertyInfoMapping property);
+        void Implement(MethodInfoMapping method, Type actorInterface, TypeBuilder wrapperBuilder);
+        void Implement(PropertyInfoMapping property, Type actorInterface, TypeBuilder wrapperBuilder);
     }
 }
