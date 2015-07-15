@@ -18,7 +18,7 @@ namespace Stacks.Actors.Remote.CodeGen
         // therefore, when creating implementation for the same interface 
         // new serializers are being hold permanently.
         // For this reason, no eviction mechanism is implemented as well.
-        private static Dictionary<Type, Type> constructedTypesCache = new Dictionary<Type, Type>();
+        private static readonly Dictionary<Type, Type> constructedTypesCache = new Dictionary<Type, Type>();
 
 
         public ClientActorTypeBuilder(string assemblyName)
@@ -29,11 +29,13 @@ namespace Stacks.Actors.Remote.CodeGen
         {
             Type implType = null;
 
+#if !DEBUG_CODEGEN
             lock (constructedTypesCache)
             {
                 if (constructedTypesCache.TryGetValue(actorInterface, out implType))
                     return implType;
             }
+#endif
 
             var proxyTemplateType = typeof(ActorClientProxyTemplate<>).MakeGenericType(actorInterface);
             var actorImplBuilder = moduleBuilder.DefineType("Impl$" + actorInterface.Name, TypeAttributes.Public,

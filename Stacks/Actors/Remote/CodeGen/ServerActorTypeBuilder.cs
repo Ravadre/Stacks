@@ -32,11 +32,13 @@ namespace Stacks.Actors.Remote.CodeGen
         public Type CreateActorType(Type actorType)
         {
             Type implType = null;
+#if !DEBUG_CODEGEN
             lock (constructedTypesCache)
             {
                 if (constructedTypesCache.TryGetValue(actorType, out implType))
                     return implType;
             }
+#endif
 
             templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
             this.actorType = actorType;

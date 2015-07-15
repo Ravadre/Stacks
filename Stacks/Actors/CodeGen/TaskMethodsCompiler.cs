@@ -28,6 +28,12 @@ namespace Stacks.Actors.CodeGen
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot,
                 CallingConventions.HasThis, method.ReturnType,
                 method.GetParameters().Select(p => p.ParameterType).ToArray());
+            var mParams = method.GetParameters();
+
+            for (var i = 1; i <= mParams.Length; ++i)
+            {
+                mBuilder.DefineParameter(i, ParameterAttributes.None, mParams[i - 1].Name);
+            }
 
             var il = mBuilder.GetILGenerator();
 

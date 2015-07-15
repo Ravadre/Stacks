@@ -35,7 +35,9 @@ namespace Stacks.Actors.CodeGen
         private bool TryGetCachedType(out Type wrapperType)
         {
             wrapperType = null;
+#if DEBUG_CODEGEN
             return false;
+#else
             var actorType = actorImplementation.GetType();
             var key = Tuple.Create(actorType, actorInterface);
 
@@ -43,6 +45,7 @@ namespace Stacks.Actors.CodeGen
             {
                 return cachedTypes.TryGetValue(key, out wrapperType);
             }
+#endif
         }
 
         private void SaveWrapperToCache(Type wrapperType)
@@ -131,7 +134,7 @@ namespace Stacks.Actors.CodeGen
             GeneratePropertiesImplementation();
         }
 
-        [Conditional("DEBUG")]
+        [Conditional("DEBUG_CODEGEN")]
         private void SaveWrapperToFile()
         {
             asmBuilder.Save(asmName.Name + ".dll");
@@ -139,7 +142,7 @@ namespace Stacks.Actors.CodeGen
 
         private AssemblyBuilder CreateAssemblyBuilder()
         {
-#if DEBUG
+#if DEBUG_CODEGEN
             return AppDomain.CurrentDomain
                             .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
 #else

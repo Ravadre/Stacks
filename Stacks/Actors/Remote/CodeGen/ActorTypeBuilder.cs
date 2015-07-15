@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reflection;
@@ -26,14 +27,21 @@ namespace Stacks.Actors.Remote.CodeGen
         
             this.asmName = new AssemblyName(assemblyName);
 
+#if DEBUG_CODEGEN
             this.asmBuilder = AppDomain.CurrentDomain
+                                 .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndSave);
+#else
+                  this.asmBuilder = AppDomain.CurrentDomain
                                        .DefineDynamicAssembly(asmName, AssemblyBuilderAccess.RunAndCollect);
+#endif
+
             this.moduleBuilder = asmBuilder.DefineDynamicModule(asmName + ".dll");
         }
 
+        [Conditional("DEBUG_CODEGEN")]
         public void SaveToFile()
         {
-            //asmBuilder.Save(asmName.Name + ".dll");
+            asmBuilder.Save(asmName.Name + ".dll");
         }
 
         public void DefineMessagesFromInterfaceType(Type actorInterface)
