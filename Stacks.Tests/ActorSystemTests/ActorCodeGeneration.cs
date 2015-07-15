@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks.Actors;
@@ -40,6 +41,34 @@ namespace Stacks.Tests.ActorSystemTests
                 await res;
             });
         }
+
+        [Fact]
+        public async Task
+            Actor_that_has_explicitly_implemented_method_should_correctly_pass_method_call_to_implementation()
+        {
+            var actor = ActorSystem.Default.CreateActor<IExplicitInterfaceActor, ExplicitInterfaceActor>();
+
+            var sum = await actor.Sum(new double[] {5, 4, 3, 2, 1});
+
+            Assert.Equal(15, sum);
+        }
+
+        [Fact]
+        public async Task Actor_Observable_that_has_explicit_implementation_should_be_properly_called()
+        {
+            var actor = ActorSystem.Default.CreateActor<IExplicitInterfaceActor, ExplicitInterfaceActor>();
+
+            int ctr = 0;
+            actor.Counter.Subscribe(_ => ++ctr);
+
+            for (int i = 0; i < 10; ++i)
+            {
+                await Task.Delay(200);
+                if (ctr >= 2) break;
+            }
+
+            Assert.True(ctr >= 2);
+        }
     }
 
     public interface ICalculatorActor
@@ -50,6 +79,26 @@ namespace Stacks.Tests.ActorSystemTests
     public interface ISingleMethodActor
     {
         Task<int> Test();
+    }
+
+    public interface IExplicitInterfaceActor
+    {
+        Task<double> Sum(double[] xs);
+        IObservable<double> Counter { get; } 
+    }
+
+    public class ExplicitInterfaceActor : Actor, IExplicitInterfaceActor
+    {
+        IObservable<double> IExplicitInterfaceActor.Counter
+        {
+            get { return Observable.Timer(TimeSpan.Zero, TimeSpan.FromSeconds(0.1)).Select(l => (double) l); }
+        }
+
+        async Task<double> IExplicitInterfaceActor.Sum(double[] xs)
+        {
+            await Context;
+            return xs.Sum();
+        }
     }
 
     public class SingleMethodActor : Actor, ISingleMethodActor
