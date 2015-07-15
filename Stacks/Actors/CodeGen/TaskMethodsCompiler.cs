@@ -24,9 +24,9 @@ namespace Stacks.Actors.CodeGen
 
         public void Implement(MethodInfoMapping method, Type actorInterface, TypeBuilder wrapperBuilder)
         {
-            var mi = method.Info;
+            var mi = method.InterfaceInfo;
 
-            var mBuilder = wrapperBuilder.DefineMethod(mi.Name,
+            var mBuilder = wrapperBuilder.DefineMethod(method.PublicName,
                 MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual | MethodAttributes.Final | MethodAttributes.NewSlot,
                 CallingConventions.HasThis, mi.ReturnType,
                 mi.GetParameters().Select(p => p.ParameterType).ToArray());
