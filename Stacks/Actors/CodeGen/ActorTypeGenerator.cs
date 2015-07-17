@@ -76,7 +76,7 @@ namespace Stacks.Actors.CodeGen
 
         private void GenerateMethodsImplementation()
         {
-            foreach (var method in actorImplementation.GetType().FindValidProxyMethods(onlyPublic: false))
+            foreach (var method in actorInterface.FindValidMethods(onlyPublic: false))
             {
                 var compiler = actorCompilers.FirstOrDefault(c => c.CanCompile(method));
 
@@ -94,7 +94,7 @@ namespace Stacks.Actors.CodeGen
 
         private void GeneratePropertiesImplementation()
         {
-            foreach (var property in actorImplementation.GetType().FindValidObservableProperties(onlyPublic: false))
+            foreach (var property in actorInterface.FindValidProperties(onlyPublic: false))
             {
                 var compiler = actorCompilers.FirstOrDefault(p => p.CanCompile(property));
 

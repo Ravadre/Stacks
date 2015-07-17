@@ -75,9 +75,15 @@ namespace Stacks.Actors.CodeGen
     {
         public static MethodInfoMapping[] FindValidProxyMethods(this Type type, bool onlyPublic)
         {
+            return type.FindValidMethods(onlyPublic).Where(m => typeof(Task).IsAssignableFrom(m.Info.ReturnType)).ToArray();
+        }
+
+        public static MethodInfoMapping[] FindValidMethods(this Type type, bool onlyPublic)
+        {
             var t = type;
             var publicMethods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                 .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
+                                // .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
+                                 .Where(m => !m.IsSpecialName)
                                  .Select(m => new MethodInfoMapping(m, m, m.Name, m.Name));
 
             if (onlyPublic)
@@ -103,8 +109,8 @@ namespace Stacks.Actors.CodeGen
                     }
                 }
 
-                var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
-                                        .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
+                var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                                        .Where(m => !m.IsSpecialName)
                                         .Where(m => mappings.ContainsKey(m.Name))
                                         .Select(m => new MethodInfoMapping(m, mappings[m.Name], mappings[m.Name].Name, m.Name));
 
@@ -114,13 +120,19 @@ namespace Stacks.Actors.CodeGen
                     .ToArray();
             }
         }
-        
+
         public static PropertyInfoMapping[] FindValidObservableProperties(this Type type, bool onlyPublic)
         {
+            return type.FindValidProperties(onlyPublic).Where(p => p.Info.PropertyType.IsGenericType &&
+                                                                   typeof (IObservable<>) ==
+                                                                   p.Info.PropertyType.GetGenericTypeDefinition())
+                       .ToArray();
+        }
+
+        public static PropertyInfoMapping[] FindValidProperties(this Type type, bool onlyPublic)
+        {
             var t = type;
-            var publicProperties = t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                    .Where(p => p.PropertyType.IsGenericType &&
-                                                typeof (IObservable<>) == p.PropertyType.GetGenericTypeDefinition())
+            var publicProperties = t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                                     .Select(m => new PropertyInfoMapping(m, m, m.Name, m.Name));
 
             if (onlyPublic)
@@ -149,9 +161,7 @@ namespace Stacks.Actors.CodeGen
                      .Where(p => p.GetGetMethod(true).Name == m.Name)
                      .First();
 
-                var overridenProperties = t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic)
-                                        .Where(p => p.PropertyType.IsGenericType &&
-                                            typeof(IObservable<>) == p.PropertyType.GetGenericTypeDefinition())
+                var overridenProperties = t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                                         .Where(m => mappings.ContainsKey(m.GetMethod.Name))
                                         .Select(p => new PropertyInfoMapping(
                                                         p, 
