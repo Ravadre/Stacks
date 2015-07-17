@@ -103,6 +103,7 @@
     <Compile Include="Actors\CodeGen\FormattingExtensions.cs" />
     <Compile Include="Actors\CodeGen\IActorCompilerStrategy.cs" />
     <Compile Include="Actors\CodeGen\ActorTypeGenerator.cs" />
+    <Compile Include="Actors\CodeGen\ObservableMethodCompiler.cs" />
     <Compile Include="Actors\CodeGen\ObservablePropertiesCompiler.cs" />
     <Compile Include="Actors\CodeGen\TaskMethodsCompiler.cs" />
     <Compile Include="Actors\IActor.cs" />

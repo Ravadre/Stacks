@@ -28,7 +28,8 @@ namespace Stacks.Actors.CodeGen
             actorCompilers = new List<IActorCompilerStrategy>
             {
                 new TaskMethodsCompiler(),
-                new ObservablePropertiesCompiler()
+                new ObservablePropertiesCompiler(),
+                new ObservableMethodCompiler()
             };
 
         }
