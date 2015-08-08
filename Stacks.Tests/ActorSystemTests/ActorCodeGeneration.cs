@@ -69,6 +69,14 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.True(ctr >= 2);
         }
+
+        [Fact]
+        public async Task Actor_with_extra_method_should_not_break_compiler()
+        {
+            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ActorWithExtraMethod>();
+
+            Assert.Equal(15.0, await actor.Div(1.0, 1.0));
+        }
     }
 
     public interface ICalculatorActor
@@ -123,6 +131,20 @@ namespace Stacks.Tests.ActorSystemTests
                 throw new DivideByZeroException();
 
             return x / y;
+        }
+    }
+
+    public class ActorWithExtraMethod : Actor, ICalculatorActor
+    {
+        public async Task<double> Div(double x, double y)
+        {
+            await Context;
+            return 5.0 + TestMethod();
+        }
+
+        public int TestMethod()
+        {
+            return 10;
         }
     }
 }

@@ -39,10 +39,10 @@ namespace Stacks.Actors.CodeGen
 
     public struct MethodInfoMapping
     {
-        public MethodInfo Info { get; private set; }
-        public MethodInfo InterfaceInfo { get; private set; }
-        public string PublicName { get; private set; }
-        public string MappedName { get; private set; }
+        public MethodInfo Info { get; }
+        public MethodInfo InterfaceInfo { get; }
+        public string PublicName { get; }
+        public string MappedName { get; }
 
         public MethodInfoMapping(MethodInfo info, MethodInfo interfaceInfo, string publicName, string mappedName) 
             : this()
@@ -56,10 +56,10 @@ namespace Stacks.Actors.CodeGen
 
     public struct PropertyInfoMapping
     {
-        public PropertyInfo Info { get; private set; }
-        public PropertyInfo InterfaceInfo { get; private set; }
-        public string PublicName { get; private set; }
-        public string MappedName { get; private set; }
+        public PropertyInfo Info { get; }
+        public PropertyInfo InterfaceInfo { get; }
+        public string PublicName { get; }
+        public string MappedName { get; }
 
         public PropertyInfoMapping(PropertyInfo propInfo, PropertyInfo interfacePropInfo, string publicName, string mappedName)
             : this()
