@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public abstract class Actor : IActor, IScheduler
+    public abstract class Actor : IActor
     {
         private readonly ActorContext context;
         private string name;
