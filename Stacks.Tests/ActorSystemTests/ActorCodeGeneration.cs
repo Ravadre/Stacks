@@ -77,9 +77,17 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.Equal(15.0, await actor.Div(1.0, 1.0));
         }
+
+        [Fact]
+        public async Task Actor_through_IActor_interface_should_return_valid_actor_name()
+        {
+            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ActorWithExtraMethod>("Custom actor name");
+
+            Assert.Equal("Custom actor name", actor.Name);
+        }
     }
 
-    public interface ICalculatorActor
+    public interface ICalculatorActor : IActor
     {
         Task<double> Div(double x, double y);
     }

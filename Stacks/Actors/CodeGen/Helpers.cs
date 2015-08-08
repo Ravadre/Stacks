@@ -82,7 +82,6 @@ namespace Stacks.Actors.CodeGen
         {
             var t = type;
             var publicMethods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                // .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
                                  .Where(m => !m.IsSpecialName)
                                  .Select(m => new MethodInfoMapping(m, m, m.Name, m.Name));
 
@@ -101,14 +100,18 @@ namespace Stacks.Actors.CodeGen
                 // To check for this case, interface maps are checked.
                 // This makes standard interface implementation pattern for F# viable
                 // for server side proxies.
-                foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
+                if (!t.IsInterface)
                 {
-                    for (var i = 0; i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length); ++i)
+                    foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
                     {
-                        mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        for (var i = 0;
+                            i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length);
+                            ++i)
+                        {
+                            mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        }
                     }
                 }
-
                 var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                                         .Where(m => !m.IsSpecialName)
                                         .Where(m => mappings.ContainsKey(m.Name))
@@ -148,18 +151,22 @@ namespace Stacks.Actors.CodeGen
                 // To check for this case, interface maps are checked.
                 // This makes standard interface implementation pattern for F# viable
                 // for server side proxies.
-                foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
+                if (!t.IsInterface)
                 {
-                    for (var i = 0; i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length); ++i)
+                    foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
                     {
-                        mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        for (var i = 0;
+                            i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length);
+                            ++i)
+                        {
+                            mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        }
                     }
                 }
-
                 Func<MethodInfo, PropertyInfo> findPropByGetMethod = m =>
-                    m.DeclaringType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                     .Where(p => p.GetGetMethod(true).Name == m.Name)
-                     .First();
+                    m.DeclaringType
+                     .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                     .First(p => p.GetGetMethod(true).Name == m.Name);
 
                 var overridenProperties = t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                                         .Where(m => mappings.ContainsKey(m.GetMethod.Name))

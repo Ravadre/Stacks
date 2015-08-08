@@ -144,6 +144,8 @@ namespace Stacks.Actors
             EnsureInheritsActor<T>();
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
+            (actorImplementation as Actor)?.SetName(name);
+
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
             RegisterActorToSystem(actorWrapper, name);
             return actorWrapper;
