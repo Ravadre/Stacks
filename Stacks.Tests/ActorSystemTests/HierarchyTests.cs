@@ -10,6 +10,11 @@ namespace Stacks.Tests.ActorSystemTests
 {
     public class HierarchyTests
     {
+        public HierarchyTests()
+        {
+            ActorSystem.Default.ResetSystem();
+        }
+
         [Fact]
         public void Actor_without_parent_should_have_RootActor_set_as_parent()
         {

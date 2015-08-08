@@ -16,7 +16,7 @@ namespace Stacks.Actors
 
         static ActorSystem()
         {
-            Default = new ActorSystem("Default");
+            Default = new ActorSystem("default");
         }
 
         public string SystemName { get; }
