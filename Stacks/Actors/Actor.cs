@@ -11,7 +11,6 @@ namespace Stacks.Actors
     public abstract class Actor : IActor
     {
         private readonly ActorContext context;
-        private string name;
 
         protected Actor()
             : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
@@ -36,10 +35,10 @@ namespace Stacks.Actors
             context = new ActorContext(executor);
         }
 
-        internal void SetName(string name)
+        internal void SetName(string newName)
         {
-            this.name = name;
-            context.SetName(name);
+            Name = newName;
+            context.SetName(newName);
         }
 
         protected IActorContext Context => context;
@@ -47,18 +46,7 @@ namespace Stacks.Actors
         protected Task Completion => context.Completion;
         protected Task Stop() => context.Stop();
 
-        public bool Named => name != null;
-        public string Name => name;
-
-        public DateTimeOffset Now => ((IScheduler) context).Now;
-
-        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime,
-            Func<IScheduler, TState, IDisposable> action) => context.Schedule(state, dueTime, action);
-
-        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
-            => context.Schedule(state, dueTime, action);
-
-        public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
-            => context.Schedule(state, action);
+        public bool Named => Name != null;
+        public string Name { get; private set; }
     }
 }
