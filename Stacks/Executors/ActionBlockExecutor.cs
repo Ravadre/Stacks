@@ -19,7 +19,7 @@ namespace Stacks
         private readonly bool supportSynchronizationContext;
         private volatile bool stopImmediately;
 
-        public Task Completion { get { return queue.Completion; } }
+        public Task Completion => queue.Completion;
         public event Action<Exception> Error;
         public string Name { get; set; }
 
@@ -84,11 +84,13 @@ namespace Stacks
 
         private void OnError(Exception e)
         {
-            var h = Error;
-            if (h != null)
+            try
             {
-                try { h(e); }
-                catch { }
+                Error?.Invoke(e);
+            }
+            catch
+            { 
+                // Ignore 
             }
         }
 

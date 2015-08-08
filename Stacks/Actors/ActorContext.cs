@@ -8,34 +8,30 @@ namespace Stacks.Actors
 {
     internal class ActorContext : IActorContext
     {
+        private readonly Actor actor;
         private readonly IExecutor executor;
         private string name;
 
-        public ActorContext()
-            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
+        public ActorContext(Actor actor)
+            : this(actor, new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         {
         }
 
-        public ActorContext(ActorContextSettings settings)
-            : this(
+        public ActorContext(Actor actor, ActorContextSettings settings)
+            : this(actor,
                 new ActionBlockExecutor(ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext))
                 )
         {
         }
 
-        public ActorContext(IExecutor executor)
+        public ActorContext(Actor actor, IExecutor executor)
         {
+            this.actor = actor;
             this.executor = executor;
         }
 
         public Task Completion => executor.Completion;
-
-        public event Action<Exception> Error
-        {
-            add { executor.Error += value; }
-            remove { executor.Error -= value; }
-        }
-
+        
         public Task Stop(bool stopImmediately)
         {
             return executor.Stop(stopImmediately);
@@ -102,16 +98,6 @@ namespace Stacks.Actors
             return name == null
                 ? "Dispatcher context"
                 : $"Dispatcher context ({name})";
-        }
-
-        public static ActorContext FromCurrentSynchronizationContext()
-        {
-            var context = SynchronizationContext.Current;
-
-            if (context == null)
-                throw new InvalidOperationException("No Synchronization context is set");
-
-            return new ActorContext(new CapturedContextExecutor(context));
         }
     }
 }

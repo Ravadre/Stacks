@@ -24,7 +24,5 @@ namespace Stacks.Actors
         Task Stop(bool stopImmediately);
 
         SynchronizationContext SynchronizationContext { get; }
-
-        event Action<Exception> Error;
     }
 }

@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;DEBUG_CODEGEN</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -127,6 +127,7 @@
     <Compile Include="Actors\Remote\IActorServerProxy.cs" />
     <Compile Include="Actors\Remote\IActorSession.cs" />
     <Compile Include="Actors\Remote\IReplyMessage.cs" />
+    <Compile Include="Actors\RootActor.cs" />
     <Compile Include="Client\Tcp\FramedClient.cs" />
     <Compile Include="Client\FramedClientBuffer.cs" />
     <Compile Include="Client\IFramedClient.cs" />

@@ -9,5 +9,6 @@ namespace Stacks.Actors
     public interface IActor
     {
         string Name { get; }
+        IActor Parent { get; }
     }
 }

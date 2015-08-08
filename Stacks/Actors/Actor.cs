@@ -12,6 +12,8 @@ namespace Stacks.Actors
     {
         private readonly ActorContext context;
 
+        public IActor Parent { get; private set; }
+
         protected Actor()
             : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         {
@@ -32,13 +34,18 @@ namespace Stacks.Actors
                     $"Tried to created actor of {GetType().FullName} using constructor. Please, use ActorSystem.CreateActor method instead.");
             }
 
-            context = new ActorContext(executor);
+            context = new ActorContext(this, executor);
         }
 
         internal void SetName(string newName)
         {
             Name = newName;
             context.SetName(newName);
+        }
+
+        internal void SetParent(IActor parentActor)
+        {
+            Parent = parentActor;
         }
 
         protected IActorContext Context => context;

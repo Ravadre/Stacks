@@ -40,6 +40,7 @@ namespace Stacks.Actors
         private void Initialize()
         {
             registeredActors = new ConcurrentDictionary<string, IActor>();
+            CreateActor<IRootActor, RootActor>("root");
         }
 
         private Type GuessActorInterfaceType<T>()
@@ -60,18 +61,18 @@ namespace Stacks.Actors
                 " - It must begin with \"I\" followed by implementation name"));
         }
 
-        public IActor CreateActor<T>(Func<T> implementationProvider, string name = null)
+        public IActor CreateActor<T>(Func<T> implementationProvider, string name = null, IActor parent = null)
             where T : class
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor(interfaceType, implementationProvider, name);
+            return (IActor)CreateActor(interfaceType, implementationProvider, name, parent);
         }
 
-        public IActor CreateActor<T>(string name = null)
+        public IActor CreateActor<T>(string name = null, IActor parent = null)
             where T : class, new()
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor(interfaceType, () => new T(), name);
+            return (IActor)CreateActor(interfaceType, () => new T(), name, parent);
         }
 
 
@@ -83,12 +84,13 @@ namespace Stacks.Actors
         /// </summary>
         /// <typeparam name="TImpl">Actor implementation type.</typeparam>
         /// <typeparam name="I">Actor interface.</typeparam>
+        /// <param name="parent">Reference to a parent actor.</param>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<I, TImpl>(string name = null)
+        public I CreateActor<I, TImpl>(string name = null, IActor parent = null)
             where TImpl : class, I, new()
         {
-            return (I)CreateActor(typeof(I), () => new TImpl(), name);
+            return (I)CreateActor(typeof(I), () => new TImpl(), name, parent);
         }
 
         /// <summary>
@@ -100,23 +102,24 @@ namespace Stacks.Actors
         /// <typeparam name="TImpl">Actor implementation type.</typeparam>
         /// <typeparam name="I">Actor interface</typeparam>
         /// <param name="implementationProvider">Actual implementation of an actor. Must inherit from Actor class.</param>
+        /// <param name="parent">Reference to a parent actor.</param>
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
-        public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null)
+        public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null, IActor parent = null)
             where TImpl: class, I
             //where I: IActor
         {
-            return (I)CreateActor(typeof (I), implementationProvider, name);
+            return (I)CreateActor(typeof (I), implementationProvider, name, parent);
         }
 
         /// <summary>
         /// Returns reference to already created actor. Actors that were created without name can not be accessed.
         /// </summary>
-        /// <typeparam name="T">Actor's interface type.</typeparam>
+        /// <typeparam name="I">Actor's interface type.</typeparam>
         /// <param name="name">Name of actor. Required.</param>
         /// <returns></returns>
-        public T GetActor<T>(string name)
-            where T: class
+        public I GetActor<I>(string name)
+            where I: class
         {
             Ensure.IsNotNull(name, nameof(name));
 
@@ -127,24 +130,30 @@ namespace Stacks.Actors
                     $"Could not get actor with name {name}. It was not previously created in system {SystemName}");
             }
 
-            var actorTyped = actor as T;
+            var actorTyped = actor as I;
             if (actorTyped == null)
             {
                 throw new Exception(
-                    $"Received actor {name} in system {SystemName}. However, it does not implement interface {typeof (T).FullName}");
+                    $"Received actor {name} in system {SystemName}. However, it does not implement interface {typeof (I).FullName}");
             }
 
             return actorTyped;
         }
 
-        private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name = null)
+        private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name, IActor parent)
             where T: class
         {
             Ensure.IsNotNull(implementationProvider, nameof(implementationProvider));
             EnsureInheritsActor<T>();
 
+            if (parent == null && name != "root")
+            {
+                parent = GetActor<IRootActor>("root");
+            }
+
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
             (actorImplementation as Actor)?.SetName(name);
+            (actorImplementation as Actor)?.SetParent(parent);
 
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
             RegisterActorToSystem(actorWrapper, name);

@@ -10,6 +10,7 @@ namespace Stacks.Actors.CodeGen
     {
         protected readonly IActor actorImplementation;
         public string Name => actorImplementation.Name;
+        public IActor Parent => actorImplementation.Parent;
 
         public ActorWrapperBase(IActor actorImplementation)
         {
