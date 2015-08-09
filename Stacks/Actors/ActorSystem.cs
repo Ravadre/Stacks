@@ -153,19 +153,20 @@ namespace Stacks.Actors
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
             RegisterActorToSystem(actorWrapper, name);
 
-            ConnectActorsAndSetName(actorImplementation, actorWrapper, parent, name);
+            SetActorProperties(actorImplementation, actorWrapper, parent, name);
 
-            actorImplementation.Start().Wait();
+            actorImplementation.Start();
 
             return actorWrapper;
         }
 
-        private static void ConnectActorsAndSetName(Actor actor, IActor actorWrapper, IActor parent, string name)
+        private void SetActorProperties(Actor actor, IActor actorWrapper, IActor parent, string name)
         {
             var parentWrapper = parent as ActorWrapperBase;
 
             actor.SetName(name);
             actor.SetParent(parent);
+            actor.SetActorSystem(this);
             if (parent != null)
             {
                 if (parentWrapper == null)
@@ -223,6 +224,18 @@ namespace Stacks.Actors
             if (!typeof(Actor).IsAssignableFrom(typeof(TImpl)))
                 throw new Exception(
                     $"Implementation type (TImpl) is of type {typeof (TImpl).FullName} which does not inherits from Stacks.Actors.Actor.");
+        }
+
+        internal void KillActor(Actor actor)
+        {
+            if (actor.Named)
+            {
+                IActor a;
+                registeredActors.TryRemove(actor.Name, out a);
+            }
+
+            (actor.Parent as ActorWrapperBase)?.ActorImplementation.RemoveChild(actor);
+            actor.SetParent(null);
         }
     }
 }

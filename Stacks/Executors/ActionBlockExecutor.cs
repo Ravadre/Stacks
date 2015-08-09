@@ -112,8 +112,8 @@ namespace Stacks
 
         public Task Stop(bool stopImmediately)
         {
-            queue.Complete();
             this.stopImmediately = stopImmediately;
+            queue.Complete();
             return queue.Completion;
         }
 

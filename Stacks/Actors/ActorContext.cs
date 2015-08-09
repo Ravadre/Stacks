@@ -36,12 +36,7 @@ namespace Stacks.Actors
         {
             return executor.Stop(stopImmediately);
         }
-
-        public Task Stop()
-        {
-            return Stop(false);
-        }
-
+        
         public void Post(Action action)
         {
             executor.Enqueue(action);

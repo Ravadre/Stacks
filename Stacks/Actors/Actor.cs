@@ -15,8 +15,10 @@ namespace Stacks.Actors
 
         public IActor Parent { get; private set; }
         public IEnumerable<IActor> Childs => childs.Keys;
+        public ActorSystem System { get; private set; }
          
-        private readonly ConcurrentDictionary<IActor, IActor> childs; 
+        private readonly ConcurrentDictionary<IActor, IActor> childs;
+        internal IActor Wrapper;
 
         /// <summary>
         /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
@@ -47,7 +49,8 @@ namespace Stacks.Actors
             if (!ActorCtorGuardian.IsGuarded())
             {
                 throw new Exception(
-                    $"Tried to created actor of {GetType().FullName} using constructor. Please, use ActorSystem.CreateActor method instead.");
+                    $"Tried to created actor of {GetType().FullName} using constructor. Please, use " + 
+                    $"{nameof(ActorSystem)}.{nameof(ActorSystem.CreateActor)} method instead.");
             }
 
             childs = new ConcurrentDictionary<IActor, IActor>();
@@ -55,22 +58,44 @@ namespace Stacks.Actors
             context = new ActorContext(this, executor);
         }
 
-        protected virtual Task OnStart()
+        protected virtual void OnStart()
         {
-            return Task.FromResult(0);
+        }
+        
+        protected virtual void OnStopped()
+        {
         }
 
-        internal async Task Start()
+        internal void Start()
         {
             try
             {
-                await OnStart();
+                OnStart();
             }
             catch (Exception exn)
             {
                 throw new Exception($"Error occured when actor was starting. Actor: '{Name}' - {GetType().FullName}. See inner exception for details.", exn);
             }
         }
+
+        protected void Stop(bool stopImmediately = false)
+        {
+            var stopTask = context.Stop(stopImmediately);
+
+            stopTask.ContinueWith(t =>
+            {
+                System.KillActor(this);
+
+                try
+                {
+                    OnStopped();
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
+            });
+        } 
 
 
         internal void SetName(string newName)
@@ -95,12 +120,29 @@ namespace Stacks.Actors
             }
         }
 
+        internal void SetWrapper(IActor actorWrapper)
+        {
+            Wrapper = actorWrapper;
+        }
+
+        internal void RemoveChild(IActor childActor)
+        {
+            Ensure.IsNotNull(childActor, nameof(childActor));
+            IActor a;
+            childs.TryRemove(childActor, out a);
+        }
+
+        internal void SetActorSystem(ActorSystem system)
+        {
+            System = system;
+        }
+
         protected IActorContext Context => context;
         protected SynchronizationContext GetActorSynchronizationContext() => context.SynchronizationContext;
         protected Task Completion => context.Completion;
-        protected Task Stop() => context.Stop();
-
+       
         public bool Named => Name != null;
         public string Name { get; private set; }
+
     }
 }
