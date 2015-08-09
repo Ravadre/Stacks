@@ -23,7 +23,6 @@ namespace Stacks
         public event Action<Exception> Error;
         public string Name { get; set; }
 
-
         public ActionBlockExecutor(string name)
             : this(name, new ActionBlockExecutorSettings())
         { }
@@ -35,8 +34,8 @@ namespace Stacks
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
             Name = name;
-            this.supportSynchronizationContext = settings.SupportSynchronizationContext;
-            this.queue = new ActionBlock<Action>(a =>
+            supportSynchronizationContext = settings.SupportSynchronizationContext;
+            queue = new ActionBlock<Action>(a =>
             {
                 if (stopImmediately) return;
 
@@ -55,7 +54,7 @@ namespace Stacks
         private void ExecuteAction(Action a)
         {
             SynchronizationContext oldCtx = null;
-            if (this.supportSynchronizationContext)
+            if (supportSynchronizationContext)
             {
                 oldCtx = SynchronizationContext.Current;
                 SynchronizationContext.SetSynchronizationContext(this);
@@ -71,7 +70,7 @@ namespace Stacks
             }
             finally
             {
-                if (this.supportSynchronizationContext)
+                if (supportSynchronizationContext)
                     SynchronizationContext.SetSynchronizationContext(oldCtx);
             }
         }
@@ -79,7 +78,6 @@ namespace Stacks
         private void ErrorOccured(Exception e)
         {
             OnError(e);
-            this.queue.Complete();
         }
 
         private void OnError(Exception e)
@@ -94,7 +92,7 @@ namespace Stacks
             }
         }
 
-        public Task<System.Reactive.Unit> PostTask(Action action)
+        public Task<Unit> PostTask(Action action)
         {
             return ExecutorHelper.PostTask(this, action);
         }
@@ -132,7 +130,7 @@ namespace Stacks
         {
             get
             {
-                if (!this.supportSynchronizationContext)
+                if (!supportSynchronizationContext)
                     throw new InvalidOperationException("This instance of action block executor " +
                                                         "does not support synchronization context");
                 return this;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -45,7 +46,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             Assert.Throws<Exception>(() =>
             {
-                var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
+                ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
             });
         }
 
@@ -54,7 +55,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             try
             {
-                var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
+                ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
             }
             catch
             {}
@@ -68,14 +69,14 @@ namespace Stacks.Tests.ActorSystemTests
         {
             try
             {
-                var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
+                ActorSystem.Default.CreateActor<ICalculatorActor, ThrowsOnStartActor>("ac");
             }
             catch
             { }
 
             Assert.Throws<Exception>(() =>
             {
-                var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
+                ActorSystem.Default.GetActor<ICalculatorActor>("ac");
             });
 
         }
@@ -97,6 +98,24 @@ namespace Stacks.Tests.ActorSystemTests
                 var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
             });
             Assert.Equal(0, root.Childs.Count());
+        }
+
+        [Fact]
+        public async Task If_actor_method_throws_actor_should_be_stopped()
+        {
+            var stoppedEvent = new ManualResetEventSlim();
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+
+            await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await actor.Throw("test error");
+            });
+            
+            Assert.True(stoppedEvent.Wait(1000));
+            Assert.Throws<Exception>(() =>
+            {
+                var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
+            });
         }
     }
 
@@ -158,6 +177,12 @@ namespace Stacks.Tests.ActorSystemTests
 
             Stop(true);
             return x + offset + y;
+        }
+
+        public async Task<double> Throw(string msg)
+        {
+            await Context;
+            throw new Exception(msg);
         }
     }
 }

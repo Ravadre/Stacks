@@ -11,7 +11,9 @@ namespace Stacks.Actors
 {
     public abstract class Actor : IActor
     {
+        private readonly IExecutor executor;
         private readonly ActorContext context;
+        internal IActor Wrapper { get; private set; }
 
         public IActor Parent { get; private set; }
         public IEnumerable<IActor> Childs => childs.Keys;
@@ -19,8 +21,7 @@ namespace Stacks.Actors
          
         private readonly ConcurrentDictionary<IActor, IActor> childs;
 
-        internal IActor Wrapper { get; private set; }
-
+       
         /// <summary>
         /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
         /// dependencied may not be registered to ActorSystem. 
@@ -47,6 +48,8 @@ namespace Stacks.Actors
 
         private Actor(IExecutor executor)
         {
+            this.executor = executor;
+
             if (!ActorCtorGuardian.IsGuarded())
             {
                 throw new Exception(
@@ -56,7 +59,13 @@ namespace Stacks.Actors
 
             childs = new ConcurrentDictionary<IActor, IActor>();
 
-            context = new ActorContext(this, executor);
+            executor.Error += ErrorOccuredInExecutor;
+            context = new ActorContext(executor);
+        }
+
+        private void ErrorOccuredInExecutor(Exception exn)
+        {
+            Stop(true);
         }
 
         protected virtual void OnStart()

@@ -8,25 +8,22 @@ namespace Stacks.Actors
 {
     internal class ActorContext : IActorContext
     {
-        private readonly Actor actor;
         private readonly IExecutor executor;
         private string name;
 
-        public ActorContext(Actor actor)
-            : this(actor, new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
+        public ActorContext()
+            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         {
         }
 
-        public ActorContext(Actor actor, ActorContextSettings settings)
-            : this(actor,
-                new ActionBlockExecutor(ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext))
+        public ActorContext(ActorContextSettings settings)
+            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext))
                 )
         {
         }
 
-        public ActorContext(Actor actor, IExecutor executor)
+        public ActorContext(IExecutor executor)
         {
-            this.actor = actor;
             this.executor = executor;
         }
 
