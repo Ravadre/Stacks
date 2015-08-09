@@ -152,12 +152,35 @@ namespace Stacks.Actors
             }
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
-            (actorImplementation as Actor)?.SetName(name);
-            (actorImplementation as Actor)?.SetParent(parent);
-
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
             RegisterActorToSystem(actorWrapper, name);
+
+            ConnectActorsAndSetName(actorImplementation, parent, name);
+
             return actorWrapper;
+        }
+
+        private static void ConnectActorsAndSetName(object actorImplementation, IActor parent, string name)
+        {
+            var actor = actorImplementation as Actor;
+            var parentWrapper = parent as ActorWrapperBase;
+
+            if (actor == null)
+            {
+                throw new Exception($"Could not cast actor implementation {actorImplementation.GetType().FullName} to Actor");
+            }
+            
+            actor.SetName(name);
+            actor.SetParent(parent);
+            if (parent != null)
+            {
+                if (parentWrapper == null)
+                {
+                    throw new Exception($"Could not cast parent actor {parent.GetType().FullName} to ActorWrapperBase");
+                }
+
+                parentWrapper.ActorImplementation.AddChild(actor);
+            }
         }
 
         private IActor CreateActorWrapper(object actorImplementation, Type actorInterface)

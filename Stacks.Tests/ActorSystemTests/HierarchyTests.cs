@@ -32,6 +32,17 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.Null(actor.Parent.Parent);
         }
+
+        [Fact]
+        public void New_actors_that_derive_from_root_should_be_added_to_roots_childs()
+        {
+            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("calc");
+            var actor2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("calc2");
+
+            Assert.IsAssignableFrom<IRootActor>(actor.Parent);
+            Assert.IsAssignableFrom<IRootActor>(actor2.Parent);
+            Assert.Equal(2, actor.Parent.Childs.Count());
+        }
     }
     
 }

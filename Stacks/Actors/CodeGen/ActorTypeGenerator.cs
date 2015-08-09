@@ -114,13 +114,13 @@ namespace Stacks.Actors.CodeGen
         private void ImplementWrapperConstructor()
         {
             var ctor = wrapperBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.SpecialName, CallingConventions.HasThis,
-                new[] {typeof (IActor)});
+                new[] {typeof (Actor)});
 
             var il = ctor.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Call, typeof(ActorWrapperBase).GetConstructor(new [] { typeof(IActor) }));
+            il.Emit(OpCodes.Call, typeof(ActorWrapperBase).GetConstructor(new [] { typeof(Actor) }));
             il.Emit(OpCodes.Ret);
         }
 

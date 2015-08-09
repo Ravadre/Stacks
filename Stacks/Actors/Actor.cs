@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
@@ -13,6 +14,9 @@ namespace Stacks.Actors
         private readonly ActorContext context;
 
         public IActor Parent { get; private set; }
+        public IEnumerable<IActor> Childs => childs.Keys;
+         
+        private readonly ConcurrentDictionary<IActor, IActor> childs; 
 
         protected Actor()
             : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
@@ -34,6 +38,8 @@ namespace Stacks.Actors
                     $"Tried to created actor of {GetType().FullName} using constructor. Please, use ActorSystem.CreateActor method instead.");
             }
 
+            childs = new ConcurrentDictionary<IActor, IActor>();
+
             context = new ActorContext(this, executor);
         }
 
@@ -46,6 +52,17 @@ namespace Stacks.Actors
         internal void SetParent(IActor parentActor)
         {
             Parent = parentActor;
+        }
+
+        internal void AddChild(IActor childActor)
+        {
+            Ensure.IsNotNull(childActor, nameof(childActor));
+
+            if (!childs.TryAdd(childActor, childActor))
+            {
+                throw new InvalidOperationException($"Tried to add child to actor '{Name}' - {GetType().FullName}. " + 
+                    $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");   
+            }
         }
 
         protected IActorContext Context => context;
