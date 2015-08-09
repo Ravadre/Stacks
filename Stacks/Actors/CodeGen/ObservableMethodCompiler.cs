@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -37,16 +38,22 @@ namespace Stacks.Actors.CodeGen
             }
 
             var il = mBuilder.GetILGenerator();
-
-            il.Emit(OpCodes.Ldarg_0);
-            il.Emit(OpCodes.Ldfld, typeof(ActorWrapperBase).GetField("actorImplementation", BindingFlags.Instance | BindingFlags.NonPublic));
-            il.Emit(OpCodes.Castclass, actorInterface);
-            for (var i = 1; i <= mi.GetParameters().Length; ++i)
+            // ((actorInterface)base.actorImplementation).method(params...)
             {
-                il.Emit(OpCodes.Ldarg, i);
+                il.Emit(OpCodes.Ldarg_0);
+                il.Emit(OpCodes.Ldfld,
+                    typeof (ActorWrapperBase).GetField("actorImplementation",
+                        BindingFlags.Instance | BindingFlags.NonPublic));
+                il.Emit(OpCodes.Castclass, actorInterface);
+                for (var i = 1; i <= mi.GetParameters().Length; ++i)
+                {
+                    il.Emit(OpCodes.Ldarg, i);
+                }
+                il.EmitCall(OpCodes.Call, mi, null);
             }
 
-            il.EmitCall(OpCodes.Call, mi, null);
+            //il.EmitCall(OpCodes.Call);
+
             il.Emit(OpCodes.Ret);
         }
 

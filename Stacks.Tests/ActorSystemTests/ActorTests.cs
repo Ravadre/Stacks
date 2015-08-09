@@ -184,5 +184,10 @@ namespace Stacks.Tests.ActorSystemTests
             await Context;
             throw new Exception(msg);
         }
+
+        public async Task NoOp()
+        {
+            await Context;
+        }
     }
 }

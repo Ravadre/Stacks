@@ -68,6 +68,11 @@ namespace Stacks.Actors
             Stop(true);
         }
 
+        internal void ErrorOccuredInMethod(string methodName, Exception exn)
+        {
+            Stop(true);
+        }
+
         protected virtual void OnStart()
         {
         }

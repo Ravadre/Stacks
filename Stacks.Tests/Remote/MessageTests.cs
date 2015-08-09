@@ -96,7 +96,7 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public void Errors_on_server_side_methods_should_not_disconnect_client()
+        public async Task If_actor_throws_on_server_and_is_stopped_it_should_throw_for_client_proxy()
         {
             Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
@@ -109,7 +109,10 @@ namespace Stacks.Tests.Remote
                 Assert.Equal("Custom fail message", exc.InnerException.Message);
             }
 
-            client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312).Wait();
+            await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312);
+            });
         }
 
         [Fact]
