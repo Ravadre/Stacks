@@ -53,7 +53,7 @@ namespace Stacks.Actors
             if (!ActorCtorGuardian.IsGuarded())
             {
                 throw new Exception(
-                    $"Tried to created actor of {GetType().FullName} using constructor. Please, use " + 
+                    $"Tried to create an actor of type {GetType().FullName} using constructor. Please, use " + 
                     $"{nameof(ActorSystem)}.{nameof(ActorSystem.CreateActor)} method instead.");
             }
 
