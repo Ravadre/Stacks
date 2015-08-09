@@ -108,6 +108,7 @@
     </Compile>
     <Compile Include="ActorSystemTests\ActorCodeGeneration.cs" />
     <Compile Include="ActorSystemTests\ActorSystemCreate.cs" />
+    <Compile Include="ActorSystemTests\ActorTests.cs" />
     <Compile Include="ActorSystemTests\HierarchyTests.cs" />
     <Compile Include="ActorSystemTests\TestActors.cs" />
     <Compile Include="Client\ReactiveMessageClientTests.cs" />

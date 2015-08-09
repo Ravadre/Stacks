@@ -18,11 +18,23 @@ namespace Stacks.Actors
          
         private readonly ConcurrentDictionary<IActor, IActor> childs; 
 
+        /// <summary>
+        /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
+        /// dependencied may not be registered to ActorSystem. 
+        /// <para></para>
+        /// Use OnStart() method to instead.
+        /// </summary>
         protected Actor()
             : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         {
         }
 
+        /// <summary>
+        /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
+        /// dependencied may not be registered to ActorSystem. 
+        /// <para></para>
+        /// Use OnStart() method to instead.
+        /// </summary>
         protected Actor(ActorSettings settings)
             : this(
                 new ActionBlockExecutor(
@@ -42,6 +54,24 @@ namespace Stacks.Actors
 
             context = new ActorContext(this, executor);
         }
+
+        protected virtual Task OnStart()
+        {
+            return Task.FromResult(0);
+        }
+
+        internal async Task Start()
+        {
+            try
+            {
+                await OnStart();
+            }
+            catch (Exception exn)
+            {
+                throw new Exception($"Error occured when actor was starting. Actor: '{Name}' - {GetType().FullName}. See inner exception for details.", exn);
+            }
+        }
+
 
         internal void SetName(string newName)
         {

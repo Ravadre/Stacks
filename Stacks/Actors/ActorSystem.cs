@@ -62,14 +62,14 @@ namespace Stacks.Actors
         }
 
         public IActor CreateActor<T>(Func<T> implementationProvider, string name = null, IActor parent = null)
-            where T : class
+            where T : Actor
         {
             var interfaceType = GuessActorInterfaceType<T>();
             return (IActor)CreateActor(interfaceType, implementationProvider, name, parent);
         }
 
         public IActor CreateActor<T>(string name = null, IActor parent = null)
-            where T : class, new()
+            where T : Actor, new()
         {
             var interfaceType = GuessActorInterfaceType<T>();
             return (IActor)CreateActor(interfaceType, () => new T(), name, parent);
@@ -88,7 +88,7 @@ namespace Stacks.Actors
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
         public I CreateActor<I, TImpl>(string name = null, IActor parent = null)
-            where TImpl : class, I, new()
+            where TImpl : Actor, I, new()
         {
             return (I)CreateActor(typeof(I), () => new TImpl(), name, parent);
         }
@@ -106,8 +106,7 @@ namespace Stacks.Actors
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
         public I CreateActor<I, TImpl>(Func<TImpl> implementationProvider, string name = null, IActor parent = null)
-            where TImpl: class, I
-            //where I: IActor
+            where TImpl: Actor, I
         {
             return (I)CreateActor(typeof (I), implementationProvider, name, parent);
         }
@@ -141,10 +140,9 @@ namespace Stacks.Actors
         }
 
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name, IActor parent)
-            where T: class
+            where T: Actor
         {
             Ensure.IsNotNull(implementationProvider, nameof(implementationProvider));
-            EnsureInheritsActor<T>();
 
             if (parent == null && name != "root")
             {
@@ -157,19 +155,15 @@ namespace Stacks.Actors
 
             ConnectActorsAndSetName(actorImplementation, actorWrapper, parent, name);
 
+            actorImplementation.Start().Wait();
+
             return actorWrapper;
         }
 
-        private static void ConnectActorsAndSetName(object actorImplementation, IActor actorWrapper, IActor parent, string name)
+        private static void ConnectActorsAndSetName(Actor actor, IActor actorWrapper, IActor parent, string name)
         {
-            var actor = actorImplementation as Actor;
             var parentWrapper = parent as ActorWrapperBase;
 
-            if (actor == null)
-            {
-                throw new Exception($"Could not cast actor implementation {actorImplementation.GetType().FullName} to Actor");
-            }
-            
             actor.SetName(name);
             actor.SetParent(parent);
             if (parent != null)

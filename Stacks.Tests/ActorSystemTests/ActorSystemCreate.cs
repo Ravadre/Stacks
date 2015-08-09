@@ -43,15 +43,6 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
-        public void Creating_actor_that_does_not_inherit_from_Actor_class_should_throw()
-        {
-            Assert.Throws<Exception>(() =>
-            {
-                var actor = ActorSystem.Default.CreateActor<ITestActor, NotAnActor>("Name");
-            });
-        }
-
-        [Fact]
         public void When_creating_actor_without_specyfing_interface_it_should_be_guessed()
         {
             var actor = ActorSystem.Default.CreateActor<TestActor>("Name");

@@ -11,27 +11,27 @@ namespace Stacks.Actors
         private static ServerActorTypeBuilder tBuilder;
 
         public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint)
-            where T : class, I, new()
+            where T : Actor, I, new()
         {
             return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), bindEndPoint,
                 ActorServerProxyOptions.Default);
         }
 
         public static IActorServerProxy Create<I, T>(string bindEndPoint)
-            where T : class, I, new()
+            where T : Actor, I, new()
         {
             return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), IPHelpers.Parse(bindEndPoint),
                 ActorServerProxyOptions.Default);
         }
 
         public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint, ActorServerProxyOptions options)
-            where T : class, I, new()
+            where T : Actor, I, new()
         {
             return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), bindEndPoint, options);
         }
 
         public static IActorServerProxy Create<I, T>(string bindEndPoint, ActorServerProxyOptions options)
-            where T : class, I, new()
+            where T : Actor, I, new()
         {
             return Create(ActorSystem.Default.CreateActor<I, T>(() => new T()), IPHelpers.Parse(bindEndPoint), options);
         }
