@@ -119,8 +119,7 @@ namespace Stacks.Tcp
 
             try
             {
-                if (acceptArgs != null)
-                    acceptArgs.Dispose();
+                acceptArgs?.Dispose();
             }
             catch { }
         }

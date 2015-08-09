@@ -18,7 +18,8 @@ namespace Stacks.Actors
         public ActorSystem System { get; private set; }
          
         private readonly ConcurrentDictionary<IActor, IActor> childs;
-        internal IActor Wrapper;
+
+        internal IActor Wrapper { get; private set; }
 
         /// <summary>
         /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all

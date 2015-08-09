@@ -106,6 +106,7 @@
     <Compile Include="Actors\CodeGen\ObservableMethodCompiler.cs" />
     <Compile Include="Actors\CodeGen\ObservablePropertiesCompiler.cs" />
     <Compile Include="Actors\CodeGen\TaskMethodsCompiler.cs" />
+    <Compile Include="Actors\Exceptions.cs" />
     <Compile Include="Actors\IActor.cs" />
     <Compile Include="Actors\Remote\ActorClientProxy.cs" />
     <Compile Include="Actors\Remote\ActorClientProxyOptions.cs" />

@@ -107,7 +107,13 @@ namespace Stacks
         public void Enqueue(Action action)
         {
             if (!queue.Post(action))
-                queue.SendAsync(action).Wait();
+            {
+                if (!queue.SendAsync(action).Result)
+                {
+                    //TODO: Inspect why throwing exception here will randomly fail tests.
+                }
+            }
+                
         }
 
         public Task Stop(bool stopImmediately)

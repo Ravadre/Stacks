@@ -12,6 +12,12 @@ namespace Stacks.Tests.ActorSystemTests
         Task<double> Div(double x, double y);
     }
 
+    public interface ICalculatorExActor : IActor
+    {
+        Task<double> Div(double x, double y);
+        Task<double> AddThenStop(double x, double y);
+    }
+
     public interface ISingleMethodActor
     {
         Task<int> Test();

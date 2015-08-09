@@ -155,7 +155,16 @@ namespace Stacks.Actors
 
             SetActorProperties(actorImplementation, actorWrapper, parent, name);
 
-            actorImplementation.Start();
+            try
+            {
+                actorImplementation.Start();
+            }
+            catch (Exception)
+            {
+                KillActor(actorImplementation);
+                throw;
+            }
+            
 
             return actorWrapper;
         }
@@ -167,6 +176,7 @@ namespace Stacks.Actors
             actor.SetName(name);
             actor.SetParent(parent);
             actor.SetActorSystem(this);
+            actor.SetWrapper(actorWrapper);
             if (parent != null)
             {
                 if (parentWrapper == null)
@@ -234,7 +244,7 @@ namespace Stacks.Actors
                 registeredActors.TryRemove(actor.Name, out a);
             }
 
-            (actor.Parent as ActorWrapperBase)?.ActorImplementation.RemoveChild(actor);
+            (actor.Parent as ActorWrapperBase)?.ActorImplementation.RemoveChild(actor.Wrapper);
             actor.SetParent(null);
         }
     }

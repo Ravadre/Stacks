@@ -57,7 +57,7 @@ namespace Stacks.Actors
             return this;
         }
 
-        public bool IsCompleted => false;
+        public bool IsCompleted => executor.Completion.IsCompleted;
 
         public void OnCompleted(Action continuation)
         {
@@ -66,6 +66,8 @@ namespace Stacks.Actors
 
         public void GetResult()
         {
+            if (executor.Completion.IsCompleted)
+                throw new ActorStoppedException("Actor context is stopped. New tasks cannot be queued. Further awaits will result in exception being thrown.");
         }
 
         public SynchronizationContext SynchronizationContext => executor.Context;
