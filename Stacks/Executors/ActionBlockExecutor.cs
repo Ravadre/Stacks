@@ -151,14 +151,11 @@ namespace Stacks
         public override string ToString()
         {
             return "ActionBlock Executor " +
-                (string.IsNullOrWhiteSpace(Name) ? "" : string.Format("({0})", Name));
+                (string.IsNullOrWhiteSpace(Name) ? "" : $"({Name})");
         }
 
 
-        DateTimeOffset IScheduler.Now
-        {
-            get { return DateTimeOffset.UtcNow; }
-        }
+        DateTimeOffset IScheduler.Now => DateTimeOffset.UtcNow;
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {

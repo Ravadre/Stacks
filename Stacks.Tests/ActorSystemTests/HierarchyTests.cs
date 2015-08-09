@@ -43,6 +43,21 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.IsAssignableFrom<IRootActor>(actor2.Parent);
             Assert.Equal(2, actor.Parent.Childs.Count());
         }
+
+        [Fact]
+        public void Having_actor_as_child_of_other_actor_should_set_hierarchy_properly()
+        {
+            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("calc");
+            var actor2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("calc2", actor);
+
+            Assert.IsAssignableFrom<IRootActor>(actor.Parent);
+            Assert.Equal(1, actor.Parent.Childs.Count());
+
+            Assert.IsAssignableFrom<IRootActor>(actor2.Parent.Parent);
+            Assert.Equal(1, actor2.Parent.Childs.Count());
+            Assert.Equal(actor2, actor2.Parent.Childs.First());
+
+        }
     }
     
 }

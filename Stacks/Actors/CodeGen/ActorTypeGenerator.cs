@@ -113,14 +113,21 @@ namespace Stacks.Actors.CodeGen
 
         private void ImplementWrapperConstructor()
         {
-            var ctor = wrapperBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.SpecialName, CallingConventions.HasThis,
+            var ctorBuilder = wrapperBuilder.DefineConstructor(MethodAttributes.Public | MethodAttributes.SpecialName, CallingConventions.HasThis,
                 new[] {typeof (Actor)});
+            var baseCtor = typeof (ActorWrapperBase).GetConstructor(new[] {typeof (Actor)});
 
-            var il = ctor.GetILGenerator();
+            if (baseCtor == null)
+            {
+                throw new Exception("Error while implementing wrapper constructor for actor. " + 
+                    $"Could not find base constructor with signature {nameof(ActorWrapperBase)}({nameof(Actor)})");
+            }
+
+            var il = ctorBuilder.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
             il.Emit(OpCodes.Ldarg_1);
-            il.Emit(OpCodes.Call, typeof(ActorWrapperBase).GetConstructor(new [] { typeof(Actor) }));
+            il.Emit(OpCodes.Call, baseCtor);
             il.Emit(OpCodes.Ret);
         }
 
