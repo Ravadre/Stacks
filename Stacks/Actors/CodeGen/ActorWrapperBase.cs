@@ -11,7 +11,8 @@ namespace Stacks.Actors.CodeGen
         protected readonly Actor actorImplementation;
         public string Name => actorImplementation.Name;
         public IActor Parent => actorImplementation.Parent;
-        public IEnumerable<IActor> Childs => actorImplementation.Childs; 
+        public IEnumerable<IActor> Children => actorImplementation.Children;
+        public Task Stop(bool stopImmediately = false) => actorImplementation.Stop(stopImmediately);
 
         public ActorWrapperBase(Actor actorImplementation)
         {

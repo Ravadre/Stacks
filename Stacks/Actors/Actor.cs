@@ -16,10 +16,10 @@ namespace Stacks.Actors
         internal IActor Wrapper { get; private set; }
 
         public IActor Parent { get; private set; }
-        public IEnumerable<IActor> Childs => childs.Keys;
+        public IEnumerable<IActor> Children => children.Keys;
         public ActorSystem System { get; private set; }
          
-        private readonly ConcurrentDictionary<IActor, IActor> childs;
+        private readonly ConcurrentDictionary<IActor, IActor> children;
 
        
         /// <summary>
@@ -57,7 +57,7 @@ namespace Stacks.Actors
                     $"{nameof(ActorSystem)}.{nameof(ActorSystem.CreateActor)} method instead.");
             }
 
-            childs = new ConcurrentDictionary<IActor, IActor>();
+            children = new ConcurrentDictionary<IActor, IActor>();
 
             executor.Error += ErrorOccuredInExecutor;
             context = new ActorContext(executor);
@@ -65,12 +65,13 @@ namespace Stacks.Actors
 
         private void ErrorOccuredInExecutor(Exception exn)
         {
-            Stop(true);
+            // This should probably never happen, if it does, always stop actor, as this can be considered fatal error.
+            Stop(true).Wait();
         }
 
         internal void ErrorOccuredInMethod(string methodName, Exception exn)
         {
-            Stop(true);
+            Stop(true).Wait();
         }
 
         protected virtual void OnStart()
@@ -93,22 +94,31 @@ namespace Stacks.Actors
             }
         }
 
-        protected void Stop(bool stopImmediately = false)
+        public async Task Stop(bool stopImmediately = false)
         {
-            var stopTask = context.Stop(stopImmediately);
-
-            stopTask.ContinueWith(t =>
+            // To avoid deadlocks, stopping procedure is called on threadpool. Is it necessary?
+            await Task.Run(async () =>
             {
-                System.KillActor(this);
+                foreach (var child in Children.ToArray())
+                {
+                    await child.Stop(stopImmediately);
+                }
 
-                try
+                var stopTask = context.Stop(stopImmediately);
+
+                await stopTask.ContinueWith(t =>
                 {
-                    OnStopped();
-                }
-                catch (Exception)
-                {
-                    // ignore
-                }
+                    System.KillActor(this);
+
+                    try
+                    {
+                        OnStopped();
+                    }
+                    catch (Exception)
+                    {
+                        // ignore
+                    }
+                });
             });
         } 
 
@@ -128,7 +138,7 @@ namespace Stacks.Actors
         {
             Ensure.IsNotNull(childActor, nameof(childActor));
 
-            if (!childs.TryAdd(childActor, childActor))
+            if (!children.TryAdd(childActor, childActor))
             {
                 throw new InvalidOperationException($"Tried to add child to actor '{Name}' - {GetType().FullName}. " + 
                     $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");   
@@ -144,7 +154,7 @@ namespace Stacks.Actors
         {
             Ensure.IsNotNull(childActor, nameof(childActor));
             IActor a;
-            childs.TryRemove(childActor, out a);
+            children.TryRemove(childActor, out a);
         }
 
         internal void SetActorSystem(ActorSystem system)

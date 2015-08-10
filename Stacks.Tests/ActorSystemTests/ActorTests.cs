@@ -61,7 +61,7 @@ namespace Stacks.Tests.ActorSystemTests
             {}
 
             var root = ActorSystem.Default.GetActor<IRootActor>("root");
-            Assert.Equal(0, root.Childs.Count());
+            Assert.Equal(0, root.Children.Count());
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace Stacks.Tests.ActorSystemTests
             var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
             var root = ActorSystem.Default.GetActor<IRootActor>("root");
 
-            Assert.Equal(1, root.Childs.Count());
+            Assert.Equal(1, root.Children.Count());
             var sum = await actor.AddThenStop(5, 6);
 
             Assert.True(stoppedEvent.Wait(1000));
@@ -97,7 +97,7 @@ namespace Stacks.Tests.ActorSystemTests
             {
                 var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
             });
-            Assert.Equal(0, root.Childs.Count());
+            Assert.Equal(0, root.Children.Count());
         }
 
         [Fact]

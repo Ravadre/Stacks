@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
 using Xunit;
@@ -41,7 +42,7 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.IsAssignableFrom<IRootActor>(actor.Parent);
             Assert.IsAssignableFrom<IRootActor>(actor2.Parent);
-            Assert.Equal(2, actor.Parent.Childs.Count());
+            Assert.Equal(2, actor.Parent.Children.Count());
         }
 
         [Fact]
@@ -51,12 +52,45 @@ namespace Stacks.Tests.ActorSystemTests
             var actor2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("calc2", actor);
 
             Assert.IsAssignableFrom<IRootActor>(actor.Parent);
-            Assert.Equal(1, actor.Parent.Childs.Count());
+            Assert.Equal(1, actor.Parent.Children.Count());
 
             Assert.IsAssignableFrom<IRootActor>(actor2.Parent.Parent);
-            Assert.Equal(1, actor2.Parent.Childs.Count());
-            Assert.Equal(actor2, actor2.Parent.Childs.First());
+            Assert.Equal(1, actor2.Parent.Children.Count());
+            Assert.Equal(actor2, actor2.Parent.Children.First());
 
+        }
+
+        [Fact]
+        public async Task When_actor_is_stopped_it_should_stop_all_its_children()
+        {
+            var a1 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a1");
+            var a2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a2");
+            var a3 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a3");
+
+            var a11 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a11", a1);
+            var a12 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a12", a1);
+            var a21 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a21", a2);
+            var a22 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a22", a2);
+            var a31 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a31", a3);
+            var a32 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a32", a3);
+
+            var a121 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("a121", a12);
+
+            var root = a1.Parent;
+
+            await a1.Stop(true);
+            
+            Assert.Equal(2, root.Children.Count());
+            Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a1"));
+            Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a11"));
+            Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a12"));
+            Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a121"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a2"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a21"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a22"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a3"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a31"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a32"));
         }
     }
     

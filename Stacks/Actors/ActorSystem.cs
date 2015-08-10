@@ -139,6 +139,27 @@ namespace Stacks.Actors
             return actorTyped;
         }
 
+        /// <summary>
+        /// Returns reference to already created actor. If actor with this name is not present, null is returned.
+        /// <para></para>
+        /// </summary>
+        /// <typeparam name="I">Actor's interface type.</typeparam>
+        /// <param name="name">Name of actor. Required.</param>
+        /// <returns></returns>
+        public I TryGetActor<I>(string name)
+            where I : class
+        {
+            Ensure.IsNotNull(name, nameof(name));
+
+            IActor actor;
+            if (!registeredActors.TryGetValue(name, out actor))
+            {
+                return null;
+            }
+
+            return actor as I;
+        }
+
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name, IActor parent)
             where T: Actor
         {

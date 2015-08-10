@@ -10,6 +10,8 @@ namespace Stacks.Actors
     {
         string Name { get; }
         IActor Parent { get; }
-        IEnumerable<IActor> Childs { get; }        
+        IEnumerable<IActor> Children { get; }
+
+        Task Stop(bool stopImmediately);
     }
 }
