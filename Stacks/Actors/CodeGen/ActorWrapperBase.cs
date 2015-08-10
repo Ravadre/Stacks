@@ -18,26 +18,26 @@ namespace Stacks.Actors.CodeGen
             this.actorImplementation = actorImplementation;
         }
 
-        protected Task<T> HandleException<T>(Task<T> task)
+        protected Task<T> HandleException<T>(string methodName, Task<T> task)
         {
             return task.ContinueWith(t =>
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.ErrorOccuredInMethod("", t.Exception);
+                    actorImplementation.ErrorOccuredInMethod(methodName, t.Exception);
                     throw t.Exception.InnerException;
                 }
                 return t.Result;
             });
         }
 
-        protected Task HandleException(Task task)
+        protected Task HandleException(string methodName, Task task)
         {
             return task.ContinueWith(t =>
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.ErrorOccuredInMethod("", t.Exception);
+                    actorImplementation.ErrorOccuredInMethod(methodName, t.Exception);
                     throw t.Exception.InnerException;
                 }
             });

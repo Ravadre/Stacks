@@ -41,6 +41,7 @@ namespace Stacks.Actors.CodeGen
             var il = mBuilder.GetILGenerator();
 
             il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Ldstr, method.PublicName);
 
             // ((actorInterface)base.actorImplementation).method(params...)
             {
