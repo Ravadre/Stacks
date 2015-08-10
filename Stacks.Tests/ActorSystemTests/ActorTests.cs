@@ -117,6 +117,34 @@ namespace Stacks.Tests.ActorSystemTests
                 var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
             });
         }
+
+        [Fact]
+        public async Task When_actor_awaits_in_method_it_should_be_resumed_in_actor_context()
+        {
+            var stoppedEvent = new ManualResetEventSlim();
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+
+            var res = await actor.Complicated(2, 3);
+            Assert.Equal(0, res);
+        }
+
+        [Fact]
+        public async Task If_actor_method_throws_after_awaits_it_should_throw_in_context_and_be_caught()
+        {
+            var stoppedEvent = new ManualResetEventSlim();
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+
+            await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await actor.ComplicatedThenThrow(5, 4);
+            });
+
+            Assert.True(stoppedEvent.Wait(1000));
+            Assert.Throws<Exception>(() =>
+            {
+                var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
+            });
+        }
     }
 
     public class ThrowsOnStartActor : Actor, ICalculatorActor
@@ -184,6 +212,33 @@ namespace Stacks.Tests.ActorSystemTests
             await Context;
             throw new Exception(msg);
         }
+
+        public async Task<double> Complicated(double x, double y)
+        {
+            await Context;
+
+            var result = await Add(x, y) + x + y;
+
+            await Task.Delay(50).ContinueWith(t => {});
+
+            if (Executor.IsInContext())
+                return 0;
+            return result;
+        }
+
+        public async Task<double> ComplicatedThenThrow(double x, double y)
+        {
+            await Context;
+
+            var result = await Add(x, y) + x + y;
+
+            await Task.Delay(50).ContinueWith(t => { });
+
+            if (Executor.IsInContext())
+                throw new Exception("Is in context");
+            return result;
+        }
+
 
         public async Task NoOp()
         {
