@@ -100,69 +100,69 @@ namespace Actors
 
             Task.WaitAll(tasks);
         }
+    }
 
-        public interface IDestination
+    public interface IDestination
+    {
+        Task Ping(Client c);
+    }
+
+    public class Destination : Actor, IDestination
+    {
+        public async Task Ping(Client c)
         {
-            void Ping(Client c);
+            await Context;
+
+            c.Pong();
+        }
+    }
+
+    public interface IClient
+    {
+        Task Pong();
+        Task Start();
+    }
+
+    public class Client : Actor, IClient
+    {
+        public long received;
+        public long sent;
+
+        public long repeat;
+        private IDestination actor;
+        private TaskCompletionSource<bool> latch;
+
+        public Client(IDestination actor, long repeat, TaskCompletionSource<bool> latch)
+        {
+            this.actor = actor;
+            this.repeat = repeat;
+            this.latch = latch;
         }
 
-        public class Destination : Actor, IDestination
+        public async Task Pong()
         {
-            public async void Ping(Client c)
-            {
-                await Context;
+            await Context;
 
-                c.Pong();
+            ++received;
+            if (sent < repeat)
+            {
+                actor.Ping(this);
+                sent++;
+            }
+            else if (received >= repeat)
+            {
+                latch.SetResult(true);
             }
         }
 
-        public interface IClient
+        public async Task Start()
         {
-            void Pong();
-            void Start();
-        }
+            await Context;
 
-        public class Client : Actor, IClient
-        {
-            public long received;
-            public long sent;
-
-            public long repeat;
-            private IDestination actor;
-            private TaskCompletionSource<bool> latch;
-
-            public Client(IDestination actor, long repeat, TaskCompletionSource<bool> latch)
+            for (int i = 0; i < Math.Min(1000, repeat); i++)
             {
-                this.actor = actor;
-                this.repeat = repeat;
-                this.latch = latch;
-            }
-
-            public async void Pong()
-            {
-                await Context;
-
-                ++received;
-                if (sent < repeat)
-                {
-                    actor.Ping(this);
-                    sent++;
-                }
-                else if (received >= repeat)
-                {
-                    latch.SetResult(true);
-                }
-            }
-
-            public async void Start()
-            {
-                await Context;
-
-                for (int i = 0; i < Math.Min(1000, repeat); i++)
-                {
-                    actor.Ping(this);
-                    sent++;
-                }
+                actor.Ping(this);
+                sent++;
             }
         }
     }

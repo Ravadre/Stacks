@@ -166,8 +166,8 @@ namespace PingPong
                 var client = createPingPong(i, waitForStartsActor, createDestClient(i, destination.Item2), repeatsPerClient, ts);
                 clients.Add(client);
 
-                ((PingPongActor)client).Start();
-                ((Destination)destination.Item2).Start();
+                client.Start();
+                destination.Item2.Start();
             }
             if (!countdown.Wait(TimeSpan.FromSeconds(10)))
             {
@@ -184,8 +184,8 @@ namespace PingPong
             totalWatch.Stop();
 
             dests.ForEach(d => { if (d.Item1 != null) d.Item1.Stop(); });
-            dests.ForEach(d => { ((Destination)d.Item2).Stop(); });
-            clients.ForEach(c => ((PingPongActor)c).Stop());
+            dests.ForEach(d => { d.Item2.Stop_(); });
+            clients.ForEach(c => c.Stop());
 
             var elapsedMilliseconds = sw.ElapsedMilliseconds;
             long throughput = elapsedMilliseconds == 0 ? -1 : totalMessagesReceived / elapsedMilliseconds * 1000;
@@ -222,153 +222,162 @@ namespace PingPong
             return numberOfRepeats * 2;
         }
 
-        public interface IDestination
-        {
-            Task Pong();
-        }
-
-        public class Destination : Actor, IDestination
-        {
-            private IWaitForStarts waitForStartsActor;
-
-            public Destination(IWaitForStarts waitForStartsActor)
-                : base(new ActorSettings { SupportSynchronizationContext = false })
-            {
-                this.waitForStartsActor = waitForStartsActor;
-            }
-
-            public Task Pong()
-            {
-                return Context.PostTask(null);
-            }
-
-            public void Start()
-            {
-                waitForStartsActor.OnStart();
-            }
-
-            public void Stop()
-            {
-                Context.Stop(true);
-            }
-        }
-
-        public interface IWaitForStarts
-        {
-            void OnStart();
-        }
-
-        public class WaitForStarts : Actor, IWaitForStarts
-        {
-            private readonly CountdownEvent countdown;
-
-            public WaitForStarts(CountdownEvent countdown)
-            {
-                this.countdown = countdown;
-            }
-
-            public async void OnStart()
-            {
-                await Context;
-                countdown.Signal();
-            }
-        }
-
-        [Flags]
-        public enum PrintStats
-        {
-            No = 0,
-            LineStart = 1,
-            Stats = 2,
-            StartTimeOnly = 32768,
-        }
-
-
-        public interface IPingPongActor
-        {
-            void Ping();
-            void Recv();
-        }
-
-        public class PingPongActor : Actor, IPingPongActor
-        {
-            private IDestination destination;
-            private IWaitForStarts waitForStartsActor;
-            private long repeat;
-            private long sent;
-            private long received;
-            private TaskCompletionSource<bool> latch;
-            private bool done;
-
-            public PingPongActor(IWaitForStarts waitForStartsActor, IDestination destination, long repeat, TaskCompletionSource<bool> latch)
-                : base(new ActorSettings { SupportSynchronizationContext = false})
-            {
-                this.waitForStartsActor = waitForStartsActor;
-                this.destination = destination;
-                this.repeat = repeat;
-                this.latch = latch;
-            }
-
-            public void Start()
-            {
-                waitForStartsActor.OnStart();
-            }
-
-            public async void Ping()
-            {
-                await Context;
-
-                for (int i = 0; i < Math.Min(1000, repeat); ++i)
-                {
-                    PingImpl();
-                }
-
-            }
-
-            private async void PingImpl()
-            {
-                await destination.Pong();
-                await Context;
-                ++sent;
-                Recv();
-            }
-
-            public void Recv()
-            {
-                Context.Post(async () =>
-                    {
-                        ++received;
-                        if (sent < repeat)
-                        {
-                            try
-                            {
-                                await destination.Pong();
-                                await Context;
-                                if (done) { return; }
-                                ++sent;
-                                Recv();
-                            }
-                            catch { }
-                        }
-                        else if (received == repeat)
-                        {
-                            done = true;
-                            latch.SetResult(true);
-                        }
-                    });
-            }
-
-            public void Stop()
-            {
-                Context.Stop(true);
-                var d = destination as IActorClientProxy<IDestination>;
-
-                if (d != null)
-                    d.Close();
-
-            }
-        }
 
     }
 
+
+    public interface IDestination
+    {
+        Task Pong();
+        Task Start();
+        Task Stop_();
+    }
+
+    public class Destination : Actor, IDestination
+    {
+        private IWaitForStarts waitForStartsActor;
+
+        public Destination(IWaitForStarts waitForStartsActor)
+            : base(new ActorSettings { SupportSynchronizationContext = false })
+        {
+            this.waitForStartsActor = waitForStartsActor;
+        }
+
+        public Task Pong()
+        {
+            return Context.PostTask(null);
+        }
+
+        public Task Start()
+        {
+            waitForStartsActor.OnStart();
+            return Task.FromResult(0);
+        }
+
+        public Task Stop_()
+        {
+            Context.Stop(true);
+            return Task.FromResult(0);
+        }
+    }
+
+    public interface IWaitForStarts
+    {
+        Task OnStart();
+    }
+
+    public class WaitForStarts : Actor, IWaitForStarts
+    {
+        private readonly CountdownEvent countdown;
+
+        public WaitForStarts(CountdownEvent countdown)
+        {
+            this.countdown = countdown;
+        }
+
+        public async Task OnStart()
+        {
+            await Context;
+            countdown.Signal();
+        }
+    }
+
+    [Flags]
+    public enum PrintStats
+    {
+        No = 0,
+        LineStart = 1,
+        Stats = 2,
+        StartTimeOnly = 32768,
+    }
+
+
+    public interface IPingPongActor
+    {
+        Task Ping();
+        Task Recv();
+        Task Start();
+        Task Stop();
+    }
+
+    public class PingPongActor : Actor, IPingPongActor
+    {
+        private IDestination destination;
+        private IWaitForStarts waitForStartsActor;
+        private long repeat;
+        private long sent;
+        private long received;
+        private TaskCompletionSource<bool> latch;
+        private bool done;
+
+        public PingPongActor(IWaitForStarts waitForStartsActor, IDestination destination, long repeat, TaskCompletionSource<bool> latch)
+            : base(new ActorSettings { SupportSynchronizationContext = false })
+        {
+            this.waitForStartsActor = waitForStartsActor;
+            this.destination = destination;
+            this.repeat = repeat;
+            this.latch = latch;
+        }
+
+        public Task Start()
+        {
+            waitForStartsActor.OnStart();
+            return Task.FromResult(0);
+        }
+
+        public async Task Ping()
+        {
+            await Context;
+
+            for (int i = 0; i < Math.Min(1000, repeat); ++i)
+            {
+                PingImpl();
+            }
+
+        }
+
+        private async void PingImpl()
+        {
+            await destination.Pong();
+            await Context;
+            ++sent;
+            Recv();
+        }
+
+        public Task Recv()
+        {
+            Context.Post(async () =>
+            {
+                ++received;
+                if (sent < repeat)
+                {
+                    try
+                    {
+                        await destination.Pong();
+                        await Context;
+                        if (done) { return; }
+                        ++sent;
+                        Recv();
+                    }
+                    catch { }
+                }
+                else if (received == repeat)
+                {
+                    done = true;
+                    latch.SetResult(true);
+                }
+            });
+            return Task.FromResult(0);
+        }
+
+        public Task Stop()
+        {
+            Context.Stop(true);
+            var d = destination as IActorClientProxy<IDestination>;
+
+            if (d != null)
+                d.Close();
+            return Task.FromResult(0);
+        }
+    }
 }
