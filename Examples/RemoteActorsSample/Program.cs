@@ -105,6 +105,10 @@ namespace RemoteActorsSample
                 }
             }
 
+            // Error on server side will by default stop actor. So we need to restart it.
+            actorServer.Stop();
+            actorServer = ActorServerProxy.Create<ICalculatorActor, CalculatorActor>("tcp://*:4632");
+            calculator = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://localhost:4632").Result;
 
 
             {
