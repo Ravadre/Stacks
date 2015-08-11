@@ -18,7 +18,9 @@ namespace Stacks.Actors
         public IActor Parent { get; private set; }
         public IEnumerable<IActor> Children => children.Keys;
         public ActorSystem System { get; private set; }
-         
+
+        private readonly ManualResetEventSlim isStoppingEvent;
+        private readonly ManualResetEventSlim syncLock;
         private readonly ConcurrentDictionary<IActor, IActor> children;
 
        
@@ -58,6 +60,8 @@ namespace Stacks.Actors
             }
 
             children = new ConcurrentDictionary<IActor, IActor>();
+            isStoppingEvent = new ManualResetEventSlim();
+            syncLock = new ManualResetEventSlim(true);
 
             executor.Error += ErrorOccuredInExecutor;
             context = new ActorContext(executor);
@@ -97,28 +101,28 @@ namespace Stacks.Actors
         public async Task Stop(bool stopImmediately = false)
         {
             // To avoid deadlocks, stopping procedure is called on threadpool. Is it necessary?
-            await Task.Run(async () =>
+            await Task.Run(() =>
             {
+                isStoppingEvent.Set();
+                syncLock.Wait();
+
                 foreach (var child in Children.ToArray())
                 {
-                    await child.Stop(stopImmediately);
+                    child.Stop(stopImmediately).Wait();
                 }
 
-                var stopTask = context.Stop(stopImmediately);
+                context.Stop(stopImmediately).Wait();
+                
+                System.KillActor(this);
 
-                await stopTask.ContinueWith(t =>
+                try
                 {
-                    System.KillActor(this);
-
-                    try
-                    {
-                        OnStopped();
-                    }
-                    catch (Exception)
-                    {
-                        // ignore
-                    }
-                });
+                    OnStopped();
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
             });
         } 
 
@@ -138,11 +142,24 @@ namespace Stacks.Actors
         {
             Ensure.IsNotNull(childActor, nameof(childActor));
 
-            if (!children.TryAdd(childActor, childActor))
+            try
             {
-                throw new InvalidOperationException(
-                    $"Tried to add child to actor '{Name}' - {GetType().FullName}. " +
-                    $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");
+                syncLock.Reset();
+                if (isStoppingEvent.IsSet)
+                {
+                    throw new Exception();
+                }
+
+                if (!children.TryAdd(childActor, childActor))
+                {
+                    throw new InvalidOperationException(
+                        $"Tried to add child to actor '{Name}' - {GetType().FullName}. " +
+                        $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");
+                }
+            }
+            finally
+            {
+                syncLock.Set();
             }
         }
 
