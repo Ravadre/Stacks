@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
 
@@ -83,6 +84,20 @@ namespace Stacks.Tests.ActorSystemTests
         public int TestMethod()
         {
             return 10;
+        }
+    }
+
+    public class LongStopActor : Actor, ICalculatorActor
+    {
+        public async Task<double> Div(double x, double y)
+        {
+            await Context;
+            return 5;
+        }
+
+        protected override void OnStopped()
+        {
+            Thread.Sleep(1000);
         }
     }
 }

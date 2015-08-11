@@ -140,8 +140,9 @@ namespace Stacks.Actors
 
             if (!children.TryAdd(childActor, childActor))
             {
-                throw new InvalidOperationException($"Tried to add child to actor '{Name}' - {GetType().FullName}. " + 
-                    $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");   
+                throw new InvalidOperationException(
+                    $"Tried to add child to actor '{Name}' - {GetType().FullName}. " +
+                    $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");
             }
         }
 
@@ -149,17 +150,17 @@ namespace Stacks.Actors
         {
             Wrapper = actorWrapper;
         }
+        
+        internal void SetActorSystem(ActorSystem system)
+        {
+            System = system;
+        }
 
         internal void RemoveChild(IActor childActor)
         {
             Ensure.IsNotNull(childActor, nameof(childActor));
             IActor a;
             children.TryRemove(childActor, out a);
-        }
-
-        internal void SetActorSystem(ActorSystem system)
-        {
-            System = system;
         }
 
         protected IActorContext Context => context;

@@ -92,6 +92,26 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a31"));
             Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a32"));
         }
+
+        [Fact]
+        public async Task When_actor_is_stopping_it_should_not_be_able_to_add_children_to_it()
+        {
+            var a1 = ActorSystem.Default.CreateActor<ICalculatorActor, LongStopActor>("a1");
+
+            var stopping = a1.Stop(false);
+
+            Thread.Sleep(50);
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                ActorSystem.Default.CreateActor<ICalculatorActor, LongStopActor>("a11", a1);
+            });
+
+            await stopping;
+
+            Assert.Equal(0, a1.Children.Count());
+            Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a11"));
+
+        }
     }
     
 }

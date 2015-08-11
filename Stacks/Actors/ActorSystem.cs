@@ -172,12 +172,11 @@ namespace Stacks.Actors
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
-            RegisterActorToSystem(actorWrapper, name);
-
-            SetActorProperties(actorImplementation, actorWrapper, parent, name);
 
             try
             {
+                RegisterActorToSystem(actorWrapper, name);
+                SetActorProperties(actorImplementation, actorWrapper, parent, name);
                 actorImplementation.Start();
             }
             catch (Exception)

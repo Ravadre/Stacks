@@ -17,8 +17,7 @@ namespace Stacks
                 {
                     try
                     {
-                        if (action != null)
-                            action();
+                        action?.Invoke();
                         tcs.SetResult(System.Reactive.Unit.Default);
                     }
                     catch (Exception exc)
