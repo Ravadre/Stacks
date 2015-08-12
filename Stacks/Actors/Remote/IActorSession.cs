@@ -15,14 +15,11 @@ namespace Stacks.Actors
             Client = client;
         }
 
-        public static IActorSession Current
-        {
-            get { return CallContext.LogicalGetData(ActorSessionCallContextKey) as IActorSession; }
-        }
+        public static IActorSession Current => CallContext.LogicalGetData(ActorSessionCallContextKey) as IActorSession;
 
         internal static readonly string ActorSessionCallContextKey = "__stacks.actor.session0xc0de";
 
-        public IFramedClient Client { get; private set; }
+        public IFramedClient Client { get; }
 
         public void Close()
         {
