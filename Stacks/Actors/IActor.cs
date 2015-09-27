@@ -12,6 +12,6 @@ namespace Stacks.Actors
         IActor Parent { get; }
         IEnumerable<IActor> Children { get; }
 
-        Task Stop(bool stopImmediately);
+        Task Stop();
     }
 }

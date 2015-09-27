@@ -29,9 +29,9 @@ namespace Stacks.Actors
 
         public Task Completion => executor.Completion;
         
-        public Task Stop(bool stopImmediately)
+        public Task Stop()
         {
-            return executor.Stop(stopImmediately);
+            return executor.Stop();
         }
         
         public void Post(Action action)

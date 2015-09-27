@@ -20,7 +20,6 @@ namespace Stacks
         Task<T> PostTask<T>(Func<T> func);
 
         Task Stop();
-        Task Stop(bool stopImmediately);
         Task Completion { get; }
 
         SynchronizationContext Context { get; }

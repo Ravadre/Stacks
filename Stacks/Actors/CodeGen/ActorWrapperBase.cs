@@ -12,7 +12,7 @@ namespace Stacks.Actors.CodeGen
         public string Name => actorImplementation.Name;
         public IActor Parent => actorImplementation.Parent;
         public IEnumerable<IActor> Children => actorImplementation.Children;
-        public Task Stop(bool stopImmediately = false) => actorImplementation.Stop(stopImmediately);
+        public Task Stop() => actorImplementation.Stop();
 
         public ActorWrapperBase(Actor actorImplementation)
         {

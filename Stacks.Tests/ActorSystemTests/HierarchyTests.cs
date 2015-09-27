@@ -78,7 +78,7 @@ namespace Stacks.Tests.ActorSystemTests
 
             var root = a1.Parent;
 
-            await a1.Stop(true);
+            await a1.Stop();
             
             Assert.Equal(2, root.Children.Count());
             Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a1"));
@@ -98,7 +98,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var a1 = ActorSystem.Default.CreateActor<ICalculatorActor, LongStopActor>("a1");
 
-            var stopping = a1.Stop(false);
+            var stopping = a1.Stop();
 
             Thread.Sleep(50);
             Assert.ThrowsAny<Exception>(() =>

@@ -203,7 +203,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             await Context;
 
-            Stop(true);
+            Stop().Wait();
             return x + offset + y;
         }
 

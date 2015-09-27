@@ -70,12 +70,12 @@ namespace Stacks.Actors
         private void ErrorOccuredInExecutor(Exception exn)
         {
             // This should probably never happen, if it does, always stop actor, as this can be considered fatal error.
-            Stop(true).Wait();
+            Stop().Wait();
         }
 
         internal void ErrorOccuredInMethod(string methodName, Exception exn)
         {
-            Stop(true).Wait();
+            Stop().Wait();
         }
 
         protected virtual void OnStart()
@@ -98,20 +98,20 @@ namespace Stacks.Actors
             }
         }
 
-        public async Task Stop(bool stopImmediately = false)
+        public Task Stop()
         {
             // To avoid deadlocks, stopping procedure is called on threadpool. Is it necessary?
-            await Task.Run(() =>
+            return Task.Run(() =>
             {
                 isStoppingEvent.Set();
                 syncLock.Wait();
 
                 foreach (var child in Children.ToArray())
                 {
-                    child.Stop(stopImmediately).Wait();
+                    child.Stop().Wait();
                 }
 
-                context.Stop(stopImmediately).Wait();
+                context.Stop().Wait();
                 
                 System.KillActor(this);
 

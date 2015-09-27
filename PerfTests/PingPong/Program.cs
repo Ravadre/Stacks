@@ -256,7 +256,7 @@ namespace PingPong
 
         public Task Stop_()
         {
-            Context.Stop(true);
+            Context.Stop();
             return Task.FromResult(0);
         }
     }
@@ -372,7 +372,7 @@ namespace PingPong
 
         public Task Stop()
         {
-            Context.Stop(true);
+            Context.Stop();
             var d = destination as IActorClientProxy<IDestination>;
 
             if (d != null)

@@ -20,7 +20,7 @@ namespace Stacks.Actors
         IActorContext GetAwaiter();
         void GetResult();
 
-        Task Stop(bool stopImmediately);
+        Task Stop();
 
         SynchronizationContext SynchronizationContext { get; }
     }

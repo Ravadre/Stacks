@@ -113,17 +113,12 @@ namespace Stacks
             }
                 
         }
-
-        public Task Stop(bool stopImmediately)
-        {
-            this.stopImmediately = stopImmediately;
-            queue.Complete();
-            return queue.Completion;
-        }
-
+        
         public Task Stop()
         {
-            return Stop(stopImmediately: false);
+            stopImmediately = true;
+            queue.Complete();
+            return Task.FromResult(0);
         }
 
         public SynchronizationContext Context
