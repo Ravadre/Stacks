@@ -167,7 +167,7 @@ namespace Stacks.Tests.ActorSystemTests
                 crashedEvent.Set();
             });
 
-            Assert.True(crashedEvent.Wait(100));
+            Assert.True(crashedEvent.Wait(1000));
         }
 
         [Fact]
@@ -178,10 +178,30 @@ namespace Stacks.Tests.ActorSystemTests
             var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(() => new ParentActor(childCrashedEvent));
 
             parent.CrashChild().Wait();
-            Assert.True(childCrashedEvent.Wait(100));
+            Assert.True(childCrashedEvent.Wait(1000));
             childCrashedEvent.Reset();
             parent.CrashChild().Wait();
-            Assert.True(childCrashedEvent.Wait(100));
+            Assert.True(childCrashedEvent.Wait(1000));
+        }
+
+        [Fact]
+        public void Exception_that_is_signalled_through_crashed_should_be_actually_thrown_exception()
+        {
+            var childCrashedEvent = new ManualResetEventSlim();
+
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(null),
+              "ac");
+
+            actor.Crashed.Subscribe(exn =>
+            {
+                Assert.IsType<Exception>(exn);
+                Assert.Equal("test-msg", exn.Message);
+                childCrashedEvent.Set();
+            });
+
+            actor.Throw("test-msg");
+
+            Assert.True(childCrashedEvent.Wait(1000));
         }
     }
 
