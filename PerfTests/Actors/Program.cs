@@ -8,6 +8,8 @@ using System.Management;
 using System.Threading;
 using System.Diagnostics;
 
+#pragma warning disable 4014
+
 namespace Actors
 {
     class Program
@@ -167,3 +169,5 @@ namespace Actors
         }
     }
 }
+
+#pragma warning restore 4014

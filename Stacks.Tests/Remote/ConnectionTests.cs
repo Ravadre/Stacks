@@ -28,6 +28,7 @@ namespace Stacks.Tests.Remote
             Utils.CreateServerAndClient<ITestActor, TestActor>(out server, out client);
 
             server.Stop();
+            // ReSharper disable once SuspiciousTypeConversion.Global
             ((IActorClientProxy)client).Close();
         }
 

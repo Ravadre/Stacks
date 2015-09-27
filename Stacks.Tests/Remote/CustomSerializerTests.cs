@@ -63,6 +63,8 @@ namespace Stacks.Tests.Remote
     {
         public async Task<int> Add(int x, int y)
         {
+            await Context;
+
             return x + y;
         }
     }

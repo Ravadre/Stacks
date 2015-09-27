@@ -12,6 +12,7 @@ using Stacks;
 using Stacks.Actors;
 
 // Code has been ported from Akka.Net library https://github.com/akkadotnet/akka.net
+#pragma warning disable 4014
 
 namespace PingPong
 {
@@ -167,6 +168,7 @@ namespace PingPong
                 clients.Add(client);
 
                 client.Start();
+
                 destination.Item2.Start();
             }
             if (!countdown.Wait(TimeSpan.FromSeconds(10)))
@@ -275,7 +277,7 @@ namespace PingPong
             this.countdown = countdown;
         }
 
-        public async Task OnStart()
+        public new async Task OnStart()
         {
             await Context;
             countdown.Signal();
@@ -370,14 +372,16 @@ namespace PingPong
             return Task.FromResult(0);
         }
 
-        public Task Stop()
+        public new Task Stop()
         {
             Context.Stop();
+            // ReSharper disable once SuspiciousTypeConversion.Global
             var d = destination as IActorClientProxy<IDestination>;
 
-            if (d != null)
-                d.Close();
+            d?.Close();
             return Task.FromResult(0);
         }
     }
 }
+
+#pragma warning restore 4014

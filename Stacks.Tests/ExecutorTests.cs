@@ -8,7 +8,6 @@ namespace Stacks.Tests
     {
         [Theory]
         [InlineData(typeof (ActionBlockExecutor))]
-        [InlineData(typeof (BusyWaitExecutor))]
         public void PostTask_should_signal_task_when_action_is_completed(Type execType)
         {
             var exec = Activator.CreateInstance(execType) as IExecutor;
@@ -23,7 +22,6 @@ namespace Stacks.Tests
 
         [Theory]
         [InlineData(typeof (ActionBlockExecutor))]
-        [InlineData(typeof (BusyWaitExecutor))]
         public void PostTask_should_signal_return_value_through_task(Type execType)
         {
             var exec = Activator.CreateInstance(execType) as IExecutor;
@@ -35,7 +33,6 @@ namespace Stacks.Tests
 
         [Theory]
         [InlineData(typeof (ActionBlockExecutor))]
-        [InlineData(typeof (BusyWaitExecutor))]
         public void PostTask_should_rethrow_exception(Type execType)
         {
             var exec = Activator.CreateInstance(execType) as IExecutor;
@@ -47,7 +44,6 @@ namespace Stacks.Tests
 
         [Theory]
         [InlineData(typeof (ActionBlockExecutor))]
-        [InlineData(typeof (BusyWaitExecutor))]
         public void Executor_should_not_be_stopped_after_posttask_throws_exception(Type execType)
         {
             var errorOccured = new ManualResetEventSlim();

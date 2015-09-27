@@ -146,7 +146,6 @@
     <Compile Include="Executors\ActionBlockExecutor.cs" />
     <Compile Include="Executors\ActionBlockExecutor.Mono.cs" />
     <Compile Include="Executors\ActionBlockExecutorSettings.cs" />
-    <Compile Include="Executors\BusyWaitExecutor.cs" />
     <Compile Include="Executors\CapturedContextExecutor.cs" />
     <Compile Include="Executors\Executor.cs" />
     <Compile Include="Executors\ExecutorHelper.cs" />

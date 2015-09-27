@@ -257,7 +257,10 @@ namespace Stacks.Tests.ActorSystemTests
         {
             await Context;
 
+            //Ommit await so that this method will not throw
+#pragma warning disable 4014
             ((ICalculatorExActor) Children.First()).Throw("test");
+#pragma warning restore 4014
         }
     }
 

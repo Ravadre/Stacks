@@ -79,7 +79,7 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
-        public async Task Actor_through_IActor_interface_should_return_valid_actor_name()
+        public void Actor_through_IActor_interface_should_return_valid_actor_name()
         {
             var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ActorWithExtraMethod>("Custom actor name");
 

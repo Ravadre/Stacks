@@ -98,16 +98,17 @@ namespace Stacks.Tests.ActorSystemTests
 
     public class TestActor : Actor, ITestActor, ISomeInterface, ITestActorInterface
     {
-        public async Task Foo()
+        public Task Foo()
         {
+            return Task.FromResult(0);
         }
     }
 
     public class NotAnActor : ITestActor
     {
-        public async Task Foo()
+        public Task Foo()
         {
-            
+            return Task.FromResult(0);
         }
     }
 }
