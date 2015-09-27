@@ -12,7 +12,9 @@ namespace Stacks.Actors.CodeGen
         public string Name => actorImplementation.Name;
         public IActor Parent => actorImplementation.Parent;
         public IEnumerable<IActor> Children => actorImplementation.Children;
+        public IObservable<Exception> Crashed => actorImplementation.Crashed; 
         public Task Stop() => actorImplementation.Stop();
+
 
         public ActorWrapperBase(Actor actorImplementation)
         {
@@ -25,7 +27,8 @@ namespace Stacks.Actors.CodeGen
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.ErrorOccuredInMethod(methodName, t.Exception);
+                    actorImplementation.StopBecauseOfError(methodName, t.Exception);
+                    ActorImplementation.OnCrashed(t.Exception.InnerException);
                     throw t.Exception.InnerException;
                 }
                 return t.Result;
@@ -38,7 +41,8 @@ namespace Stacks.Actors.CodeGen
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.ErrorOccuredInMethod(methodName, t.Exception);
+                    actorImplementation.StopBecauseOfError(methodName, t.Exception);
+                    ActorImplementation.OnCrashed(t.Exception.InnerException);
                     throw t.Exception.InnerException;
                 }
             });

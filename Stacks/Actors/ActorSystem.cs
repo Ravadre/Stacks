@@ -189,8 +189,16 @@ namespace Stacks.Actors
             return actorWrapper;
         }
 
+        private static IActor TryUnwrapActorAsWrapper(IActor actor)
+        {
+            if (actor == null) return null;
+            if (actor is ActorWrapperBase) return actor;
+            return (actor as Actor)?.Wrapper;
+        }
+
         private void SetActorProperties(Actor actor, IActor actorWrapper, IActor parent, string name)
         {
+            parent = TryUnwrapActorAsWrapper(parent);
             var parentWrapper = parent as ActorWrapperBase;
 
             actor.SetName(name);
@@ -201,7 +209,8 @@ namespace Stacks.Actors
             {
                 if (parentWrapper == null)
                 {
-                    throw new Exception($"Could not cast parent actor {parent.GetType().FullName} to ActorWrapperBase");
+                    throw new Exception(
+                        $"Could not cast parent actor {parent.GetType().FullName} to ActorWrapperBase");
                 }
 
                 parentWrapper.ActorImplementation.AddChild(actorWrapper);

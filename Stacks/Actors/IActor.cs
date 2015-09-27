@@ -13,5 +13,7 @@ namespace Stacks.Actors
         IEnumerable<IActor> Children { get; }
 
         Task Stop();
+
+        IObservable<Exception> Crashed { get; } 
     }
 }

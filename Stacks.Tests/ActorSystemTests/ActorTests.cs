@@ -145,6 +145,44 @@ namespace Stacks.Tests.ActorSystemTests
                 var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
             });
         }
+
+        [Fact]
+        public void If_actor_crashes_it_should_signal_Crashed_observable()
+        {
+            var crashedEvent = new ManualResetEventSlim();
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(null),
+                "ac");
+
+            try
+            {
+                actor.Throw("test").Wait();
+            }
+            catch
+            {
+                // ignore
+            }
+
+            actor.Crashed.Subscribe(exn =>
+            {
+                crashedEvent.Set();
+            });
+
+            Assert.True(crashedEvent.Wait(100));
+        }
+
+        [Fact]
+        public void Parent_should_be_able_to_restart_failing_child_actor()
+        {
+            var childCrashedEvent = new ManualResetEventSlim();
+
+            var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(() => new ParentActor(childCrashedEvent));
+
+            parent.CrashChild().Wait();
+            Assert.True(childCrashedEvent.Wait(100));
+            childCrashedEvent.Reset();
+            parent.CrashChild().Wait();
+            Assert.True(childCrashedEvent.Wait(100));
+        }
     }
 
     public class ThrowsOnStartActor : Actor, ICalculatorActor
@@ -158,6 +196,48 @@ namespace Stacks.Tests.ActorSystemTests
         {
             await Context;
             return 5;
+        }
+    }
+
+    public interface IParentActor
+    {
+        Task CrashChild();
+    }
+
+    public class ParentActor : Actor, IParentActor
+    {
+        private readonly ManualResetEventSlim childCrashed;
+
+        public ParentActor(ManualResetEventSlim childCrashed)
+        {
+            this.childCrashed = childCrashed;
+        }
+
+        protected override void OnStart()
+        {
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), "child", this);
+
+            child.Crashed.Subscribe(ChildCrashed);
+
+            Assert.Equal(1, Children.Count());
+        }
+
+        private async void ChildCrashed(Exception exn)
+        {
+            await Context;
+
+            childCrashed.Set();
+            Assert.Equal(0, Children.Count());
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), "child", this);
+            child.Crashed.Subscribe(ChildCrashed);
+            Assert.Equal(1, Children.Count());
+        }
+
+        public async Task CrashChild()
+        {
+            await Context;
+
+            ((ICalculatorExActor) Children.First()).Throw("test");
         }
     }
 

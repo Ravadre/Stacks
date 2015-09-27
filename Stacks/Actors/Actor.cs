@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +25,9 @@ namespace Stacks.Actors
         private readonly ManualResetEventSlim syncLock;
         private readonly ConcurrentDictionary<IActor, IActor> children;
 
+        private readonly AsyncSubject<Exception> crashedSubject;
+
+        public IObservable<Exception> Crashed => crashedSubject.AsObservable();
        
         /// <summary>
         /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
@@ -63,6 +68,8 @@ namespace Stacks.Actors
             isStoppingEvent = new ManualResetEventSlim();
             syncLock = new ManualResetEventSlim(true);
 
+            crashedSubject = new AsyncSubject<Exception>();
+
             executor.Error += ErrorOccuredInExecutor;
             context = new ActorContext(executor);
         }
@@ -73,7 +80,7 @@ namespace Stacks.Actors
             Stop().Wait();
         }
 
-        internal void ErrorOccuredInMethod(string methodName, Exception exn)
+        internal void StopBecauseOfError(string methodName, Exception exn)
         {
             Stop().Wait();
         }
@@ -90,7 +97,7 @@ namespace Stacks.Actors
         {
             try
             {
-                OnStart();
+                context.PostTask(OnStart).Wait();
             }
             catch (Exception exn)
             {
@@ -154,7 +161,8 @@ namespace Stacks.Actors
                 {
                     throw new InvalidOperationException(
                         $"Tried to add child to actor '{Name}' - {GetType().FullName}. " +
-                        $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. Actor already has this child registered.");
+                        $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. " +
+                        $"Actor already has this child registered.");
                 }
             }
             finally
@@ -178,6 +186,12 @@ namespace Stacks.Actors
             Ensure.IsNotNull(childActor, nameof(childActor));
             IActor a;
             children.TryRemove(childActor, out a);
+        }
+
+        internal void OnCrashed(Exception exn)
+        {
+            crashedSubject.OnNext(exn);
+            crashedSubject.OnCompleted();
         }
 
         protected IActorContext Context => context;
