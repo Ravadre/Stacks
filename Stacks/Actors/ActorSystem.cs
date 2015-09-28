@@ -110,7 +110,7 @@ namespace Stacks.Actors
         {
             return (I)CreateActor(typeof (I), implementationProvider, name, parent);
         }
-
+        
         /// <summary>
         /// Returns reference to already created actor. Actors that were created without name can not be accessed.
         /// </summary>
@@ -168,6 +168,15 @@ namespace Stacks.Actors
             if (parent == null && name != "root")
             {
                 parent = GetActor<IRootActor>("root");
+            }
+
+            if (parent != null)
+            {
+                if (name != null && parent.Name == null)
+                {
+                    throw new Exception($"Tried to create named actor {name} ({typeof(T).Name}) with parent what is an unnamed actor.\r\n" + 
+                        "Unnamed actors can only have unnamed children actors.");
+                }
             }
 
             var actorImplementation = ResolveImplementationProvider(implementationProvider);

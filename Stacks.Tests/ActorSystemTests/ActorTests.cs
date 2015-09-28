@@ -235,7 +235,7 @@ namespace Stacks.Tests.ActorSystemTests
 
         protected override void OnStart()
         {
-            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), "child", this);
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), parent: this);
 
             child.Crashed.Subscribe(ChildCrashed);
 
@@ -248,7 +248,7 @@ namespace Stacks.Tests.ActorSystemTests
 
             childCrashed.Set();
             Assert.Equal(0, Children.Count());
-            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), "child", this);
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), parent: this);
             child.Crashed.Subscribe(ChildCrashed);
             Assert.Equal(1, Children.Count());
         }

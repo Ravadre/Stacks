@@ -112,6 +112,39 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a11"));
 
         }
+
+        [Fact]
+        public void Creating_actor_with_same_name_and_parent_should_fail()
+        {
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("p");
+
+            var child1 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
+
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                var child2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
+            });
+        }
+
+        [Fact]
+        public void Creating_actor_with_same_name_but_different_path_should_succeed()
+        {
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("p");
+
+            var child1 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
+            var child2 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", child1);
+        }
+
+        [Fact]
+        public void Creating_named_actor_as_child_of_anonymous_one_should_fail()
+        {
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
+
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                var child1 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
+            });
+        }
     }
     
 }
