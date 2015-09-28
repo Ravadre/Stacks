@@ -41,7 +41,7 @@ namespace Stacks.Tests.Remote
                 {
                     try
                     {
-                        var client = clientTask.Result;
+                        clientTask.Wait();
                     } catch (AggregateException exc)
                     {
                         throw exc.InnerException;
