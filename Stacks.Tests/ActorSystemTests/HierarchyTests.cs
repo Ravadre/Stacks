@@ -155,6 +155,53 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.Equal("/root/$aad/", actors[actors.Length - 1].Path);
         }
 
+        [Fact]
+        public void Stopping_root_actor_should_stop_all_children()
+        {
+            var stoppedEvents = new []
+            {
+                new ManualResetEventSlim(),
+                new ManualResetEventSlim(),
+                new ManualResetEventSlim(),
+            };
+
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[0]));
+            var c1 =
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[1]),
+                    parent: parent);
+            var c2 =
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[2]),
+                    parent: c1);
+
+            ActorSystem.Default.ResetSystem();
+
+            Assert.True(stoppedEvents[0].Wait(1000));
+            Assert.True(stoppedEvents[1].Wait(1000));
+            Assert.True(stoppedEvents[2].Wait(1000));
+        }
     }
+
+    public class OnStopActor : Actor, ICalculatorActor
+    {
+        private readonly ManualResetEventSlim onStopped;
+
+        public OnStopActor(ManualResetEventSlim onStopped)
+        {
+            this.onStopped = onStopped;
+        }
+
+        protected override void OnStopped()
+        {
+            onStopped.Set();
+        }
+
+        public async Task<double> Div(double x, double y)
+        {
+            await Context;
+
+            return 5;
+        }
+    }
+    
     
 }
