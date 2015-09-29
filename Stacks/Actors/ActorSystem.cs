@@ -36,6 +36,15 @@ namespace Stacks.Actors
         /// </summary>
         public void ResetSystem()
         {
+            try
+            {
+                GetActor<IRootActor>("root").Stop().Wait();
+            }
+            catch
+            {
+                // Ignore
+            }
+            
             Initialize();
         }
 
@@ -198,7 +207,7 @@ namespace Stacks.Actors
             }
             catch (Exception)
             {
-                KillActor(actorImplementation);
+                UnregisterActor(actorImplementation);
                 throw;
             }
             
@@ -289,7 +298,7 @@ namespace Stacks.Actors
             }
         }
         
-        internal void KillActor(Actor actor)
+        internal void UnregisterActor(Actor actor)
         {
             Ensure.IsNotNull(actor, nameof(actor));
 

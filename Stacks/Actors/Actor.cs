@@ -120,7 +120,7 @@ namespace Stacks.Actors
 
                 context.Stop().Wait();
                 
-                System.KillActor(this);
+                System.UnregisterActor(this);
 
                 try
                 {
