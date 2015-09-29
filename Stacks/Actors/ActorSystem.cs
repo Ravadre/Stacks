@@ -113,19 +113,19 @@ namespace Stacks.Actors
         {
             return (I)CreateActor(typeof (I), implementationProvider, name, parent);
         }
-        
+
         /// <summary>
         /// Returns reference to already created actor. Actors that were created without name can not be accessed.
         /// </summary>
         /// <typeparam name="I">Actor's interface type.</typeparam>
-        /// <param name="name">Path for the actor. Required.</param>
+        /// <param name="path">Path for the actor. /root/ can be ommited. Required.</param>
         /// <returns></returns>
         public I GetActor<I>(string path)
             where I: class
         {
             Ensure.IsNotNull(path, nameof(path));
 
-            path = FixActorQueryPath(path);
+            path = PathUtils.FixQueryPath(path);
 
             IActor actor;
             if (!registeredActors.TryGetValue(path, out actor))
@@ -144,19 +144,6 @@ namespace Stacks.Actors
             return actorTyped;
         }
 
-        private string FixActorQueryPath(string path)
-        {
-            if (path.Length == 0)
-                return path;
-
-            if (path[0] != '/')
-                path = '/' + path;
-            if (!path.StartsWith("/root"))
-                path = "/root" + path;
-            if (path[path.Length - 1] != '/')
-                path = path + '/';
-            return path;
-        }
 
         /// <summary>
         /// Returns reference to an already created actor. If actor with this name is not present, null is returned.
@@ -170,7 +157,7 @@ namespace Stacks.Actors
         {
             Ensure.IsNotNull(path, nameof(path));
 
-            path = FixActorQueryPath(path);
+            path = PathUtils.FixQueryPath(path);
 
             IActor actor;
             if (!registeredActors.TryGetValue(path, out actor))
@@ -192,16 +179,7 @@ namespace Stacks.Actors
                 parent = GetActor<IRootActor>("root");
             }
 
-            if (parent != null)
-            {
-                if (name != null && parent.Name == null)
-                {
-                    throw new Exception($"Tried to create named actor {name} ({typeof(T).Name}) with parent what is an unnamed actor.\r\n" + 
-                        "Unnamed actors can only have unnamed children actors.");
-                }
-            }
-
-            CheckNameForInvalidCharacters(name);
+            PathUtils.AssertNameForInvalidCharacters(name);
 
             if (name == null)
             {
@@ -236,25 +214,6 @@ namespace Stacks.Actors
             x = (char) (x + 1);
             autoGenActorName = x > 'z' ? prefix + "aa" : prefix + x;
             return autoGenActorName;
-        }
-
-        private void CheckNameForInvalidCharacters(string name)
-        {
-            if (name == null)
-                return;
-
-            if (name.Length == 0)
-                throw new Exception("Name can't be empty whitespace");
-
-            var invalidChars = new[] {'$', ' ', '\t', '/', '\\'};
-
-            foreach (var ch in invalidChars)
-            {
-                if (name.IndexOf(ch) != -1)
-                {
-                    throw new Exception("Actor name cannot contain symbol '" + ch + "'");
-                }
-            }
         }
 
         private static IActor TryUnwrapActorAsWrapper(IActor actor)
@@ -336,7 +295,9 @@ namespace Stacks.Actors
         
         internal void KillActor(Actor actor)
         {
-            if (actor?.Name != null)
+            Ensure.IsNotNull(actor, nameof(actor));
+
+            if (actor.Name != null)
             {
                 IActor a;
                 registeredActors.TryRemove(actor.Path, out a);

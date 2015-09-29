@@ -142,6 +142,19 @@ namespace Stacks.Tests.ActorSystemTests
             var child = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
             Assert.Equal("/root/$b/c/", child.Path);
         }
+
+        [Fact]
+        public void Creating_lots_of_anonymous_actors_should_properly_name_them()
+        {
+            var actors = new IActor[55];
+            for (var i = 0; i < actors.Length; ++i)
+            {
+                actors[i] = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
+            }
+
+            Assert.Equal("/root/$aad/", actors[actors.Length - 1].Path);
+        }
+
     }
     
 }
