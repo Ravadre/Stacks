@@ -81,9 +81,9 @@ namespace Stacks.Tests.ActorSystemTests
         [Fact]
         public void Actor_through_IActor_interface_should_return_valid_actor_name()
         {
-            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ActorWithExtraMethod>("Custom actor name");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorActor, ActorWithExtraMethod>("Custom-actor-name");
 
-            Assert.Equal("Custom actor name", actor.Name);
+            Assert.Equal("Custom-actor-name", actor.Name);
         }
     }
 

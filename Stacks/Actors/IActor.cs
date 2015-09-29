@@ -9,6 +9,7 @@ namespace Stacks.Actors
     public interface IActor
     {
         string Name { get; }
+        string Path { get; }
         IActor Parent { get; }
         IEnumerable<IActor> Children { get; }
 

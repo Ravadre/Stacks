@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ namespace Stacks.Actors
         public string SystemName { get; }
 
         private ConcurrentDictionary<string, IActor> registeredActors;
+        private string autoGenActorName;
 
         internal ActorSystem(string systemName)
         {
@@ -41,6 +43,7 @@ namespace Stacks.Actors
         {
             registeredActors = new ConcurrentDictionary<string, IActor>();
             CreateActor<IRootActor, RootActor>("root");
+            autoGenActorName = "$a";
         }
 
         private Type GuessActorInterfaceType<T>()
@@ -115,44 +118,62 @@ namespace Stacks.Actors
         /// Returns reference to already created actor. Actors that were created without name can not be accessed.
         /// </summary>
         /// <typeparam name="I">Actor's interface type.</typeparam>
-        /// <param name="name">Name of actor. Required.</param>
+        /// <param name="name">Path for the actor. Required.</param>
         /// <returns></returns>
-        public I GetActor<I>(string name)
+        public I GetActor<I>(string path)
             where I: class
         {
-            Ensure.IsNotNull(name, nameof(name));
+            Ensure.IsNotNull(path, nameof(path));
+
+            path = FixActorQueryPath(path);
 
             IActor actor;
-            if (!registeredActors.TryGetValue(name, out actor))
+            if (!registeredActors.TryGetValue(path, out actor))
             {
                 throw new Exception(
-                    $"Could not get actor with name {name}. It was not previously created in system {SystemName}");
+                    $"Could not get actor with path {path}. It was not previously created in system {SystemName}");
             }
 
             var actorTyped = actor as I;
             if (actorTyped == null)
             {
                 throw new Exception(
-                    $"Received actor {name} in system {SystemName}. However, it does not implement interface {typeof (I).FullName}");
+                    $"Received actor {path} in system {SystemName}. However, it does not implement interface {typeof (I).FullName}");
             }
 
             return actorTyped;
         }
 
+        private string FixActorQueryPath(string path)
+        {
+            if (path.Length == 0)
+                return path;
+
+            if (path[0] != '/')
+                path = '/' + path;
+            if (!path.StartsWith("/root"))
+                path = "/root" + path;
+            if (path[path.Length - 1] != '/')
+                path = path + '/';
+            return path;
+        }
+
         /// <summary>
-        /// Returns reference to already created actor. If actor with this name is not present, null is returned.
+        /// Returns reference to an already created actor. If actor with this name is not present, null is returned.
         /// <para></para>
         /// </summary>
         /// <typeparam name="I">Actor's interface type.</typeparam>
-        /// <param name="name">Name of actor. Required.</param>
+        /// <param name="path">Full path for an actor. /root/ can be ommited. Required.</param>
         /// <returns></returns>
-        public I TryGetActor<I>(string name)
+        public I TryGetActor<I>(string path)
             where I : class
         {
-            Ensure.IsNotNull(name, nameof(name));
+            Ensure.IsNotNull(path, nameof(path));
+
+            path = FixActorQueryPath(path);
 
             IActor actor;
-            if (!registeredActors.TryGetValue(name, out actor))
+            if (!registeredActors.TryGetValue(path, out actor))
             {
                 return null;
             }
@@ -163,6 +184,7 @@ namespace Stacks.Actors
         private object CreateActor<T>(Type interfaceType, Func<T> implementationProvider, string name, IActor parent)
             where T: Actor
         {
+            Ensure.IsNotNull(interfaceType, nameof(interfaceType));
             Ensure.IsNotNull(implementationProvider, nameof(implementationProvider));
 
             if (parent == null && name != "root")
@@ -179,13 +201,21 @@ namespace Stacks.Actors
                 }
             }
 
+            CheckNameForInvalidCharacters(name);
+
+            if (name == null)
+            {
+                name = GenerateActorName();
+            }
+
             var actorImplementation = ResolveImplementationProvider(implementationProvider);
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
 
             try
             {
-                RegisterActorToSystem(actorWrapper, name);
-                SetActorProperties(actorImplementation, actorWrapper, parent, name);
+                var path = GetActorPath(name, parent);
+                RegisterActorToSystem(actorWrapper, path);
+                SetActorProperties(actorImplementation, actorWrapper, parent, name, path);
                 actorImplementation.Start();
             }
             catch (Exception)
@@ -198,6 +228,35 @@ namespace Stacks.Actors
             return actorWrapper;
         }
 
+        private string GenerateActorName()
+        {
+            var n = autoGenActorName;
+            var prefix = n.Substring(0, n.Length - 1);
+            var x = n[n.Length - 1];
+            x = (char) (x + 1);
+            autoGenActorName = x > 'z' ? prefix + "aa" : prefix + x;
+            return autoGenActorName;
+        }
+
+        private void CheckNameForInvalidCharacters(string name)
+        {
+            if (name == null)
+                return;
+
+            if (name.Length == 0)
+                throw new Exception("Name can't be empty whitespace");
+
+            var invalidChars = new[] {'$', ' ', '\t', '/', '\\'};
+
+            foreach (var ch in invalidChars)
+            {
+                if (name.IndexOf(ch) != -1)
+                {
+                    throw new Exception("Actor name cannot contain symbol '" + ch + "'");
+                }
+            }
+        }
+
         private static IActor TryUnwrapActorAsWrapper(IActor actor)
         {
             if (actor == null) return null;
@@ -205,12 +264,13 @@ namespace Stacks.Actors
             return (actor as Actor)?.Wrapper;
         }
 
-        private void SetActorProperties(Actor actor, IActor actorWrapper, IActor parent, string name)
+        private void SetActorProperties(Actor actor, IActor actorWrapper, IActor parent, string name, string path)
         {
             parent = TryUnwrapActorAsWrapper(parent);
             var parentWrapper = parent as ActorWrapperBase;
 
             actor.SetName(name);
+            actor.SetPath(path);
             actor.SetParent(parent);
             actor.SetActorSystem(this);
             actor.SetWrapper(actorWrapper);
@@ -224,6 +284,13 @@ namespace Stacks.Actors
 
                 parentWrapper.ActorImplementation.AddChild(actorWrapper);
             }
+        }
+
+        private string GetActorPath(string name, IActor parent)
+        {
+            if (parent == null)
+                return "/" + name + "/";
+            return parent.Path + name + "/";
         }
 
         private IActor CreateActorWrapper(object actorImplementation, Type actorInterface)
@@ -255,31 +322,24 @@ namespace Stacks.Actors
             }
         }
 
-        private void RegisterActorToSystem(IActor actorImplementation, string actorName)
+        private void RegisterActorToSystem(IActor actorImplementation, string actorPath)
         {
-            if (string.IsNullOrEmpty(actorName))
-                return;
+            Ensure.IsNotNull(actorImplementation, nameof(actorImplementation));
+            Ensure.IsNotNull(actorPath, nameof(actorPath));
 
-            if (!registeredActors.TryAdd(actorName, actorImplementation))
+            if (!registeredActors.TryAdd(actorPath, actorImplementation))
             {
                 throw new Exception(
-                    $"Tried to create actor named {actorName} inside system {SystemName}. Actor with such name is already added");
+                    $"Tried to create actor named {actorPath} inside system {SystemName}. Actor with such name is already added");
             }
         }
-
-        private static void EnsureInheritsActor<TImpl>()
-        {
-            if (!typeof(Actor).IsAssignableFrom(typeof(TImpl)))
-                throw new Exception(
-                    $"Implementation type (TImpl) is of type {typeof (TImpl).FullName} which does not inherits from Stacks.Actors.Actor.");
-        }
-
+        
         internal void KillActor(Actor actor)
         {
-            if (actor.Named)
+            if (actor?.Name != null)
             {
                 IActor a;
-                registeredActors.TryRemove(actor.Name, out a);
+                registeredActors.TryRemove(actor.Path, out a);
             }
 
             (actor.Parent as ActorWrapperBase)?.ActorImplementation.RemoveChild(actor.Wrapper);

@@ -140,6 +140,11 @@ namespace Stacks.Actors
             context.SetName(newName);
         }
 
+        internal void SetPath(string newPath)
+        {
+            Path = newPath;
+        }
+
         internal void SetParent(IActor parentActor)
         {
             Parent = parentActor;
@@ -198,8 +203,7 @@ namespace Stacks.Actors
         protected SynchronizationContext GetActorSynchronizationContext() => context.SynchronizationContext;
         protected Task Completion => context.Completion;
        
-        public bool Named => Name != null;
         public string Name { get; private set; }
-
+        public string Path { get; private set; }
     }
 }

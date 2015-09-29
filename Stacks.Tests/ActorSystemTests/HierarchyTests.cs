@@ -86,11 +86,11 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a12"));
             Assert.Null(ActorSystem.Default.TryGetActor<ICalculatorActor>("a121"));
             Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a2"));
-            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a21"));
-            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a22"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a2/a21"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a2/a22"));
             Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a3"));
-            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a31"));
-            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a32"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a3/a31"));
+            Assert.NotNull(ActorSystem.Default.TryGetActor<ICalculatorActor>("a3/a32"));
         }
 
         [Fact]
@@ -136,14 +136,11 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
-        public void Creating_named_actor_as_child_of_anonymous_one_should_fail()
+        public void Creating_named_actor_as_child_of_anonymous_one_should_succeed()
         {
             var parent = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
-
-            Assert.ThrowsAny<Exception>(() =>
-            {
-                var child1 = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
-            });
+            var child = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>("c", parent);
+            Assert.Equal("/root/$b/c/", child.Path);
         }
     }
     

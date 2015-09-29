@@ -10,6 +10,7 @@ namespace Stacks.Actors.CodeGen
     {
         protected readonly Actor actorImplementation;
         public string Name => actorImplementation.Name;
+        public string Path => actorImplementation.Path;
         public IActor Parent => actorImplementation.Parent;
         public IEnumerable<IActor> Children => actorImplementation.Children;
         public IObservable<Exception> Crashed => actorImplementation.Crashed; 
