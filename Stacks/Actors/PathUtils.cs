@@ -42,5 +42,12 @@ namespace Stacks.Actors
                 throw new Exception("Actor name cannot contain symbol '" + ch + "'");
             }
         }
+
+        public static string GetActorPath(IActor parent, string name)
+        {
+            if (parent == null)
+                return "/" + name + "/";
+            return parent.Path + name + "/";
+        }
     }
 }

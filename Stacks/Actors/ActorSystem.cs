@@ -191,7 +191,7 @@ namespace Stacks.Actors
 
             try
             {
-                var path = GetActorPath(name, parent);
+                var path = PathUtils.GetActorPath(parent, name);
                 RegisterActorToSystem(actorWrapper, path);
                 SetActorProperties(actorImplementation, actorWrapper, parent, name, path);
                 actorImplementation.Start();
@@ -208,12 +208,15 @@ namespace Stacks.Actors
 
         private string GenerateActorName()
         {
-            var n = autoGenActorName;
-            var prefix = n.Substring(0, n.Length - 1);
-            var x = n[n.Length - 1];
-            x = (char) (x + 1);
-            autoGenActorName = x > 'z' ? prefix + "aa" : prefix + x;
-            return autoGenActorName;
+            lock (autoGenActorName)
+            {
+                var n = autoGenActorName;
+                var prefix = n.Substring(0, n.Length - 1);
+                var x = n[n.Length - 1];
+                x = (char) (x + 1);
+                autoGenActorName = x > 'z' ? prefix + "aa" : prefix + x;
+                return autoGenActorName;
+            }
         }
 
         private static IActor TryUnwrapActorAsWrapper(IActor actor)
@@ -245,13 +248,6 @@ namespace Stacks.Actors
             }
         }
 
-        private string GetActorPath(string name, IActor parent)
-        {
-            if (parent == null)
-                return "/" + name + "/";
-            return parent.Path + name + "/";
-        }
-
         private IActor CreateActorWrapper(object actorImplementation, Type actorInterface)
         {
             var typeGenerator = new ActorTypeGenerator();
@@ -281,15 +277,15 @@ namespace Stacks.Actors
             }
         }
 
-        private void RegisterActorToSystem(IActor actorImplementation, string actorPath)
+        private void RegisterActorToSystem(IActor actor, string path)
         {
-            Ensure.IsNotNull(actorImplementation, nameof(actorImplementation));
-            Ensure.IsNotNull(actorPath, nameof(actorPath));
+            Ensure.IsNotNull(actor, nameof(actor));
+            Ensure.IsNotNull(path, nameof(path));
 
-            if (!registeredActors.TryAdd(actorPath, actorImplementation))
+            if (!registeredActors.TryAdd(path, actor))
             {
                 throw new Exception(
-                    $"Tried to create actor named {actorPath} inside system {SystemName}. Actor with such name is already added");
+                    $"Tried to create actor named {path} inside system {SystemName}. Actor with such name is already added");
             }
         }
         
