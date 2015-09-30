@@ -84,6 +84,13 @@ Target "Nuget" (fun _ ->
                    ("Rx-Main", "2.2.5");
                    ("protobuf-net", "2.0.0.668") ]
                  "Stacks/stacks.nuspec"
+    
+    BuildPackage "Stacks.DI.Windsor"
+                 ["Stacks.DI.Windsor.dll"]
+                 "Stacks.DI.Windsor.dll"
+                 [ ("Stacks", stacksVer );
+                   ("Castle.Windsor", "3.3.0") ]
+                 "Stacks.DI.Windsor/stacks.di.windsor.nuspec"
 
     BuildPackage "Stacks.MessagePack"
                  ["Stacks.MessagePack.dll"]
