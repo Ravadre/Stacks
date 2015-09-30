@@ -9,13 +9,26 @@ Stacks introduce actor pattern in a completely new way by leveraging C#'s async/
 
 Actors can be used for in-proc communication as well as for IPC. This makes Stacks a good choice when implementing system which must be able to scale, by introducing parallel and distributed techniques.
 
+2.0 Update
+----------
+
+Version 2.0 brings some important changes to how actor model is implemented in Stacks. 
+Up to version 1.3.4 local actors were implemented without any wrapper / proxy layer. This lightweight implementation
+was conscious decision, however, it also imposed some limits on what framework can handle for user.
+From version 2.0 onwards, similarly to how remote proxies are implemented, thin wrapper is generated and dynamically compiled
+based on interface and actor implementation. This wrapper, with newly added `ActorSystem` will allow to further develop actor model in Stacks.
+One example of what is possible using new mechanism is introduction of actor hierarchy, 
+killing whole subtrees of actors when one of their ancestor encountered unhandled exception.
+
+2.0 update is currently in alpha stage and as such, some changes might break an API.
+
 Build
 -----
 
 Stacks can be build with Visual Studio 2013. Earlier versions should work as well.
 Core functionality (actors and sockets) are contained in a single assembly. Serialization functionalities which require third party libraries are compiled into separate assemblies.
 
-### Building on Mono (and Linux) ###
+### Building on Mono (and Linux) (ver. 1.3.4) ###
 
 Building requires at least Mono 3.2, previous versions will crash during compilation.
 ```
@@ -25,6 +38,7 @@ mono nuget.exe restore Stacks-Mono.sln
 xbuild Stacks-Mono.sln
 ```
 
+> ver. 2.0.0 is not yet tested under Mono.
 
 Concepts
 --------
@@ -163,9 +177,7 @@ Everything on Stacks uses lightweight implementation of actor model underneath. 
 Sample actor, which implements behavior for single message:
 
 ```cs
-//One of the ways of defining an actor is to 
-//inherit from Actor class
-class Formatter : Actor
+class Formatter : Actor, IFormatter
 {
     //Because every call has to be scheduled on
     //actor's context, answer will not be ready instantly,
