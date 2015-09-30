@@ -1,7 +1,7 @@
 Stacks - Actor based networking library
 ===================================
 --------------------------------------
-[![Build status](https://ci.appveyor.com/api/projects/status/uxi69l39gcl63tsn/branch/develop?svg=true)](https://ci.appveyor.com/project/Ravadre/stacks/branch/develop) [![NuGet](http://img.shields.io/nuget/v/Stacks.svg?style=flat)](http://www.nuget.org/packages/Stacks/) [![NuGet](https://img.shields.io/nuget/vpre/Stacks.svg?style=flat)]
+[![Build status](https://ci.appveyor.com/api/projects/status/uxi69l39gcl63tsn/branch/develop?svg=true)](https://ci.appveyor.com/project/Ravadre/stacks/branch/develop) [![NuGet](http://img.shields.io/nuget/v/Stacks.svg?style=flat)](http://www.nuget.org/packages/Stacks/) [![NuGet](https://img.shields.io/nuget/vpre/Stacks.svg?style=flat)](http://www.nuget.org/packages/Stacks/)
 
 Stacks is a small networking and actor library. With Stacks it is very easy to create high performance socket client or server without worrying about synchronization or threading. Stacks is highly configurable, features like tls/ssl, framing or serialization can be composed together easily. 
 
