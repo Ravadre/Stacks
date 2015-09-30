@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.30723.0
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks", "Stacks\Stacks.csproj", "{9E0D5C52-AD78-4A5E-82AD-289D272A111D}"
 EndProject
@@ -58,6 +58,12 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PingPong", "PingPong", "{F08320ED-0A77-4676-97FB-07801482D975}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "PerfTests\PingPong\PingPong.csproj", "{E46A1856-8BC9-4EB2-8B04-5E290872B211}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.DI.Windsor", "Stacks.DI.Windsor\Stacks.DI.Windsor.csproj", "{473A7898-24A3-44B5-A8C4-01C23F88EE1B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DI", "DI", "{6543B6C2-75AC-409D-B976-C82B2C4A65B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Tests.DI.Windsor", "Stacks.Tests.DI.Windsor\Stacks.Tests.DI.Windsor.csproj", "{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -199,6 +205,22 @@ Global
 		{E46A1856-8BC9-4EB2-8B04-5E290872B211}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E46A1856-8BC9-4EB2-8B04-5E290872B211}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E46A1856-8BC9-4EB2-8B04-5E290872B211}.Release|x64.ActiveCfg = Release|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Debug|x64.Build.0 = Debug|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Release|x64.ActiveCfg = Release|Any CPU
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B}.Release|x64.Build.0 = Release|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Debug|x64.Build.0 = Debug|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Release|x64.ActiveCfg = Release|Any CPU
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -220,8 +242,7 @@ Global
 		{4DE73ECC-F3AE-43AA-B984-991AE0E13DC2} = {03B85743-07E0-40A3-A074-CBCDECEB3B55}
 		{F08320ED-0A77-4676-97FB-07801482D975} = {1E638865-0E75-4443-9BD2-130751C33DEF}
 		{E46A1856-8BC9-4EB2-8B04-5E290872B211} = {F08320ED-0A77-4676-97FB-07801482D975}
-	EndGlobalSection
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
+		{473A7898-24A3-44B5-A8C4-01C23F88EE1B} = {6543B6C2-75AC-409D-B976-C82B2C4A65B0}
+		{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307} = {6543B6C2-75AC-409D-B976-C82B2C4A65B0}
 	EndGlobalSection
 EndGlobal

@@ -19,15 +19,16 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Client_should_be_able_to_connect_to_server()
         {
-            Utils.CreateServerAndClient<TestActor, ITestActor>(out server, out client);
+            Utils.CreateServerAndClient<ITestActor, TestActor>(out server, out client);
         }
 
         [Fact]
         public void Client_and_server_should_be_able_to_close_without_errors()
         {
-            Utils.CreateServerAndClient<TestActor, ITestActor>(out server, out client);
+            Utils.CreateServerAndClient<ITestActor, TestActor>(out server, out client);
 
             server.Stop();
+            // ReSharper disable once SuspiciousTypeConversion.Global
             ((IActorClientProxy)client).Close();
         }
 
@@ -40,7 +41,7 @@ namespace Stacks.Tests.Remote
                 {
                     try
                     {
-                        var client = clientTask.Result;
+                        clientTask.Wait();
                     } catch (AggregateException exc)
                     {
                         throw exc.InnerException;
@@ -52,7 +53,7 @@ namespace Stacks.Tests.Remote
         public void Client_should_signal_disconnection_when_server_is_closed()
         {
             var disconnected = new ManualResetEventSlim();
-            Utils.CreateServerAndClientProxy<TestActor, ITestActor>(out server, out clientProxy);
+            Utils.CreateServerAndClientProxy<ITestActor, TestActor>(out server, out clientProxy);
 
             clientProxy.Disconnected.Subscribe(exn => { disconnected.Set(); });
             

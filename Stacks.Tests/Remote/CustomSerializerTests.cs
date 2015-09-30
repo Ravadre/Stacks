@@ -22,7 +22,7 @@ namespace Stacks.Tests.Remote
         public async Task Using_custom_noop_serializer_should_succeed()
         {
             var opts = new ActorServerProxyOptions(false, s => new CustomNoopSerializer(s));
-            Utils.CreateServerAndClient<SerializerActor, ISerializerActor>(opts, out server, out client);
+            Utils.CreateServerAndClient<ISerializerActor, SerializerActor>(opts, out server, out client);
 
             var res = await client.Add(5, 6);
 
@@ -34,7 +34,7 @@ namespace Stacks.Tests.Remote
         {
             var opts = new ActorServerProxyOptions(false, s => new CustomTamperSerializer(s));
             var cOpts = new ActorClientProxyOptions(s => new CustomTamperSerializer(s));
-            Utils.CreateServerAndClient<SerializerActor, ISerializerActor>(opts, cOpts, out server, out client);
+            Utils.CreateServerAndClient<ISerializerActor, SerializerActor>(opts, cOpts, out server, out client);
 
             var res = await client.Add(5, 6);
 
@@ -46,7 +46,7 @@ namespace Stacks.Tests.Remote
         {
             var opts = new ActorServerProxyOptions(false, s => new EncryptSerializer(s));
             var cOpts = new ActorClientProxyOptions(s => new EncryptSerializer(s));
-            Utils.CreateServerAndClient<SerializerActor, ISerializerActor>(opts, cOpts, out server, out client);
+            Utils.CreateServerAndClient<ISerializerActor, SerializerActor>(opts, cOpts, out server, out client);
 
             var res = await client.Add(5, 6);
 
@@ -59,10 +59,12 @@ namespace Stacks.Tests.Remote
         Task<int> Add(int x, int y);
     }
 
-    public class SerializerActor : ISerializerActor
+    public class SerializerActor : Actor, ISerializerActor
     {
         public async Task<int> Add(int x, int y)
         {
+            await Context;
+
             return x + y;
         }
     }

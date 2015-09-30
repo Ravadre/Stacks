@@ -1,66 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using Stacks.Actors.Remote.CodeGen;
-using System.Reactive.Threading.Tasks;
-using Stacks.Tcp;
-using System.Reactive.Linq;
+
+// ReSharper disable InconsistentNaming
 
 namespace Stacks.Actors
 {
     public class ActorServerProxy
     {
-        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint)
-            where T: new()
+        private static ServerActorTypeBuilder tBuilder;
+
+        public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint)
+            where T : Actor, I, new()
         {
-            return Create(bindEndPoint, new T());
+            return Create(ActorSystem.Default.CreateActor<I, T>(), bindEndPoint,
+                ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T>(string bindEndPoint)
-            where T: new()
+        public static IActorServerProxy Create<I, T>(string bindEndPoint)
+            where T : Actor, I, new()
         {
-            return Create<T>(IPHelpers.Parse(bindEndPoint), new T());
+            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint),
+                ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, ActorServerProxyOptions options)
-            where T : new()
+        public static IActorServerProxy Create<I, T>(IPEndPoint bindEndPoint, ActorServerProxyOptions options)
+            where T : Actor, I, new()
         {
-            return Create(bindEndPoint, new T(), options);
+            return Create(ActorSystem.Default.CreateActor<I, T>(), bindEndPoint, options);
         }
 
-        public static IActorServerProxy Create<T>(string bindEndPoint, ActorServerProxyOptions options)
-            where T : new()
+        public static IActorServerProxy Create<I, T>(string bindEndPoint, ActorServerProxyOptions options)
+            where T : Actor, I, new()
         {
-            return Create<T>(IPHelpers.Parse(bindEndPoint), new T(), options);
+            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint), options);
         }
 
-        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, T actorImpl)
+        public static IActorServerProxy Create<I>(IPEndPoint bindEndPoint, I actorImpl)
         {
             return Create(actorImpl, bindEndPoint, ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T>(string bindEndPoint, T actorImpl)
+        public static IActorServerProxy Create<I>(string bindEndPoint, I actorImpl)
         {
             return Create(actorImpl, IPHelpers.Parse(bindEndPoint), ActorServerProxyOptions.Default);
         }
 
-        public static IActorServerProxy Create<T>(IPEndPoint bindEndPoint, T actorImpl, ActorServerProxyOptions options)
+        public static IActorServerProxy Create<I>(IPEndPoint bindEndPoint, I actorImpl, ActorServerProxyOptions options)
         {
             return Create(actorImpl, bindEndPoint, options);
         }
 
-        public static IActorServerProxy Create<T>(string bindEndPoint, T actorImpl, ActorServerProxyOptions options)
+        public static IActorServerProxy Create<I>(string bindEndPoint, I actorImpl, ActorServerProxyOptions options)
         {
             return Create(actorImpl, IPHelpers.Parse(bindEndPoint), options);
         }
 
-        private static ServerActorTypeBuilder tBuilder;
-
-        private static IActorServerProxy Create<T>(T actorImplementation, IPEndPoint bindEndPoint, ActorServerProxyOptions options)
+        private static IActorServerProxy Create<I>(I actorImplementation, IPEndPoint bindEndPoint,
+            ActorServerProxyOptions options)
         {
             var aType = actorImplementation.GetType();
             tBuilder = new ServerActorTypeBuilder("ActorServerProxy_ " + aType.FullName);
@@ -70,8 +68,8 @@ namespace Stacks.Actors
             var actorImplType = tBuilder.CreateActorType(aType);
             tBuilder.SaveToFile();
 
-            var actor = Activator.CreateInstance(actorImplType, new object[] { actorImplementation, bindEndPoint, options });
-            return (ActorServerProxyTemplate<T>)actor;
+            var actor = Activator.CreateInstance(actorImplType, actorImplementation, bindEndPoint, options);
+            return (IActorServerProxy)actor;
         }
     }
 }

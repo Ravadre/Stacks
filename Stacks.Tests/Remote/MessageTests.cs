@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.Remote
@@ -22,19 +23,19 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_should_call_it_on_server()
         {
-            var impl = new MessageActor();
-
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(impl, out server, out client);
+            var pingsCalled = new PingsCalled();
+            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(new Args(pingsCalled));
+            Utils.CreateServerAndClient(sImpl, out server, out client);
 
             client.Ping().Wait();
 
-            Assert.Equal(1, impl.PingsCalled);
+            Assert.Equal(1, pingsCalled.Count);
         }
 
         [Fact]
         public void Calling_method_with_primitive_type_as_return_parameter_should_work_correctly()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var random = client.Random().Result;
         }
@@ -42,7 +43,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_with_object_that_isnt_protocontract_should_return_failed_task()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             Assert.Throws(typeof(InvalidOperationException), () =>
                 {
@@ -61,7 +62,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_with_enumerable_of_proto_contract_data_should_be_accepted()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var res = client.PassValidData(new[]
                 {
@@ -75,7 +76,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Multiple_parameters_should_be_serialized_properly()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312).Wait();
         }
@@ -83,7 +84,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Errors_on_server_side_should_propagate_exception_messages()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             try
             {
@@ -96,9 +97,9 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public void Errors_on_server_side_methods_should_not_disconnect_client()
+        public async Task If_actor_throws_on_server_and_is_stopped_it_should_throw_for_client_proxy()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             try
             {
@@ -109,13 +110,16 @@ namespace Stacks.Tests.Remote
                 Assert.Equal("Custom fail message", exc.InnerException.Message);
             }
 
-            client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312).Wait();
+            await Assert.ThrowsAsync<Exception>(async () =>
+            {
+                await client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312);
+            });
         }
 
         [Fact]
         public void Request_should_fail_if_server_goes_down_while_processing_an_event()
         {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
+            Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
             var addResult = client.LongRunningAdder(5, 6);
             Thread.Sleep(50);
@@ -135,26 +139,10 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public async void If_first_parameter_is_IActorSession_it_should_be_filled_with_reference_to_an_client()
-        {
-            Utils.CreateServerAndClient<MessageActor, IMessageActor>(out server, out client);
-            var client2 = ActorClientProxy.CreateActor<IMessageActor>("tcp://localhost:" + server.BindEndPoint.Port).Result;
-
-            await client.PassDataWithClient(1);
-            await client.PassDataWithClient(1);
-            await client2.PassDataWithClient(2);
-            await client.PassDataWithClient(1);
-            await client2.PassDataWithClient(2);
-
-        }
-
-       
-
-        [Fact]
         public async void Explicit_interface_implementation_should_correctly_map_methods_on_server_side()
         {
             IExplicitInterfaceActor client;
-            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+            Utils.CreateServerAndClient<IExplicitInterfaceActor, ExplicitInterfaceActor>(out server, out client);
 
             await client.Test();
         }
@@ -164,7 +152,7 @@ namespace Stacks.Tests.Remote
         {
             var receivedValue = new ManualResetEventSlim();
             IExplicitInterfaceActor client;
-            Utils.CreateServerAndClient<ExplicitInterfaceActor, IExplicitInterfaceActor>(out server, out client);
+            Utils.CreateServerAndClient<IExplicitInterfaceActor, ExplicitInterfaceActor>(out server, out client);
 
             await client.Test();
 
@@ -181,10 +169,8 @@ namespace Stacks.Tests.Remote
         IObservable<long> ValuesPublic { get; }
     }
 
-    public class ExplicitInterfaceActor : IExplicitInterfaceActor
+    public class ExplicitInterfaceActor : Actor, IExplicitInterfaceActor
     {
-        private readonly ActorContext ctx = new ActorContext();
-
         private IObservable<long> values;
 
         public ExplicitInterfaceActor()
@@ -194,7 +180,7 @@ namespace Stacks.Tests.Remote
 
         async Task IExplicitInterfaceActor.Test()
         {
-            await ctx;
+            await Context;
         }
 
         IObservable<long> IExplicitInterfaceActor.Values
@@ -245,20 +231,40 @@ namespace Stacks.Tests.Remote
         public int Result { get; set; }
     }
 
-    public class MessageActor : Actor
+    public class PingsCalled
+    {
+        public int Count { get; set; }
+
+        public void Incr()
+        {
+            lock (this)
+            {
+                ++Count;
+            }
+        }
+    }
+
+    public class MessageActor : Actor, IMessageActor
     {
         private Random rng = new Random();
         private Dictionary<int, IFramedClient> clientCache = new Dictionary<int, IFramedClient>();
 
-        private volatile int pingsCalled;
+        private PingsCalled pingsCalled;
 
-        public int PingsCalled { get { return pingsCalled; } }
+        public MessageActor()
+            : this(new PingsCalled())
+        { }
+
+        public MessageActor(PingsCalled pingsCalled)
+        {
+            this.pingsCalled = pingsCalled;
+        }
 
         public async Task Ping()
         {
             await Context;
 
-            pingsCalled++;
+            pingsCalled.Incr();
         }
 
         public async Task<int> Random()
@@ -286,12 +292,12 @@ namespace Stacks.Tests.Remote
             return data.Select(d => new ValidDataResponse { Result = d.X + d.Y });
         }
 
-        public async Task PassDataWithClient(IActorSession session, int c)
+        public async Task PassDataWithClient(int c)
         {
             await Context;
             await Task.Delay(1);
 
-            var client = session.Client;
+            var client = ActorSession.Current.Client;
 
             Assert.NotNull(client);
 

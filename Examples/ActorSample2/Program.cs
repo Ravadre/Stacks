@@ -13,7 +13,7 @@ namespace ActorSample2
     {
         static void Main(string[] args)
         {
-            var weather = new Weather();
+            var weather = ActorSystem.Default.CreateActor<IWeather, Weather>();
 
             try
             {
@@ -29,15 +29,20 @@ namespace ActorSample2
         }
     }
 
-    class Weather
+    interface IWeather
+    {
+        Task<double> GetTemperature(string city);
+    }
+
+    class Weather : Actor, IWeather
     {
         //Actor can also be implemented by defining context
-        private ActorContext actor = new ActorContext();
+        //private ActorContext actor = new ActorContext();
         private HttpClient httpClient = new HttpClient();
 
         public async Task<double> GetTemperature(string city)
         {
-            await actor;
+            await Context;
 
             //Other actors or services can be awaited, execution will be resumed
             //on actor context automatically.

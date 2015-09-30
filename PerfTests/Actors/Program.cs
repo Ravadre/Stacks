@@ -7,6 +7,9 @@ using Stacks.Actors;
 using System.Management;
 using System.Threading;
 using System.Diagnostics;
+using Stacks.Actors.DI;
+
+#pragma warning disable 4014
 
 namespace Actors
 {
@@ -50,14 +53,14 @@ namespace Actors
             var repeatsPerClient = repeat / numberOfClients;
             //var system = new ActorSystem("PingPong");
 
-            var clients = new List<Client>();
+            var clients = new List<IClient>();
             var tasks = new List<Task>();
             for (int i = 0; i < numberOfClients; i++)
             {
-                var destination = new Destination();
+                var destination = ActorSystem.Default.CreateActor<IDestination, Destination>();
                 var ts = new TaskCompletionSource<bool>();
                 tasks.Add(ts.Task);
-                var client = new Client(destination, repeatsPerClient, ts);
+                var client = ActorSystem.Default.CreateActor<IClient, Client>(new Args { ["a"] = new Client(destination, repeatsPerClient, ts) });
                 clients.Add(client);
             }
 
@@ -100,59 +103,72 @@ namespace Actors
 
             Task.WaitAll(tasks);
         }
+    }
 
-        public class Destination : Actor
+    public interface IDestination
+    {
+        Task Ping(Client c);
+    }
+
+    public class Destination : Actor, IDestination
+    {
+        public async Task Ping(Client c)
         {
-            public async void Ping(Client c)
-            {
-                await Context;
+            await Context;
 
-                c.Pong();
+            c.Pong();
+        }
+    }
+
+    public interface IClient
+    {
+        Task Pong();
+        Task Start();
+    }
+
+    public class Client : Actor, IClient
+    {
+        public long received;
+        public long sent;
+
+        public long repeat;
+        private IDestination actor;
+        private TaskCompletionSource<bool> latch;
+
+        public Client(IDestination actor, long repeat, TaskCompletionSource<bool> latch)
+        {
+            this.actor = actor;
+            this.repeat = repeat;
+            this.latch = latch;
+        }
+
+        public async Task Pong()
+        {
+            await Context;
+
+            ++received;
+            if (sent < repeat)
+            {
+                actor.Ping(this);
+                sent++;
+            }
+            else if (received >= repeat)
+            {
+                latch.SetResult(true);
             }
         }
 
-        public class Client : Actor
+        public async Task Start()
         {
-            public long received;
-            public long sent;
+            await Context;
 
-            public long repeat;
-            private Destination actor;
-            private TaskCompletionSource<bool> latch;
-
-            public Client(Destination actor, long repeat, TaskCompletionSource<bool> latch)
+            for (int i = 0; i < Math.Min(1000, repeat); i++)
             {
-                this.actor = actor;
-                this.repeat = repeat;
-                this.latch = latch;
-            }
-
-            public async void Pong()
-            {
-                await Context;
-
-                ++received;
-                if (sent < repeat)
-                {
-                    actor.Ping(this);
-                    sent++;
-                }
-                else if (received >= repeat)
-                {
-                    latch.SetResult(true);
-                }
-            }
-
-            public async void Start()
-            {
-                await Context;
-
-                for (int i = 0; i < Math.Min(1000, repeat); i++)
-                {
-                    actor.Ping(this);
-                    sent++;
-                }
+                actor.Ping(this);
+                sent++;
             }
         }
     }
 }
+
+#pragma warning restore 4014

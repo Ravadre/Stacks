@@ -1,69 +1,209 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class Actor : IScheduler
+    public abstract class Actor : IActor
     {
+        private readonly IExecutor executor;
         private readonly ActorContext context;
-        private readonly string name;
+        internal IActor Wrapper { get; private set; }
 
-        public Actor()
-            : this(null, 
-                   new ActionBlockExecutor(null, ActionBlockExecutorSettings.Default))
-        { }
+        public IActor Parent { get; private set; }
+        public IEnumerable<IActor> Children => children.Keys;
+        public ActorSystem System { get; private set; }
 
-        public Actor(string name)
-            : this(name, 
-                   new ActionBlockExecutor(name, ActionBlockExecutorSettings.Default))
-        { }
+        private readonly ManualResetEventSlim isStoppingEvent;
+        private readonly ManualResetEventSlim syncLock;
+        private readonly ConcurrentDictionary<IActor, IActor> children;
 
-        public Actor(string name, IExecutor executor)
+        private readonly AsyncSubject<Exception> crashedSubject;
+
+        public IObservable<Exception> Crashed => crashedSubject.AsObservable();
+       
+        /// <summary>
+        /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
+        /// dependencied may not be registered to ActorSystem. 
+        /// <para></para>
+        /// Use OnStart() method to instead.
+        /// </summary>
+        protected Actor()
+            : this(new ActionBlockExecutor(ActionBlockExecutorSettings.Default))
         {
-            this.name = name;
-            this.context = new ActorContext(name, executor);
         }
 
-        protected Task Completion { get { return context.Completion; } }
-
-        protected Task Stop()
+        /// <summary>
+        /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
+        /// dependencied may not be registered to ActorSystem. 
+        /// <para></para>
+        /// Use OnStart() method to instead.
+        /// </summary>
+        protected Actor(ActorSettings settings)
+            : this(
+                new ActionBlockExecutor(
+                    ActionBlockExecutorSettings.DefaultWith(settings.SupportSynchronizationContext)))
         {
-            return context.Stop();
         }
 
-        public bool Named { get { return name != null; } }
-        public string Name { get { return name; } }
-
-        protected IActorContext Context { get { return context; } }
-        protected SynchronizationContext GetActorSynchronizationContext()
+        private Actor(IExecutor executor)
         {
-            return context.Context;
+            this.executor = executor;
+
+            if (!ActorCtorGuardian.IsGuarded())
+            {
+                throw new Exception(
+                    $"Tried to create an actor of type {GetType().FullName} using constructor. Please, use " + 
+                    $"{nameof(ActorSystem)}.{nameof(ActorSystem.CreateActor)} method instead.");
+            }
+
+            children = new ConcurrentDictionary<IActor, IActor>();
+            isStoppingEvent = new ManualResetEventSlim();
+            syncLock = new ManualResetEventSlim(true);
+
+            crashedSubject = new AsyncSubject<Exception>();
+
+            executor.Error += ErrorOccuredInExecutor;
+            context = new ActorContext(executor);
         }
 
-        public DateTimeOffset Now
+        private void ErrorOccuredInExecutor(Exception exn)
         {
-            get { return ((IScheduler)context).Now; }
+            // This should probably never happen, if it does, always stop actor, as this can be considered fatal error.
+            Stop().Wait();
         }
 
-        public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
+        internal void StopBecauseOfError(string methodName, Exception exn)
         {
-            return context.Schedule(state, dueTime, action);
+            Stop().Wait();
         }
 
-        public IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
+        protected virtual void OnStart()
         {
-            return context.Schedule(state, dueTime, action);
+        }
+        
+        protected virtual void OnStopped()
+        {
         }
 
-        public IDisposable Schedule<TState>(TState state, Func<IScheduler, TState, IDisposable> action)
+        internal void Start()
         {
-            return context.Schedule(state, action);
+            try
+            {
+                context.PostTask(OnStart).Wait();
+            }
+            catch (Exception exn)
+            {
+                throw new Exception($"Error occured when actor was starting. Actor: '{Name}' - {GetType().FullName}. See inner exception for details.", exn);
+            }
         }
+
+        public Task Stop()
+        {
+            // To avoid deadlocks, stopping procedure is called on threadpool. Is it necessary?
+            return Task.Run(() =>
+            {
+                isStoppingEvent.Set();
+                syncLock.Wait();
+
+                foreach (var child in Children.ToArray())
+                {
+                    child.Stop().Wait();
+                }
+
+                context.Stop().Wait();
+                
+                System.UnregisterActor(this);
+
+                try
+                {
+                    OnStopped();
+                }
+                catch (Exception)
+                {
+                    // ignore
+                }
+            });
+        } 
+
+
+        internal void SetName(string newName)
+        {
+            Name = newName;
+            context.SetName(newName);
+        }
+
+        internal void SetPath(string newPath)
+        {
+            Path = newPath;
+        }
+
+        internal void SetParent(IActor parentActor)
+        {
+            Parent = parentActor;
+        }
+
+        internal void AddChild(IActor childActor)
+        {
+            Ensure.IsNotNull(childActor, nameof(childActor));
+
+            try
+            {
+                syncLock.Reset();
+                if (isStoppingEvent.IsSet)
+                {
+                    throw new Exception();
+                }
+
+                if (!children.TryAdd(childActor, childActor))
+                {
+                    throw new InvalidOperationException(
+                        $"Tried to add child to actor '{Name}' - {GetType().FullName}. " +
+                        $"Child to be added '{childActor.Name}' - {childActor.GetType().FullName}. " +
+                        $"Actor already has this child registered.");
+                }
+            }
+            finally
+            {
+                syncLock.Set();
+            }
+        }
+
+        internal void SetWrapper(IActor actorWrapper)
+        {
+            Wrapper = actorWrapper;
+        }
+        
+        internal void SetActorSystem(ActorSystem system)
+        {
+            System = system;
+        }
+
+        internal void RemoveChild(IActor childActor)
+        {
+            Ensure.IsNotNull(childActor, nameof(childActor));
+            IActor a;
+            children.TryRemove(childActor, out a);
+        }
+
+        internal void OnCrashed(Exception exn)
+        {
+            crashedSubject.OnNext(exn);
+            crashedSubject.OnCompleted();
+        }
+
+        protected IActorContext Context => context;
+        protected SynchronizationContext GetActorSynchronizationContext() => context.SynchronizationContext;
+        protected Task Completion => context.Completion;
+       
+        public string Name { get; private set; }
+        public string Path { get; private set; }
     }
-
 }

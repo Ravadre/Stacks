@@ -37,7 +37,7 @@ namespace Stacks
         {
             IsNotNull(type, name);
 
-            message = message == null ? "Given type must be an interface" : message;
+            message = message ?? "Given type must be an interface";
 
             if (!type.IsInterface)
                 throw new ArgumentException(message, name);
@@ -47,7 +47,7 @@ namespace Stacks
         {
             IsNotNull(type, name);
 
-            message = message == null ? "Given type must be an instantiable class" : message;
+            message = message ?? "Given type must be an instantiable class";
 
             if (!type.IsClass ||
                 type.IsAbstract)

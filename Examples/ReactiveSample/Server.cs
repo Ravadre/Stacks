@@ -93,7 +93,7 @@ namespace ReactiveSample
 
             // Service starts with an Observable, which will be automatically
             // scheduled on service's actor context (thanks to passing `Context` to
-            // Intervalmethod). 
+            // Interval method). 
             // One can use composition operators, like Do, Select, Where to
             // implement pipeline.
             // In this example, state modification is made (which is safe, because it is

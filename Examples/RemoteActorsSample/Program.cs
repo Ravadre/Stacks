@@ -22,7 +22,7 @@ namespace RemoteActorsSample
 
             // Creating and starting server proxy for an actor is easy.
             // Returned reference can be used to stop server.
-            var actorServer = ActorServerProxy.Create<CalculatorActor>("tcp://*:4632");
+            var actorServer = ActorServerProxy.Create<ICalculatorActor, CalculatorActor>("tcp://*:4632");
 
             // To create client proxy and connect to the server just pass an interface which describes
             // what method actor supports. Returned object implements given interface,
@@ -105,6 +105,10 @@ namespace RemoteActorsSample
                 }
             }
 
+            // Error on server side will by default stop actor. So we need to restart it.
+            actorServer.Stop();
+            actorServer = ActorServerProxy.Create<ICalculatorActor, CalculatorActor>("tcp://*:4632");
+            calculator = ActorClientProxy.CreateActor<ICalculatorActor>("tcp://localhost:4632").Result;
 
 
             {
@@ -190,7 +194,7 @@ namespace RemoteActorsSample
                 // Created actor proxy is, from the user's perspective just an interface,
                 // which can also be implemented by local actor, therefore,
                 // where the code executes is fully transparent for other methods.
-                ICalculatorActor localCalc = new CalculatorActor();
+                ICalculatorActor localCalc = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
 
                 Console.WriteLine();
                 Console.WriteLine("Remote: 4 + 8 = " + Add(calculator, 4, 8));

@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 using Stacks;
 using Stacks.Actors.Remote;
 using Stacks.Tcp;
+using Stacks.Actors.Remote.CodeGen;
 
 namespace Stacks.Actors
 {
-    using Stacks.Actors.Remote.CodeGen;
-
     public class ActorClientProxy
     {
         public static Task<IActorClientProxy<T>> CreateProxy<T>(IPEndPoint remoteEndPoint)
@@ -111,7 +110,7 @@ namespace Stacks.Actors
                         .ContinueWith(t =>
                             {
                                 if (t.Exception == null)
-                                    return (IActorClientProxy<T>)t.Result;
+                                    return t.Result;
                                 else
                                     throw t.Exception.InnerException;
                             });

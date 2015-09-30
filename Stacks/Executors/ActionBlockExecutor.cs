@@ -15,29 +15,27 @@ namespace Stacks
 #if !MONO
     public class ActionBlockExecutor : SynchronizationContext, IExecutor
     {
-        private ActionBlock<Action> queue;
-        private string name;
-        private bool supportSynchronizationContext;
+        private readonly ActionBlock<Action> queue;
+        private readonly bool supportSynchronizationContext;
         private volatile bool stopImmediately;
 
-        public Task Completion { get { return queue.Completion; } }
+        public Task Completion => queue.Completion;
         public event Action<Exception> Error;
-        public string Name { get { return name; } }
-        
-
-        public ActionBlockExecutor()
-            : this(null, new ActionBlockExecutorSettings())
-        { }
+        public string Name { get; set; }
 
         public ActionBlockExecutor(string name)
             : this(name, new ActionBlockExecutorSettings())
         { }
 
+        public ActionBlockExecutor()
+            : this(null, new ActionBlockExecutorSettings())
+        { }
+
         public ActionBlockExecutor(string name, ActionBlockExecutorSettings settings)
         {
-            this.name = name == null ? string.Empty : name;
-            this.supportSynchronizationContext = settings.SupportSynchronizationContext;
-            this.queue = new ActionBlock<Action>(a =>
+            Name = name;
+            supportSynchronizationContext = settings.SupportSynchronizationContext;
+            queue = new ActionBlock<Action>(a =>
             {
                 if (stopImmediately) return;
 
@@ -49,10 +47,14 @@ namespace Stacks
             });
         }
 
+        public ActionBlockExecutor(ActionBlockExecutorSettings settings)
+            : this(null, settings)
+        { }
+
         private void ExecuteAction(Action a)
         {
             SynchronizationContext oldCtx = null;
-            if (this.supportSynchronizationContext)
+            if (supportSynchronizationContext)
             {
                 oldCtx = SynchronizationContext.Current;
                 SynchronizationContext.SetSynchronizationContext(this);
@@ -68,7 +70,7 @@ namespace Stacks
             }
             finally
             {
-                if (this.supportSynchronizationContext)
+                if (supportSynchronizationContext)
                     SynchronizationContext.SetSynchronizationContext(oldCtx);
             }
         }
@@ -76,20 +78,21 @@ namespace Stacks
         private void ErrorOccured(Exception e)
         {
             OnError(e);
-            this.queue.Complete();
         }
 
         private void OnError(Exception e)
         {
-            var h = Error;
-            if (h != null)
+            try
             {
-                try { h(e); }
-                catch { }
+                Error?.Invoke(e);
+            }
+            catch
+            { 
+                // Ignore 
             }
         }
 
-        public Task<System.Reactive.Unit> PostTask(Action action)
+        public Task<Unit> PostTask(Action action)
         {
             return ExecutorHelper.PostTask(this, action);
         }
@@ -102,26 +105,27 @@ namespace Stacks
         public void Enqueue(Action action)
         {
             if (!queue.Post(action))
-                queue.SendAsync(action).Wait();
+            {
+                if (!queue.SendAsync(action).Result)
+                {
+                    //TODO: Inspect why throwing exception here will randomly fail tests.
+                }
+            }
+                
         }
-
-        public Task Stop(bool stopImmediately)
-        {
-            queue.Complete();
-            this.stopImmediately = stopImmediately;
-            return queue.Completion;
-        }
-
+        
         public Task Stop()
         {
-            return Stop(stopImmediately: false);
+            stopImmediately = true;
+            queue.Complete();
+            return Task.FromResult(0);
         }
 
         public SynchronizationContext Context
         {
             get
             {
-                if (!this.supportSynchronizationContext)
+                if (!supportSynchronizationContext)
                     throw new InvalidOperationException("This instance of action block executor " +
                                                         "does not support synchronization context");
                 return this;
@@ -146,14 +150,11 @@ namespace Stacks
         public override string ToString()
         {
             return "ActionBlock Executor " +
-                (string.IsNullOrWhiteSpace(name) ? "" : string.Format("({0})", name));
+                (string.IsNullOrWhiteSpace(Name) ? "" : $"({Name})");
         }
 
 
-        DateTimeOffset IScheduler.Now
-        {
-            get { return DateTimeOffset.UtcNow; }
-        }
+        DateTimeOffset IScheduler.Now => DateTimeOffset.UtcNow;
 
         public IDisposable Schedule<TState>(TState state, DateTimeOffset dueTime, Func<IScheduler, TState, IDisposable> action)
         {

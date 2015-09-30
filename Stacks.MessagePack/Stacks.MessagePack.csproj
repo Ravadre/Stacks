@@ -52,8 +52,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="MsgPack, Version=0.5.0.0, Culture=neutral, PublicKeyToken=a2625990d5dc0167, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\MsgPack.Cli.0.5.9\lib\net45\MsgPack.dll</HintPath>
+      <HintPath>..\packages\MsgPack.Cli.0.5.11\lib\net45\MsgPack.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

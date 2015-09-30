@@ -2,10 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Stacks.Actors.Remote.CodeGen
+namespace Stacks.Actors.CodeGen
 {
     static class MethodInfoMappingExtensions
     {
@@ -40,10 +39,10 @@ namespace Stacks.Actors.Remote.CodeGen
 
     public struct MethodInfoMapping
     {
-        public MethodInfo Info { get; private set; }
-        public MethodInfo InterfaceInfo { get; private set; }
-        public string PublicName { get; private set; }
-        public string MappedName { get; private set; }
+        public MethodInfo Info { get; }
+        public MethodInfo InterfaceInfo { get; }
+        public string PublicName { get; }
+        public string MappedName { get; }
 
         public MethodInfoMapping(MethodInfo info, MethodInfo interfaceInfo, string publicName, string mappedName) 
             : this()
@@ -57,10 +56,10 @@ namespace Stacks.Actors.Remote.CodeGen
 
     public struct PropertyInfoMapping
     {
-        public PropertyInfo Info { get; private set; }
-        public PropertyInfo InterfaceInfo { get; private set; }
-        public string PublicName { get; private set; }
-        public string MappedName { get; private set; }
+        public PropertyInfo Info { get; }
+        public PropertyInfo InterfaceInfo { get; }
+        public string PublicName { get; }
+        public string MappedName { get; }
 
         public PropertyInfoMapping(PropertyInfo propInfo, PropertyInfo interfacePropInfo, string publicName, string mappedName)
             : this()
@@ -76,9 +75,14 @@ namespace Stacks.Actors.Remote.CodeGen
     {
         public static MethodInfoMapping[] FindValidProxyMethods(this Type type, bool onlyPublic)
         {
+            return type.FindValidMethods(onlyPublic).Where(m => typeof(Task).IsAssignableFrom(m.Info.ReturnType)).ToArray();
+        }
+
+        public static MethodInfoMapping[] FindValidMethods(this Type type, bool onlyPublic)
+        {
             var t = type;
             var publicMethods = t.GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                                 .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
+                                 .Where(m => !m.IsSpecialName)
                                  .Select(m => new MethodInfoMapping(m, m, m.Name, m.Name));
 
             if (onlyPublic)
@@ -96,16 +100,20 @@ namespace Stacks.Actors.Remote.CodeGen
                 // To check for this case, interface maps are checked.
                 // This makes standard interface implementation pattern for F# viable
                 // for server side proxies.
-                foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
+                if (!t.IsInterface)
                 {
-                    for (var i = 0; i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length); ++i)
+                    foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
                     {
-                        mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        for (var i = 0;
+                            i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length);
+                            ++i)
+                        {
+                            mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        }
                     }
                 }
-
-                var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic)
-                                        .Where(m => typeof (Task).IsAssignableFrom(m.ReturnType))
+                var overridenMethods = t.GetMethods(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                                        .Where(m => !m.IsSpecialName)
                                         .Where(m => mappings.ContainsKey(m.Name))
                                         .Select(m => new MethodInfoMapping(m, mappings[m.Name], mappings[m.Name].Name, m.Name));
 
@@ -115,13 +123,19 @@ namespace Stacks.Actors.Remote.CodeGen
                     .ToArray();
             }
         }
-        
+
         public static PropertyInfoMapping[] FindValidObservableProperties(this Type type, bool onlyPublic)
         {
+            return type.FindValidProperties(onlyPublic).Where(p => p.Info.PropertyType.IsGenericType &&
+                                                                   typeof (IObservable<>) ==
+                                                                   p.Info.PropertyType.GetGenericTypeDefinition())
+                       .ToArray();
+        }
+
+        public static PropertyInfoMapping[] FindValidProperties(this Type type, bool onlyPublic)
+        {
             var t = type;
-            var publicProperties = t.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                                    .Where(p => p.PropertyType.IsGenericType &&
-                                                typeof (IObservable<>) == p.PropertyType.GetGenericTypeDefinition())
+            var publicProperties = t.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                                     .Select(m => new PropertyInfoMapping(m, m, m.Name, m.Name));
 
             if (onlyPublic)
@@ -137,22 +151,24 @@ namespace Stacks.Actors.Remote.CodeGen
                 // To check for this case, interface maps are checked.
                 // This makes standard interface implementation pattern for F# viable
                 // for server side proxies.
-                foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
+                if (!t.IsInterface)
                 {
-                    for (var i = 0; i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length); ++i)
+                    foreach (var mapping in type.GetInterfaces().Select(iFace => t.GetInterfaceMap(iFace)))
                     {
-                        mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        for (var i = 0;
+                            i < Math.Min(mapping.InterfaceMethods.Length, mapping.TargetMethods.Length);
+                            ++i)
+                        {
+                            mappings[mapping.TargetMethods[i].Name] = mapping.InterfaceMethods[i];
+                        }
                     }
                 }
-
                 Func<MethodInfo, PropertyInfo> findPropByGetMethod = m =>
-                    m.DeclaringType.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                     .Where(p => p.GetGetMethod(true).Name == m.Name)
-                     .First();
+                    m.DeclaringType
+                     .GetProperties(BindingFlags.Instance | BindingFlags.Public)
+                     .First(p => p.GetGetMethod(true).Name == m.Name);
 
-                var overridenProperties = t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic)
-                                        .Where(p => p.PropertyType.IsGenericType &&
-                                            typeof(IObservable<>) == p.PropertyType.GetGenericTypeDefinition())
+                var overridenProperties = t.GetProperties(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
                                         .Where(m => mappings.ContainsKey(m.GetMethod.Name))
                                         .Select(p => new PropertyInfoMapping(
                                                         p, 

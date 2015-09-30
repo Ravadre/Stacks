@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using Stacks.Actors.CodeGen;
 using Stacks.Actors.Proto;
 using Stacks.Tcp;
 
@@ -32,11 +33,13 @@ namespace Stacks.Actors.Remote.CodeGen
         public Type CreateActorType(Type actorType)
         {
             Type implType = null;
+#if !DEBUG_CODEGEN
             lock (constructedTypesCache)
             {
                 if (constructedTypesCache.TryGetValue(actorType, out implType))
                     return implType;
             }
+#endif
 
             templateType = typeof(ActorServerProxyTemplate<>).MakeGenericType(new[] { actorType });
             this.actorType = actorType;

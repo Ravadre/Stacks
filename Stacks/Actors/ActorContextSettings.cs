@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks.Actors
 {
-    public class ActorContextSettings
+    internal class ActorContextSettings
     {
         public bool SupportSynchronizationContext { get; set; }
 

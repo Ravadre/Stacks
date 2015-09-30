@@ -23,7 +23,7 @@ namespace Stacks.Actors
         protected Dictionary<IFramedClient, IActorSession> actorSessions;
         protected Dictionary<FramedClient, Exception> clientErrors;
         protected List<FramedClient> clients;
-        protected Dictionary<FramedClient, DateTime> clientTimestamps;
+        protected Dictionary<FramedClient, TimeSpan> clientTimestamps;
         protected IExecutor executor;
         protected Dictionary<string, Action<FramedClient, ActorProtocolFlags, string, long, MemoryStream>> handlers;
         protected bool isStopped;
@@ -35,6 +35,7 @@ namespace Stacks.Actors
         private readonly Subject<IActorSession> clientActorConnected;
         private readonly Subject<ClientActorDisconnectedData> clientActorDisconnected;
 
+        // ReSharper disable once PublicConstructorInAbstractClass
         public ActorServerProxyTemplate(T actorImplementation, IPEndPoint bindEndPoint, ActorServerProxyOptions options)
         {
             isStopped = false;
@@ -51,33 +52,25 @@ namespace Stacks.Actors
             clientActorConnected = new Subject<IActorSession>();
             clientActorDisconnected = new Subject<ClientActorDisconnectedData>();
 
-            clientTimestamps = new Dictionary<FramedClient, DateTime>();
+            clientTimestamps = new Dictionary<FramedClient, TimeSpan>();
             clientErrors = new Dictionary<FramedClient, Exception>();
             pingTimer = new Timer(OnPingTimer, null, 10000, 10000);
 
-            protocolHandlers = new Dictionary<int, Action<FramedClient, ActorProtocolFlags, MemoryStream>>();
-            protocolHandlers[ActorProtocol.HandshakeId] = HandleHandshakeMessage;
-            protocolHandlers[ActorProtocol.PingId] = HandlePingMessage;
+            protocolHandlers = new Dictionary<int, Action<FramedClient, ActorProtocolFlags, MemoryStream>>
+            {
+                [ActorProtocol.HandshakeId] = HandleHandshakeMessage,
+                [ActorProtocol.PingId] = HandlePingMessage
+            };
 
             server = new SocketServer(executor, bindEndPoint);
             server.Connected.Subscribe(ClientConnected);
             server.Start();
         }
 
-        public IPEndPoint BindEndPoint
-        {
-            get { return server.BindEndPoint; }
-        }
+        public IPEndPoint BindEndPoint => server.BindEndPoint;
 
-        public IObservable<IActorSession> ActorClientConnected
-        {
-            get { return clientActorConnected.AsObservable(); }
-        }
-
-        public IObservable<ClientActorDisconnectedData> ActorClientDisconnected
-        {
-            get { return clientActorDisconnected.AsObservable(); }
-        }
+        public IObservable<IActorSession> ActorClientConnected => clientActorConnected.AsObservable();
+        public IObservable<ClientActorDisconnectedData> ActorClientDisconnected => clientActorDisconnected.AsObservable();
 
         public Task<IActorSession[]> GetCurrentClientSessions()
         {
@@ -106,15 +99,21 @@ namespace Stacks.Actors
                 if (isStopped)
                     return;
 
-                var now = DateTime.UtcNow;
-                var halfMinute = TimeSpan.FromMinutes(1.0);
+                var now = TimeSpan.FromMilliseconds(Environment.TickCount);
+                var oneMinute = TimeSpan.FromMinutes(1.0);
 
                 foreach (var kv in clientTimestamps)
                 {
                     var c = kv.Key;
                     var ts = kv.Value;
 
-                    if (now - ts > halfMinute)
+                    // Make sure that if tick count leaps we're ok.
+                    if (now <= ts)
+                    {
+                        continue;
+                    }
+
+                    if (now - ts > oneMinute)
                     {
                         c.Close();
                     }
@@ -140,13 +139,13 @@ namespace Stacks.Actors
                         if (header != ActorProtocolFlags.RequestReponse)
                             throw new Exception("Invalid actor protocol header. Expected request-response");
 
-                        bs = HandleRequestMessage(client, header, bs, s);
+                        HandleRequestMessage(client, header, bs, s);
                     }
                 }
             }
         }
 
-        private unsafe ArraySegment<byte> HandleRequestMessage(FramedClient client, ActorProtocolFlags flags, ArraySegment<byte> bs, byte* s)
+        private unsafe void HandleRequestMessage(FramedClient client, ActorProtocolFlags flags, ArraySegment<byte> bs, byte* s)
         {
             var reqId = *(long*) (s + 4);
             var msgNameLength = *(int*) (s + 12);
@@ -157,7 +156,6 @@ namespace Stacks.Actors
             {
                 HandleMessage(client, flags, reqId, msgName, ms);
             }
-            return bs;
         }
 
         private void ClientConnected(SocketClient socketClient)
@@ -189,6 +187,7 @@ namespace Stacks.Actors
                     }
                     catch
                     {
+                        // TODO: Ignored for now
                     }
                 }
             });
@@ -207,7 +206,7 @@ namespace Stacks.Actors
             });
 
             clients.Add(client);
-            clientTimestamps[client] = DateTime.UtcNow;
+            clientTimestamps[client] = TimeSpan.FromMilliseconds(Environment.TickCount);
 
             var session = new ActorSession(client);
             actorSessions[client] = session;
@@ -217,6 +216,7 @@ namespace Stacks.Actors
             }
             catch
             {
+                //TODO: Ignored for now
             }
         }
 
@@ -251,7 +251,7 @@ namespace Stacks.Actors
 
         private void HandlePingMessage(FramedClient client, ActorProtocolFlags flags, MemoryStream ms)
         {
-            clientTimestamps[client] = DateTime.UtcNow;
+            clientTimestamps[client] = TimeSpan.FromMilliseconds(Environment.TickCount);
 
             var req = serializer.Deserialize<Ping>(flags, "Ping", ms);
             AuxSendProtocolPacket(client, "Handshake", ActorProtocol.PingId,
@@ -268,10 +268,7 @@ namespace Stacks.Actors
             if (!handlers.TryGetValue(messageName, out handler))
             {
                 throw new Exception(
-                    string.Format(
-                        "Client {0} sent message for method {1}, which has no handler registered",
-                        client.RemoteEndPoint,
-                        messageName));
+                    $"Client {client.RemoteEndPoint} sent message for method {messageName}, which has no handler registered");
             }
 
             if (options.ActorSessionInjectionEnabled)
@@ -352,7 +349,7 @@ namespace Stacks.Actors
             }
         }
 
-        private unsafe void Send<R>(FramedClient client, ActorProtocolFlags flags, string messageName, long requestId, IReplyMessage<R> packet)
+        private unsafe void Send<R>(IFramedClient client, ActorProtocolFlags flags, string messageName, long requestId, IReplyMessage<R> packet)
         {
             using (var ms = new MemoryStream())
             {

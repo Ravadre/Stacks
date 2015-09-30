@@ -7,32 +7,39 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.Remote
 {
     public class ObservableTests
     {
-        private ObservableActorServer serverImpl;
+        private IObservableActor serverImpl;
+        private Subject<int> intStreamSubject;
+        private Subject<ComplexData> complexStreamSubject;
         private IActorServerProxy server;
         private IObservableActor client;
 
         public ObservableTests()
         {
-            serverImpl = new ObservableActorServer();
+            intStreamSubject = new Subject<int>();
+            complexStreamSubject = new Subject<ComplexData>();
+            serverImpl =
+                ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(new Args(intStreamSubject, complexStreamSubject));
         }
 
         [Fact]
         public void Client_should_receive_integer_stream_from_server_with_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             List<int> input = new List<int>() { 3, 1, 4, 1, 5 };
             List<int> output = new List<int>();
 
             client.IntStream.Subscribe(x => output.Add(x));
 
-            serverImpl.RunIntStream(input);
+            foreach (var x in input)
+                intStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -46,7 +53,7 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Client_should_receive_complex_data_stream_via_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             var input = new List<ComplexData>()
             {
@@ -57,7 +64,8 @@ namespace Stacks.Tests.Remote
 
             client.ComplexStream.Subscribe(x => output.Add(x));
 
-            serverImpl.RunComplexStream(input);
+            foreach (var x in input)
+                complexStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -71,14 +79,15 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Normal_methods_that_return_IObservable_should_be_allowed_as_observable()
         {
-            Utils.CreateServerAndClient<ObservableActorServer, IObservableActor>(serverImpl, out server, out client);
+            Utils.CreateServerAndClient(serverImpl, out server, out client);
 
             List<int> input = new List<int>() { 3, 1, 4, 1, 5 };
             List<int> output = new List<int>();
 
             client.IntMethod().Subscribe(x => output.Add(x));
 
-            serverImpl.RunIntStream(input);
+            foreach (var x in input)
+                intStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -125,7 +134,7 @@ namespace Stacks.Tests.Remote
         IObservable<int> IntMethod();
     }
 
-    public class ObservableActorServer : IObservableActor
+    public class ObservableActorServer : Actor, IObservableActor
     {
         private Subject<int> intStream;
         private Subject<ComplexData> complexStream;
@@ -141,9 +150,13 @@ namespace Stacks.Tests.Remote
         }
 
         public ObservableActorServer()
+            : this(new Subject<int>(), new Subject<ComplexData>())
+        { }
+
+        public ObservableActorServer(Subject<int> intStream, Subject<ComplexData> complexStream)
         {
-            intStream = new Subject<int>();
-            complexStream = new Subject<ComplexData>();
+            this.intStream = intStream;
+            this.complexStream = complexStream;
         }
 
         public void RunIntStream(IEnumerable<int> data)

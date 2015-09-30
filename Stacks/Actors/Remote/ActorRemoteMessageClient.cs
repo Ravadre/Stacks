@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -21,47 +22,23 @@ namespace Stacks.Actors
         protected readonly IFramedClient framedClient;
         protected readonly ActorPacketSerializer packetSerializer;
 
-        private AsyncSubject<Unit> handshakeCompleted;
-        private AsyncSubject<Exception> disconnectedSubject;
+        private readonly AsyncSubject<Unit> handshakeCompleted;
+        private readonly AsyncSubject<Exception> disconnectedSubject;
 
-        private Dictionary<int, Action<IntPtr, MemoryStream>> protocolHandlers;
+        private readonly Dictionary<int, Action<IntPtr, MemoryStream>> protocolHandlers;
 
-        private Timer pingTimer;
+        private readonly Timer pingTimer;
 
-        public IExecutor Executor
-        {
-            get { return framedClient.Executor; }
-        }
+        public IExecutor Executor => framedClient.Executor;
 
-        public bool IsConnected
-        {
-            get { return framedClient.IsConnected; }
-        }
+        public bool IsConnected => framedClient.IsConnected;
 
-        public IObservable<Unit> Connected
-        {
-            get { return this.handshakeCompleted.AsObservable(); }
-        }
+        public IObservable<Unit> Connected => handshakeCompleted.AsObservable();
+        public IObservable<Exception> Disconnected => disconnectedSubject.AsObservable();
+        public IObservable<int> Sent => framedClient.Sent;
 
-        public IObservable<Exception> Disconnected
-        {
-            get { return this.disconnectedSubject.AsObservable(); }
-        }
-
-        public IObservable<int> Sent
-        {
-            get { return this.framedClient.Sent; }
-        }
-
-        public IPEndPoint LocalEndPoint
-        {
-            get { return framedClient.LocalEndPoint; }
-        }
-
-        public IPEndPoint RemoteEndPoint
-        {
-            get { return framedClient.RemoteEndPoint; }
-        }
+        public IPEndPoint LocalEndPoint => framedClient.LocalEndPoint;
+        public IPEndPoint RemoteEndPoint => framedClient.RemoteEndPoint;
 
         public IObservable<Unit> Connect(IPEndPoint endPoint)
         {
@@ -85,19 +62,21 @@ namespace Stacks.Actors
             handshakeCompleted = new AsyncSubject<Unit>();
             disconnectedSubject = new AsyncSubject<Exception>();
 
-            protocolHandlers = new Dictionary<int, Action<IntPtr, MemoryStream>>();
-            protocolHandlers[Proto.ActorProtocol.HandshakeId] = HandleHandshakeMessage;
-            protocolHandlers[Proto.ActorProtocol.PingId] = HandlePingMessage;
+            protocolHandlers = new Dictionary<int, Action<IntPtr, MemoryStream>>
+            {
+                [ActorProtocol.HandshakeId] = HandleHandshakeMessage,
+                [ActorProtocol.PingId] = HandlePingMessage
+            };
 
             pingTimer = new Timer(OnPingTimer, null, Timeout.Infinite, Timeout.Infinite);
         }
 
         private void OnConnected(Unit _)
         {
-            AuxSendProtocolPacket(Proto.ActorProtocol.HandshakeId, "Handshake",
-                    new Proto.HandshakeRequest
+            AuxSendProtocolPacket(ActorProtocol.HandshakeId, "Handshake",
+                    new HandshakeRequest
                     {
-                        ClientProtocolVersion = Proto.ActorProtocol.Version
+                        ClientProtocolVersion = ActorProtocol.Version
                     });
         }
 
@@ -143,16 +122,12 @@ namespace Stacks.Actors
 
         private void OnMessageReceived(long requestId, MemoryStream ms)
         {
-            var h = MessageReceived;
-            if (h != null)
-                h(requestId, ms);
+            MessageReceived?.Invoke(requestId, ms);
         }
 
         private void OnObsMessageReceived(string name, MemoryStream ms)
         {
-            var h = ObsMessageReceived;
-            if (h != null)
-                h(name, ms);
+            ObsMessageReceived?.Invoke(name, ms);
         }
 
         private unsafe void HandleObservableMessage(byte* b, ArraySegment<byte> buffer)
@@ -178,13 +153,14 @@ namespace Stacks.Actors
 
             using (var ms = new MemoryStream(buffer.Array, buffer.Offset + 8, buffer.Count - 8, true, true))
             {
+                Debug.Assert(handler != null, "handler != null");
                 handler(new IntPtr(b), ms);
             }
         }
 
-        private unsafe void HandleHandshakeMessage(IntPtr p, MemoryStream ms)
+        private void HandleHandshakeMessage(IntPtr p, MemoryStream ms)
         {
-            var resp = packetSerializer.Deserialize<Proto.HandshakeResponse>(ActorProtocolFlags.StacksProtocol, "Handshake", ms);
+            var resp = packetSerializer.Deserialize<HandshakeResponse>(ActorProtocolFlags.StacksProtocol, "Handshake", ms);
 
             if (resp.ProtocolMatch)
             {
@@ -209,14 +185,13 @@ namespace Stacks.Actors
                         {
                             pingTimer.Change(Timeout.Infinite, Timeout.Infinite);
                             pingTimer.Dispose();
-                            return;
                         }
                         else
                         {
-                            AuxSendProtocolPacket(Proto.ActorProtocol.PingId, "Ping",
-                                new Proto.Ping
+                            AuxSendProtocolPacket(ActorProtocol.PingId, "Ping",
+                                new Ping
                                 {
-                                    Timestamp = System.Diagnostics.Stopwatch.GetTimestamp()
+                                    Timestamp = Stopwatch.GetTimestamp()
                                 });
                         }
                     }
@@ -241,11 +216,11 @@ namespace Stacks.Actors
                 {
                     int header = *(int*)b;
 
-                    if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.RequestReponse))
+                    if (Bit.IsSet(header, (int)ActorProtocolFlags.RequestReponse))
                         HandleReqRespMessage(b, buffer);
-                    else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.Observable))
+                    else if (Bit.IsSet(header, (int)ActorProtocolFlags.Observable))
                         HandleObservableMessage(b, buffer);
-                    else if (Bit.IsSet(header, (int)Proto.ActorProtocolFlags.StacksProtocol))
+                    else if (Bit.IsSet(header, (int)ActorProtocolFlags.StacksProtocol))
                         HandleProtocolMessage(b, buffer);
                     else
                         FailWithExnAndClose(new InvalidProtocolException("Server has incompatible protocol"));
@@ -274,7 +249,7 @@ namespace Stacks.Actors
 
                 fixed (byte* buf = buffer)
                 {
-                    *(Proto.ActorProtocolFlags*)buf = Proto.ActorProtocolFlags.RequestReponse;
+                    *(ActorProtocolFlags*)buf = ActorProtocolFlags.RequestReponse;
                     *(long*)(buf + 4) = requestId;
                     *(int*)(buf + 12) = msgNameBytes.Length;
                 }
@@ -285,7 +260,7 @@ namespace Stacks.Actors
 
         public void Close()
         {
-            this.framedClient.Close();
+            framedClient.Close();
         }
 
         private void AuxSendProtocolPacket<T>(int packetId, string packetName, T packet)
@@ -304,7 +279,7 @@ namespace Stacks.Actors
                 {
                     fixed (byte* b = buffer)
                     {
-                        *(Proto.ActorProtocolFlags*)b = Proto.ActorProtocolFlags.StacksProtocol;
+                        *(ActorProtocolFlags*)b = ActorProtocolFlags.StacksProtocol;
                         *(int*)(b + 4) = packetId;
                     }
                 }

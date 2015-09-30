@@ -30,7 +30,7 @@ namespace Stacks.Tests.Remote
         public async void Client_should_be_disconnected_after_over_30_seconds_after_last_ping()
         {
             var disconnected = new ManualResetEventSlim();
-            server = ActorServerProxy.Create<TestActor>("tcp://*:0");
+            server = ActorServerProxy.Create<ITestActor, TestActor>("tcp://*:0");
             int port = server.BindEndPoint.Port;
 
             client = new FramedClient(new SocketClient());
