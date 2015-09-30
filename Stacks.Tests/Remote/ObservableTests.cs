@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.Remote
@@ -14,16 +15,17 @@ namespace Stacks.Tests.Remote
     public class ObservableTests
     {
         private IObservableActor serverImpl;
-        private ObservableActorServer realServerImpl;
+        private Subject<int> intStreamSubject;
+        private Subject<ComplexData> complexStreamSubject;
         private IActorServerProxy server;
         private IObservableActor client;
 
         public ObservableTests()
         {
-            serverImpl = ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(() =>
-            {
-                return realServerImpl = new ObservableActorServer();
-            });
+            intStreamSubject = new Subject<int>();
+            complexStreamSubject = new Subject<ComplexData>();
+            serverImpl =
+                ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(new Args(intStreamSubject, complexStreamSubject));
         }
 
         [Fact]
@@ -36,7 +38,8 @@ namespace Stacks.Tests.Remote
 
             client.IntStream.Subscribe(x => output.Add(x));
 
-            realServerImpl.RunIntStream(input);
+            foreach (var x in input)
+                intStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -61,7 +64,8 @@ namespace Stacks.Tests.Remote
 
             client.ComplexStream.Subscribe(x => output.Add(x));
 
-            realServerImpl.RunComplexStream(input);
+            foreach (var x in input)
+                complexStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -82,7 +86,8 @@ namespace Stacks.Tests.Remote
 
             client.IntMethod().Subscribe(x => output.Add(x));
 
-            realServerImpl.RunIntStream(input);
+            foreach (var x in input)
+                intStreamSubject.OnNext(x);
 
             for (int i = 0; i < 10; ++i)
             {
@@ -145,9 +150,13 @@ namespace Stacks.Tests.Remote
         }
 
         public ObservableActorServer()
+            : this(new Subject<int>(), new Subject<ComplexData>())
+        { }
+
+        public ObservableActorServer(Subject<int> intStream, Subject<ComplexData> complexStream)
         {
-            intStream = new Subject<int>();
-            complexStream = new Subject<ComplexData>();
+            this.intStream = intStream;
+            this.complexStream = complexStream;
         }
 
         public void RunIntStream(IEnumerable<int> data)

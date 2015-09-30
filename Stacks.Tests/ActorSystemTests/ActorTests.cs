@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.ActorSystemTests
@@ -22,7 +23,7 @@ namespace Stacks.Tests.ActorSystemTests
             ()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
             await actor.AddThenStop(5, 6);
 
             Assert.True(stoppedEvent.Wait(1000));
@@ -85,7 +86,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task When_stopped_actor_should_receive_OnStopped_callback()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
             var root = ActorSystem.Default.GetActor<IRootActor>("root");
 
             Assert.Equal(1, root.Children.Count());
@@ -104,7 +105,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task If_actor_method_throws_actor_should_be_stopped()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
 
             await Assert.ThrowsAsync<Exception>(async () =>
             {
@@ -122,7 +123,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task When_actor_awaits_in_method_it_should_be_resumed_in_actor_context()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
 
             var res = await actor.Complicated(2, 3);
             Assert.Equal(0, res);
@@ -132,7 +133,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task If_actor_method_throws_after_awaits_it_should_throw_in_context_and_be_caught()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
 
             await Assert.ThrowsAsync<Exception>(async () =>
             {
@@ -150,8 +151,7 @@ namespace Stacks.Tests.ActorSystemTests
         public void If_actor_crashes_it_should_signal_Crashed_observable()
         {
             var crashedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(null),
-                "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>("ac");
 
             try
             {
@@ -175,7 +175,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var childCrashedEvent = new ManualResetEventSlim();
 
-            var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(() => new ParentActor(childCrashedEvent));
+            var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(new Args(childCrashedEvent));
 
             parent.CrashChild().Wait();
             Assert.True(childCrashedEvent.Wait(1000));
@@ -189,8 +189,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var childCrashedEvent = new ManualResetEventSlim();
 
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(null),
-              "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>("ac");
 
             actor.Crashed.Subscribe(exn =>
             {
@@ -235,7 +234,7 @@ namespace Stacks.Tests.ActorSystemTests
 
         protected override void OnStart()
         {
-            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), parent: this);
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(parent: this);
 
             child.Crashed.Subscribe(ChildCrashed);
 
@@ -248,7 +247,7 @@ namespace Stacks.Tests.ActorSystemTests
 
             childCrashed.Set();
             Assert.Equal(0, Children.Count());
-            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(() => new OnStartActor(), parent: this);
+            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(parent: this);
             child.Crashed.Subscribe(ChildCrashed);
             Assert.Equal(1, Children.Count());
         }

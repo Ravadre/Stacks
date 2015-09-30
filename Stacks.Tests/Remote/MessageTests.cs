@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ProtoBuf;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.Remote
@@ -22,13 +23,13 @@ namespace Stacks.Tests.Remote
         [Fact]
         public void Calling_method_should_call_it_on_server()
         {
-            MessageActor impl = null;
-            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(() => impl = new MessageActor());
+            var pingsCalled = new PingsCalled();
+            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(new Args(pingsCalled));
             Utils.CreateServerAndClient(sImpl, out server, out client);
 
             client.Ping().Wait();
 
-            Assert.Equal(1, impl.PingsCalled);
+            Assert.Equal(1, pingsCalled.Count);
         }
 
         [Fact]
@@ -230,20 +231,40 @@ namespace Stacks.Tests.Remote
         public int Result { get; set; }
     }
 
+    public class PingsCalled
+    {
+        public int Count { get; set; }
+
+        public void Incr()
+        {
+            lock (this)
+            {
+                ++Count;
+            }
+        }
+    }
+
     public class MessageActor : Actor, IMessageActor
     {
         private Random rng = new Random();
         private Dictionary<int, IFramedClient> clientCache = new Dictionary<int, IFramedClient>();
 
-        private volatile int pingsCalled;
+        private PingsCalled pingsCalled;
 
-        public int PingsCalled { get { return pingsCalled; } }
+        public MessageActor()
+            : this(new PingsCalled())
+        { }
+
+        public MessageActor(PingsCalled pingsCalled)
+        {
+            this.pingsCalled = pingsCalled;
+        }
 
         public async Task Ping()
         {
             await Context;
 
-            pingsCalled++;
+            pingsCalled.Incr();
         }
 
         public async Task<int> Random()

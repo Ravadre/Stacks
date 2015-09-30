@@ -96,6 +96,7 @@
     <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContextSettings.cs" />
     <Compile Include="Actors\ActorCtorGuardian.cs" />
+    <Compile Include="Actors\DI\Args.cs" />
     <Compile Include="Actors\DI\IDependencyResolver.cs" />
     <Compile Include="Actors\DI\StandardDependencyResolver.cs" />
     <Compile Include="Actors\PathUtils.cs" />

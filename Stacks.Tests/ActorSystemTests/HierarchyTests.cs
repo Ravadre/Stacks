@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
+using Stacks.Actors.DI;
 using Xunit;
 
 namespace Stacks.Tests.ActorSystemTests
@@ -165,12 +166,12 @@ namespace Stacks.Tests.ActorSystemTests
                 new ManualResetEventSlim(),
             };
 
-            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[0]));
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[0]));
             var c1 =
-                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[1]),
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[1]),
                     parent: parent);
             var c2 =
-                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(() => new OnStopActor(stoppedEvents[2]),
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[2]),
                     parent: c1);
 
             ActorSystem.Default.ResetSystem();

@@ -7,6 +7,7 @@ using Stacks.Actors;
 using System.Management;
 using System.Threading;
 using System.Diagnostics;
+using Stacks.Actors.DI;
 
 #pragma warning disable 4014
 
@@ -59,7 +60,7 @@ namespace Actors
                 var destination = ActorSystem.Default.CreateActor<IDestination, Destination>();
                 var ts = new TaskCompletionSource<bool>();
                 tasks.Add(ts.Task);
-                var client = ActorSystem.Default.CreateActor<IClient, Client>(() => new Client(destination, repeatsPerClient, ts));
+                var client = ActorSystem.Default.CreateActor<IClient, Client>(new Args { ["a"] = new Client(destination, repeatsPerClient, ts) });
                 clients.Add(client);
             }
 
