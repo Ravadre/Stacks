@@ -202,7 +202,7 @@ namespace Stacks.Actors
                 args = new Dictionary<object, object>();
             }
 
-            var actorImplementation = ResolveActorImplementation<T>(providerKey, args);
+            var actorImplementation = (T)ResolveActorImplementation<T>(interfaceType, providerKey, args);
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
 
             try
@@ -280,12 +280,12 @@ namespace Stacks.Actors
             return wrapperObject;
         }
 
-        private TImpl ResolveActorImplementation<TImpl>(string providerKey, IDictionary args)
+        private object ResolveActorImplementation<TImpl>(Type interfaceType, string providerKey, IDictionary args)
         {
             try
             {
                 ActorCtorGuardian.SetGuard();
-                return DependencyResolver.Resolve<TImpl>(providerKey, args);
+                return DependencyResolver.Resolve<TImpl>(interfaceType, providerKey, args);
             }
             finally
             {

@@ -10,7 +10,7 @@ namespace Stacks.Actors.DI
 {
     public class StandardDependencyResolver : IDependencyResolver
     {
-        public T Resolve<T>(string resolverKey, IDictionary arguments)
+        public object Resolve<T>(Type interfaceType, string resolverKey, IDictionary arguments)
         {
             var args = arguments.Values.Cast<object>().ToArray();
 

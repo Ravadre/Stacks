@@ -9,7 +9,7 @@ namespace Stacks.Actors.DI
 {
     public interface IDependencyResolver
     {
-        T Resolve<T>(string resolverKey, IDictionary arguments);
+        object Resolve<T>(Type interfaceType, string resolverKey, IDictionary arguments);
         void Release(IActor actor);
 
     }
