@@ -120,6 +120,24 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
+        public void Error_thrown_through_non_observable_property_should_stop_actor()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            Assert.Equal(actor.Path, child.Parent.Path);
+
+            Assert.Throws<Exception>(() =>
+            {
+                var x = actor.ThrowProp;
+            });
+
+            Assert.Equal(null, child.Parent);
+            Assert.Equal(true, child.Stopped);
+            Assert.Equal(true, actor.Stopped);
+        }
+
+        [Fact]
         public void Actor_containing_properties_should_be_wrapped_properties()
         {
             var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
@@ -134,15 +152,55 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.Equal(115, actor.Test(10));
         }
 
+        [Fact]
+        public void NoExceptionHandler_decorated_method_should_not_stop_actor_when_exn_is_thrown()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            Assert.Throws<Exception>(() =>
+            {
+                actor.ThrowNoHandler();
+            });
+
+            Assert.Equal(actor.Path, child.Parent.Path);
+            Assert.Equal(false, child.Stopped);
+            Assert.Equal(false, actor.Stopped);
+        }
+
+        [Fact]
+        public void NoExceptionHandler_decorated_property_should_not_stop_actor_when_exn_is_thrown()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            Assert.Equal(actor.Path, child.Parent.Path);
+
+            Assert.Throws<Exception>(() =>
+            {
+                var x = actor.ThrowNoHandlerProp;
+            });
+
+            Assert.Equal(actor.Path, child.Parent.Path);
+            Assert.Equal(false, child.Stopped);
+            Assert.Equal(false, actor.Stopped);
+        }
     }
 
     public interface ISyncActor : IActor
     {
+        
         int Test(int x);
         void NoOp();
         int Throw();
+        [NoExceptionHandler]
+        int ThrowNoHandler();
 
         int Prop { get; set; }
+        int ThrowProp { get; }
+        [NoExceptionHandler]
+        int ThrowNoHandlerProp { get; }
+        int SetOnly { set; }
     }
 
     public class SyncActor : Actor, ISyncActor
@@ -163,11 +221,40 @@ namespace Stacks.Tests.ActorSystemTests
             throw new Exception("test");
         }
 
+        public int ThrowNoHandler()
+        {
+            throw new Exception("test");
+        }
+
         protected override void OnStopped()
         {
         }
 
         public int Prop { get; set; }
+
+        public int ThrowProp
+        {
+            get
+            {
+                throw new Exception("test");
+            }
+        }
+
+        public int ThrowNoHandlerProp
+        {
+            get
+            {
+                throw new Exception("test");
+            }
+        }
+
+        public int SetOnly
+        {
+            set
+            {
+                
+            }
+        }
     }
 
 }

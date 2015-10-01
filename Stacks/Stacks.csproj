@@ -101,6 +101,7 @@
     <Compile Include="Actors\DI\Args.cs" />
     <Compile Include="Actors\DI\IDependencyResolver.cs" />
     <Compile Include="Actors\DI\StandardDependencyResolver.cs" />
+    <Compile Include="Actors\NoExceptionHandlerAttribute.cs" />
     <Compile Include="Actors\PathUtils.cs" />
     <Compile Include="Actors\ActorSettings.cs" />
     <Compile Include="Actors\ActorSystem.cs" />
