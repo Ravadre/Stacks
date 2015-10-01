@@ -85,6 +85,25 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.Equal("Custom-actor-name", actor.Name);
         }
+
+        [Fact]
+        public void Actor_containing_non_task_return_type_should_be_wrapped()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+        }
+    }
+
+    public interface ISyncActor
+    {
+        int Test(int x);
+    }
+
+    public class SyncActor : Actor, ISyncActor
+    {
+        public int Test(int x)
+        {
+            return x + 5;
+        }
     }
 
 }

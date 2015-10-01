@@ -14,7 +14,7 @@ namespace Stacks.Actors.CodeGen
         public bool CanCompile(MethodInfoMapping method)
         {
             var retType = method.InterfaceInfo.ReturnType;
-            return retType.GetGenericTypeDefinition() == typeof(IObservable<>);
+            return retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(IObservable<>);
         }
 
         public bool CanCompile(PropertyInfoMapping property)

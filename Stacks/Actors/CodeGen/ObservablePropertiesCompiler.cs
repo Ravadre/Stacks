@@ -17,7 +17,8 @@ namespace Stacks.Actors.CodeGen
 
         public bool CanCompile(PropertyInfoMapping property)
         {
-            return property.InterfaceInfo.PropertyType.GetGenericTypeDefinition() == typeof (IObservable<>);
+            var propType = property.InterfaceInfo.PropertyType;
+            return propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof (IObservable<>);
         }
 
         public void Implement(MethodInfoMapping method, Type actorInterface, TypeBuilder wrapperBuilder)
