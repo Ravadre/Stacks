@@ -39,8 +39,7 @@ namespace Stacks.Actors.CodeGen
             }
 
             var il = mBuilder.GetILGenerator();
-
-            var exnLocal = il.DeclareLocal(typeof (Exception));
+            il.DeclareLocal(typeof (Exception));
             
             il.BeginExceptionBlock();
             // try {

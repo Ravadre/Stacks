@@ -118,6 +118,22 @@ namespace Stacks.Tests.ActorSystemTests
             Assert.Equal(true, child.Stopped);
             Assert.Equal(true, actor.Stopped);
         }
+
+        [Fact]
+        public void Actor_containing_properties_should_be_wrapped_properties()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            Assert.Equal(15, actor.Test(10));
+        }
+
+        [Fact]
+        public void Actor_get_and_set_properties_should_be_wrapped()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            actor.Prop = 100;
+            Assert.Equal(115, actor.Test(10));
+        }
+
     }
 
     public interface ISyncActor : IActor
@@ -125,6 +141,8 @@ namespace Stacks.Tests.ActorSystemTests
         int Test(int x);
         void NoOp();
         int Throw();
+
+        int Prop { get; set; }
     }
 
     public class SyncActor : Actor, ISyncActor
@@ -132,7 +150,7 @@ namespace Stacks.Tests.ActorSystemTests
         private int state = 0;
         public int Test(int x)
         {
-            return x + 5 + state;
+            return x + 5 + state + Prop;
         }
 
         public void NoOp()
@@ -148,6 +166,8 @@ namespace Stacks.Tests.ActorSystemTests
         protected override void OnStopped()
         {
         }
+
+        public int Prop { get; set; }
     }
 
 }
