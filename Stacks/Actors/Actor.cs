@@ -25,6 +25,9 @@ namespace Stacks.Actors
         private readonly ManualResetEventSlim syncLock;
         private readonly ConcurrentDictionary<IActor, IActor> children;
 
+        private volatile bool stopped;
+        public bool Stopped => stopped;
+
         private readonly AsyncSubject<Exception> crashedSubject;
 
         public IObservable<Exception> Crashed => crashedSubject.AsObservable();
@@ -118,6 +121,7 @@ namespace Stacks.Actors
                     child.Stop().Wait();
                 }
 
+                stopped = true;
                 context.Stop().Wait();
                 
                 System.UnregisterActor(this);

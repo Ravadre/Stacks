@@ -100,12 +100,31 @@ namespace Stacks.Tests.ActorSystemTests
             actor.NoOp();
             Assert.Equal(10, actor.Test(4));
         }
+
+        [Fact]
+        public void Error_thrown_through_non_task_method_should_stop_actor()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            Assert.Equal(actor.Path, child.Parent.Path);
+
+            Assert.Throws<Exception>(() =>
+            {
+                actor.Throw();
+            });
+
+            Assert.Equal(null, child.Parent);
+            Assert.Equal(true, child.Stopped);
+            Assert.Equal(true, actor.Stopped);
+        }
     }
 
-    public interface ISyncActor
+    public interface ISyncActor : IActor
     {
         int Test(int x);
         void NoOp();
+        int Throw();
     }
 
     public class SyncActor : Actor, ISyncActor
@@ -119,6 +138,15 @@ namespace Stacks.Tests.ActorSystemTests
         public void NoOp()
         {
             ++state;
+        }
+
+        public int Throw()
+        {
+            throw new Exception("test");
+        }
+
+        protected override void OnStopped()
+        {
         }
     }
 

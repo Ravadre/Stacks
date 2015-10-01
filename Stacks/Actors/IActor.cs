@@ -8,6 +8,7 @@ namespace Stacks.Actors
 {
     public interface IActor
     {
+        bool Stopped { get; }
         string Name { get; }
         string Path { get; }
         IActor Parent { get; }

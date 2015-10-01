@@ -79,7 +79,8 @@ namespace Stacks.Tests.ActorSystemTests
             {
                 var actor2 = ActorSystem.Default.GetActor<ITestActorInterface>("Name");
             });
-        }   
+        }
+
     }
 
     public interface ITestActor

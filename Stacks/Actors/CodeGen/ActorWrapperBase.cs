@@ -15,6 +15,7 @@ namespace Stacks.Actors.CodeGen
         public IEnumerable<IActor> Children => actorImplementation.Children;
         public IObservable<Exception> Crashed => actorImplementation.Crashed; 
         public Task Stop() => actorImplementation.Stop();
+        public bool Stopped => actorImplementation.Stopped;
 
 
         public ActorWrapperBase(Actor actorImplementation)
