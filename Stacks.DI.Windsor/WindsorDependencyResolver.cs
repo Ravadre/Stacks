@@ -4,11 +4,11 @@ using Castle.Windsor;
 
 namespace Stacks.Actors.DI.Windsor
 {
-    public class DependencyResolver : IDependencyResolver
+    public class WindsorDependencyResolver : IDependencyResolver
     {
         private readonly IWindsorContainer container;
 
-        public DependencyResolver(IWindsorContainer container)
+        public WindsorDependencyResolver(IWindsorContainer container)
         {
             if (container == null)
                 throw new ArgumentNullException(nameof(container));
