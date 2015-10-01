@@ -22,14 +22,19 @@ namespace Stacks.Actors.CodeGen
             this.actorImplementation = actorImplementation;
         }
 
+        protected void StopActorAndNotifySystem(string methodName, Exception exception)
+        {
+            actorImplementation.StopBecauseOfError(methodName, exception);
+            actorImplementation.OnCrashed(exception);
+        }
+
         protected Task<T> HandleException<T>(string methodName, Task<T> task)
         {
             return task.ContinueWith(t =>
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.StopBecauseOfError(methodName, t.Exception);
-                    ActorImplementation.OnCrashed(t.Exception.InnerException);
+                    StopActorAndNotifySystem(methodName, t.Exception.InnerException);
                     throw t.Exception.InnerException;
                 }
                 return t.Result;
@@ -42,8 +47,7 @@ namespace Stacks.Actors.CodeGen
             {
                 if (t.Exception != null)
                 {
-                    actorImplementation.StopBecauseOfError(methodName, t.Exception);
-                    ActorImplementation.OnCrashed(t.Exception.InnerException);
+                    StopActorAndNotifySystem(methodName, t.Exception.InnerException);
                     throw t.Exception.InnerException;
                 }
             });

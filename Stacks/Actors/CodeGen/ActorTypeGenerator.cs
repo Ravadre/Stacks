@@ -29,7 +29,8 @@ namespace Stacks.Actors.CodeGen
             {
                 new TaskMethodsCompiler(),
                 new ObservablePropertiesCompiler(),
-                new ObservableMethodCompiler()
+                new ObservableMethodCompiler(),
+                new StandardMethodCompiler()
             };
 
         }

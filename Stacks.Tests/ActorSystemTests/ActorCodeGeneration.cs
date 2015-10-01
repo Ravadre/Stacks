@@ -90,19 +90,35 @@ namespace Stacks.Tests.ActorSystemTests
         public void Actor_containing_non_task_return_type_should_be_wrapped()
         {
             var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            Assert.Equal(15, actor.Test(10));
+        }
+
+        [Fact]
+        public void Void_method_should_be_wrapped_properly()
+        {
+            var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
+            actor.NoOp();
+            Assert.Equal(10, actor.Test(4));
         }
     }
 
     public interface ISyncActor
     {
         int Test(int x);
+        void NoOp();
     }
 
     public class SyncActor : Actor, ISyncActor
     {
+        private int state = 0;
         public int Test(int x)
         {
-            return x + 5;
+            return x + 5 + state;
+        }
+
+        public void NoOp()
+        {
+            ++state;
         }
     }
 

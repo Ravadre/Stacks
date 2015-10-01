@@ -20,7 +20,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;DEBUG_CODEGEN</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -96,6 +96,7 @@
     <Compile Include="Actors\Actor.cs" />
     <Compile Include="Actors\ActorContextSettings.cs" />
     <Compile Include="Actors\ActorCtorGuardian.cs" />
+    <Compile Include="Actors\CodeGen\StandardMethodCompiler.cs" />
     <Compile Include="Actors\DI\Args.cs" />
     <Compile Include="Actors\DI\IDependencyResolver.cs" />
     <Compile Include="Actors\DI\StandardDependencyResolver.cs" />
