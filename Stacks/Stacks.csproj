@@ -99,6 +99,7 @@
     <Compile Include="Actors\CodeGen\StandardMethodCompiler.cs" />
     <Compile Include="Actors\CodeGen\StandardPropertiesCompiler.cs" />
     <Compile Include="Actors\DI\Args.cs" />
+    <Compile Include="Actors\DI\IDependencyResolverHelper.cs" />
     <Compile Include="Actors\DI\IDependencyResolver.cs" />
     <Compile Include="Actors\NoExceptionHandlerAttribute.cs" />
     <Compile Include="Actors\PathUtils.cs" />

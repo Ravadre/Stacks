@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Stacks.Actors.CodeGen;
@@ -24,9 +25,13 @@ namespace Stacks.Actors
 
         public string SystemName { get; }
 
+        public IDependencyResolverHelper DI { get; private set; }
+
         private ConcurrentDictionary<string, IActor> registeredActors;
         private string autoGenActorName;
         private volatile IDependencyResolver dependencyResolver;
+
+        internal IDependencyResolver DependencyResolver => dependencyResolver;
 
         public void SetDependencyResolver(IDependencyResolver dependencyResolver)
         {
@@ -58,6 +63,7 @@ namespace Stacks.Actors
 
         private void Initialize()
         {
+            DI = new DependencyResolverHelper(this);
             registeredActors = new ConcurrentDictionary<string, IActor>();
             CreateActor<IRootActor, RootActor>("root");
             autoGenActorName = "$a";
@@ -81,24 +87,42 @@ namespace Stacks.Actors
                 " - It must begin with \"I\" followed by implementation name"));
         }
 
+        private MethodInfo GetCreateMethodForGuessedInterface<T>(Type interfaceType)
+        {
+            return GetType()
+                .GetMethods()
+                .First(
+                    m =>
+                        m.Name == "CreateActor" && m.IsGenericMethodDefinition && m.GetGenericArguments().Length == 2 &&
+                        m.GetParameters().Length == 3)
+                .MakeGenericMethod(interfaceType, typeof (T));
+        }
+
         public IActor CreateActor<T>(object[] args, string name = null, IActor parent = null)
           where T : Actor
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor<T>(interfaceType, args, name, parent);
+            return (IActor)(GetCreateMethodForGuessedInterface<T>(interfaceType)
+                            .Invoke(this, new object[] { args, name, parent }));
         }
         
         public IActor CreateActor<T>(string name = null, IActor parent = null)
-            where T : Actor
+            where T : Actor, new()
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor<T>(interfaceType, null, name, parent);
+            return (IActor)(GetCreateMethodForGuessedInterface<T>(interfaceType)
+                            .Invoke(this, new object[] { null, name, parent }));
         }
 
         public I CreateActor<I, TImpl>(object[] args, string name = null, IActor parent = null)
            where TImpl : Actor, I
         {
-            return (I)CreateActor<TImpl>(typeof(I), args, name, parent);
+            if (args == null)
+            {
+                args = new object[0];
+            }
+
+            return CreateActor(() => (I)Activator.CreateInstance(typeof(TImpl), args), name, parent);
         }
         
         /// <summary>
@@ -113,9 +137,44 @@ namespace Stacks.Actors
         /// <param name="name">Optional name. Only named actors are registered to the system.</param>
         /// <returns></returns>
         public I CreateActor<I, TImpl>(string name = null, IActor parent = null)
-            where TImpl: Actor, I
+            where TImpl: Actor, I, new()
         {
-            return (I)CreateActor<TImpl>(typeof (I), null, name, parent);
+            return CreateActor<I>(() => new TImpl(), name, parent);
+        }
+
+        public I CreateActor<I>(Func<I> actorProvider, string name, IActor parent)
+        {
+            if (parent == null && name != "root")
+            {
+                parent = GetActor<IRootActor>("root");
+            }
+
+            PathUtils.AssertNameForInvalidCharacters(name);
+
+            if (name == null)
+            {
+                name = GenerateActorName();
+            }
+
+            var actorImplementation = ResolveActorImplementation(actorProvider);
+            var actor = ValidateCreatedActorInstance<I>(actorImplementation);
+            var actorWrapper = CreateActorWrapper(actorImplementation, typeof(I));
+
+            try
+            {
+                var path = PathUtils.GetActorPath(parent, name);
+                RegisterActorToSystem(actorWrapper, path);
+                SetActorProperties(actor, actorWrapper, parent, name, path);
+                actor.Start();
+            }
+            catch (Exception)
+            {
+                UnregisterActor(actor);
+                throw;
+            }
+
+
+            return (I)actorWrapper;
         }
 
         /// <summary>
@@ -172,46 +231,18 @@ namespace Stacks.Actors
             return actor as I;
         }
 
-        private object CreateActor<T>(Type interfaceType, object[] args, string name, IActor parent)
-            where T: Actor
+
+        private Actor ValidateCreatedActorInstance<I>(object actorImplementation)
         {
-            Ensure.IsNotNull(interfaceType, nameof(interfaceType));
+            Ensure.IsNotNull(actorImplementation, nameof(actorImplementation));
 
-            if (parent == null && name != "root")
-            {
-                parent = GetActor<IRootActor>("root");
-            }
+            var actor = actorImplementation as Actor;
 
-            PathUtils.AssertNameForInvalidCharacters(name);
+            if (actor == null)
+                throw new Exception($"Object created by actor implementation does not inherit from {nameof(Actor)} class.\r\n" + 
+                    $"Actor interface: {typeof(I).Name}. Object type: {actorImplementation.GetType().Name}");
 
-            if (name == null)
-            {
-                name = GenerateActorName();
-            }
-
-            if (args == null)
-            {
-                args = new object[0];
-            }
-
-            var actorImplementation = ResolveActorImplementation<T>(args);
-            var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
-
-            try
-            {
-                var path = PathUtils.GetActorPath(parent, name);
-                RegisterActorToSystem(actorWrapper, path);
-                SetActorProperties(actorImplementation, actorWrapper, parent, name, path);
-                actorImplementation.Start();
-            }
-            catch (Exception)
-            {
-                UnregisterActor(actorImplementation);
-                throw;
-            }
-            
-
-            return actorWrapper;
+            return actor;
         }
 
         private string GenerateActorName()
@@ -272,20 +303,13 @@ namespace Stacks.Actors
             return wrapperObject;
         }
 
-        private TImpl ResolveActorImplementation<TImpl>(object[] args)
+        private I ResolveActorImplementation<I>(Func<I> actorProvider)
         {
             try
             {
                 ActorCtorGuardian.SetGuard();
-                
-                if (args.Length == 0)
-                {
-                    return Activator.CreateInstance<TImpl>();
-                }
-                else
-                {
-                    return (TImpl)Activator.CreateInstance(typeof(TImpl), args);
-                }
+
+                return actorProvider();
             }
             finally
             {

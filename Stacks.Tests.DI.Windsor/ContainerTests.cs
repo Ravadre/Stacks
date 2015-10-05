@@ -38,7 +38,7 @@ namespace Stacks.Actors.Tests.DI.Windsor
                 Component.For<IDataActor>().ImplementedBy<DataActor>()
             );
 
-            var actor = ActorSystem.Default.CreateActor<IDataActor, DataActor>(new Args { ["data"] = "a" });
+            var actor = ActorSystem.Default.DI.Resolve<IDataActor>(new Args { ["data"] = "a" });
             Assert.Equal("a", actor.GetData().Result);
         }
 
@@ -62,8 +62,8 @@ namespace Stacks.Actors.Tests.DI.Windsor
                 Component.For<IService1>().ImplementedBy<Service1>()
             );
 
-            var actor = ActorSystem.Default.CreateActor<IDepActor, DepActor>();
-            var actor2 = ActorSystem.Default.CreateActor<IDepActor, DepActor>();
+            var actor = ActorSystem.Default.DI.Resolve<IDepActor>();
+            var actor2 = ActorSystem.Default.DI.Resolve<IDepActor>();
             Assert.Equal(1, actor.ServiceCounter().Result);
             Assert.Equal(1, actor2.ServiceCounter().Result);
         }
@@ -76,8 +76,8 @@ namespace Stacks.Actors.Tests.DI.Windsor
                 Component.For<IService1>().ImplementedBy<Service1>().LifestyleTransient()
             );
 
-            var actor = ActorSystem.Default.CreateActor<IDepActor, DepActor>();
-            var actor2 = ActorSystem.Default.CreateActor<IDepActor, DepActor>();
+            var actor = ActorSystem.Default.DI.Resolve<IDepActor>();
+            var actor2 = ActorSystem.Default.DI.Resolve<IDepActor>();
             Assert.Equal(2, actor.ServiceCounter().Result);
             Assert.Equal(2, actor2.ServiceCounter().Result);
 
