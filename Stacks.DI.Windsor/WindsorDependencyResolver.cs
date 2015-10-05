@@ -48,9 +48,9 @@ namespace Stacks.Actors.DI.Windsor
                 Component.For<I>().UsingFactoryMethod(
                     (kernel, model, ctx) =>
                     {
-                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration", ctx.AdditionalArguments), null, null);
+                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration$" + typeof(TImpl).FullName, ctx.AdditionalArguments), null, null);
                     }),
-                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration")
+                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration$" + typeof(TImpl).FullName)
                 );
         }
 
@@ -62,9 +62,9 @@ namespace Stacks.Actors.DI.Windsor
                 Component.For<I>().UsingFactoryMethod(
                     (kernel, model, ctx) =>
                     {
-                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration", ctx.AdditionalArguments), null, null);
+                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration$" + typeof(TImpl).FullName, ctx.AdditionalArguments), null, null);
                     }).LifestyleTransient(),
-                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration").LifestyleTransient()
+                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration$" + typeof(TImpl).FullName).LifestyleTransient()
                 );
         }
 

@@ -101,6 +101,23 @@ namespace Stacks.Actors.Tests.DI.Windsor
             Assert.True(ReferenceEquals(ac, ac2));
             Assert.True(ReferenceEquals(c.Actor, ac));
         }
+
+        [Fact]
+        public void Multiple_actors_should_be_registered()
+        {
+            ActorSystem.Default.DI.Register<IDepActor, DepActor>();
+            ActorSystem.Default.DI.Register<IDepActor2, DepActor2>();
+        }
+    }
+
+    public interface IDepActor2
+    {
+        
+    }
+
+    public class DepActor2 : Actor, IDepActor2
+    {
+        
     }
 
     public interface IService2
