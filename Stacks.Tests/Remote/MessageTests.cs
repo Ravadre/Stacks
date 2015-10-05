@@ -24,7 +24,7 @@ namespace Stacks.Tests.Remote
         public void Calling_method_should_call_it_on_server()
         {
             var pingsCalled = new PingsCalled();
-            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(new Args(pingsCalled));
+            var sImpl = ActorSystem.Default.CreateActor<IMessageActor, MessageActor>(new object[] { pingsCalled });
             Utils.CreateServerAndClient(sImpl, out server, out client);
 
             client.Ping().Wait();

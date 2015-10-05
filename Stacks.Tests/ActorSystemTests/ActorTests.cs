@@ -23,7 +23,7 @@ namespace Stacks.Tests.ActorSystemTests
             ()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
             await actor.AddThenStop(5, 6);
 
             Assert.True(stoppedEvent.Wait(1000));
@@ -86,7 +86,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task When_stopped_actor_should_receive_OnStopped_callback()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
             var root = ActorSystem.Default.GetActor<IRootActor>("root");
 
             Assert.Equal(1, root.Children.Count());
@@ -105,7 +105,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task If_actor_method_throws_actor_should_be_stopped()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
 
             await Assert.ThrowsAsync<Exception>(async () =>
             {
@@ -123,7 +123,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task When_actor_awaits_in_method_it_should_be_resumed_in_actor_context()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
 
             var res = await actor.Complicated(2, 3);
             Assert.Equal(0, res);
@@ -133,7 +133,7 @@ namespace Stacks.Tests.ActorSystemTests
         public async Task If_actor_method_throws_after_awaits_it_should_throw_in_context_and_be_caught()
         {
             var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new Args(stoppedEvent), "ac");
+            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
 
             await Assert.ThrowsAsync<Exception>(async () =>
             {
@@ -175,7 +175,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var childCrashedEvent = new ManualResetEventSlim();
 
-            var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(new Args(childCrashedEvent));
+            var parent = ActorSystem.Default.CreateActor<IParentActor, ParentActor>(new object[] { childCrashedEvent });
 
             parent.CrashChild().Wait();
             Assert.True(childCrashedEvent.Wait(1000));

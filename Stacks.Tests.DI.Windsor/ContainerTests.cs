@@ -17,7 +17,7 @@ namespace Stacks.Actors.Tests.DI.Windsor
             container = new WindsorContainer();
             
             ActorSystem.Default.ResetSystem();
-            ActorSystem.Default.DependencyResolver = new WindsorDependencyResolver(container);
+            ActorSystem.Default.SetDependencyResolver(new WindsorDependencyResolver(container));
             Service1.ctr = 0;
         }
 

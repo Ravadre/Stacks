@@ -166,12 +166,12 @@ namespace Stacks.Tests.ActorSystemTests
                 new ManualResetEventSlim(),
             };
 
-            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[0]));
+            var parent = ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new object[] { stoppedEvents[0] });
             var c1 =
-                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[1]),
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new object[] { stoppedEvents[1] },
                     parent: parent);
             var c2 =
-                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new Args(stoppedEvents[2]),
+                ActorSystem.Default.CreateActor<ICalculatorActor, OnStopActor>(new object[] { stoppedEvents[2] },
                     parent: c1);
 
             ActorSystem.Default.ResetSystem();

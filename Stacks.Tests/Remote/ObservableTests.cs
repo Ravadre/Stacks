@@ -25,7 +25,7 @@ namespace Stacks.Tests.Remote
             intStreamSubject = new Subject<int>();
             complexStreamSubject = new Subject<ComplexData>();
             serverImpl =
-                ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(new Args(intStreamSubject, complexStreamSubject));
+                ActorSystem.Default.CreateActor<IObservableActor, ObservableActorServer>(new object[] { intStreamSubject, complexStreamSubject });
         }
 
         [Fact]

@@ -74,19 +74,19 @@ namespace PingPong
             //Warm up
             Console.Write("Local     first start time: ");
             await Benchmark(1, 1, 1, PrintStats.StartTimeOnly, -1, -1,
-                (idx, wfs) => Tuple.Create((IActorServerProxy)null, ActorSystem.Default.CreateActor<IDestination, Destination>(new Args(new Destination(wfs)))),
+                (idx, wfs) => Tuple.Create((IActorServerProxy)null, ActorSystem.Default.CreateActor<IDestination, Destination>(new object[] { new Destination(wfs) })),
                 (idx, d) => d,
-                (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new Args(new PingPongActor(wfs, dest, r, latch))));
+                (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new object[] { new PingPongActor(wfs, dest, r, latch) }));
             Console.WriteLine(" ms");
             Console.Write("Remote    first start time: ");
             await Benchmark(1, 1, 1, PrintStats.StartTimeOnly, -1, -1,
                 (idx, wfs) =>
                 {
-                    var dest = ActorSystem.Default.CreateActor<IDestination, Destination>(new Args(new Destination(wfs)));
+                    var dest = ActorSystem.Default.CreateActor<IDestination, Destination>(new object[] { new Destination(wfs)});
                     return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest), dest);
                 },
                 (idx, d) => ActorClientProxy.CreateActor<IDestination>("tcp://localhost:" + (54000 + idx)).Result,
-                (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new Args(new PingPongActor(wfs, dest, r, latch))));
+                (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new object[] { new PingPongActor(wfs, dest, r, latch)}));
             Console.WriteLine(" ms");
             Console.WriteLine();
 
@@ -101,9 +101,9 @@ namespace PingPong
                 foreach (var throughput in GetThroughputSettings())
                 {
                     var result1 = await Benchmark(throughput, processorCount, repeat, PrintStats.LineStart | PrintStats.Stats, bestThroughputLocalActor, redCountLocalActor,
-                       (idx, wfs) => Tuple.Create((IActorServerProxy)null, ActorSystem.Default.CreateActor<IDestination, Destination>(new Args(new Destination(wfs)))),
+                       (idx, wfs) => Tuple.Create((IActorServerProxy)null, ActorSystem.Default.CreateActor<IDestination, Destination>(new object[] { new Destination(wfs)})),
                        (idx, d) => d,
-                       (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new Args(new PingPongActor(wfs, dest, r, latch))));
+                       (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new object[] { new PingPongActor(wfs, dest, r, latch)}));
                     bestThroughputLocalActor = result1.Item2;
                     redCountLocalActor = result1.Item3;
                     Console.Write(",  ");
@@ -112,11 +112,11 @@ namespace PingPong
                         (idx, wfs) =>
                         {
                             var dest =
-                                ActorSystem.Default.CreateActor<IDestination, Destination>(new Args(new Destination(wfs)));
+                                ActorSystem.Default.CreateActor<IDestination, Destination>(new object[] { new Destination(wfs)});
                             return Tuple.Create(ActorServerProxy.Create("tcp://localhost:" + (54000 + idx), dest, serverProxyOptions), dest);
                         },
                         (idx, d) => ActorClientProxy.CreateActor<IDestination>("tcp://localhost:" + (54000 + idx)).Result,
-                        (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new Args(new PingPongActor(wfs, dest, r, latch))));
+                        (idx, wfs, dest, r, latch) => ActorSystem.Default.CreateActor<IPingPongActor, PingPongActor>(new object[] { new PingPongActor(wfs, dest, r, latch)}));
                     bestThroughputRemoteActor = result2.Item2;
                     redCountRemoteActor = result2.Item3;
                     Console.WriteLine();
@@ -155,7 +155,7 @@ namespace PingPong
 
             var countdown = new CountdownEvent(numberOfClients * 2);
             var waitForStartsActor =
-                ActorSystem.Default.CreateActor<IWaitForStarts, WaitForStarts>(new Args(new WaitForStarts(countdown)));
+                ActorSystem.Default.CreateActor<IWaitForStarts, WaitForStarts>(new object[] { new WaitForStarts(countdown)});
             var clients = new List<IPingPongActor>();
             var dests = new List<Tuple<IActorServerProxy, IDestination>>();
             var tasks = new List<Task>();

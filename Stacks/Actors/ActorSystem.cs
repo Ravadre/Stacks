@@ -26,7 +26,12 @@ namespace Stacks.Actors
 
         private ConcurrentDictionary<string, IActor> registeredActors;
         private string autoGenActorName;
-        public IDependencyResolver DependencyResolver { get; set; }
+        private volatile IDependencyResolver dependencyResolver;
+
+        public void SetDependencyResolver(IDependencyResolver dependencyResolver)
+        {
+            this.dependencyResolver = dependencyResolver;
+        }
 
         internal ActorSystem(string systemName)
         {
@@ -53,7 +58,6 @@ namespace Stacks.Actors
 
         private void Initialize()
         {
-            DependencyResolver = new StandardDependencyResolver();
             registeredActors = new ConcurrentDictionary<string, IActor>();
             CreateActor<IRootActor, RootActor>("root");
             autoGenActorName = "$a";
@@ -76,39 +80,27 @@ namespace Stacks.Actors
                 " - It must have the same name as implementation\r\n" +
                 " - It must begin with \"I\" followed by implementation name"));
         }
-        public IActor CreateActor<T>(IDictionary args, string name = null, IActor parent = null)
+
+        public IActor CreateActor<T>(object[] args, string name = null, IActor parent = null)
           where T : Actor
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor<T>(interfaceType, null, args, name, parent);
+            return (IActor)CreateActor<T>(interfaceType, args, name, parent);
         }
-
-        public IActor CreateActor<T>(string providerKey, IDictionary args, string name = null, IActor parent = null)
-            where T: Actor
-        {
-            var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor<T>(interfaceType, providerKey, args, name, parent);
-        }
-
+        
         public IActor CreateActor<T>(string name = null, IActor parent = null)
             where T : Actor
         {
             var interfaceType = GuessActorInterfaceType<T>();
-            return (IActor)CreateActor<T>(interfaceType, null, null, name, parent);
+            return (IActor)CreateActor<T>(interfaceType, null, name, parent);
         }
 
-        public I CreateActor<I, TImpl>(IDictionary args, string name = null, IActor parent = null)
+        public I CreateActor<I, TImpl>(object[] args, string name = null, IActor parent = null)
            where TImpl : Actor, I
         {
-            return (I)CreateActor<TImpl>(typeof(I), null, args, name, parent);
+            return (I)CreateActor<TImpl>(typeof(I), args, name, parent);
         }
-
-        public I CreateActor<I, TImpl>(string providerKey, IDictionary args, string name = null, IActor parent = null)
-            where TImpl: Actor, I
-        {
-            return (I) CreateActor<TImpl>(typeof (I), providerKey, args, name, parent);
-        }
-
+        
         /// <summary>
         /// Creates a new actor, using I as an interface.
         /// I must be an interface. TImpl must implement this interface. 
@@ -123,7 +115,7 @@ namespace Stacks.Actors
         public I CreateActor<I, TImpl>(string name = null, IActor parent = null)
             where TImpl: Actor, I
         {
-            return (I)CreateActor<TImpl>(typeof (I), null, null, name, parent);
+            return (I)CreateActor<TImpl>(typeof (I), null, name, parent);
         }
 
         /// <summary>
@@ -180,7 +172,7 @@ namespace Stacks.Actors
             return actor as I;
         }
 
-        private object CreateActor<T>(Type interfaceType, string providerKey, IDictionary args, string name, IActor parent)
+        private object CreateActor<T>(Type interfaceType, object[] args, string name, IActor parent)
             where T: Actor
         {
             Ensure.IsNotNull(interfaceType, nameof(interfaceType));
@@ -199,10 +191,10 @@ namespace Stacks.Actors
 
             if (args == null)
             {
-                args = new Dictionary<object, object>();
+                args = new object[0];
             }
 
-            var actorImplementation = (T)ResolveActorImplementation<T>(interfaceType, providerKey, args);
+            var actorImplementation = ResolveActorImplementation<T>(args);
             var actorWrapper = CreateActorWrapper(actorImplementation, interfaceType);
 
             try
@@ -280,12 +272,20 @@ namespace Stacks.Actors
             return wrapperObject;
         }
 
-        private object ResolveActorImplementation<TImpl>(Type interfaceType, string providerKey, IDictionary args)
+        private TImpl ResolveActorImplementation<TImpl>(object[] args)
         {
             try
             {
                 ActorCtorGuardian.SetGuard();
-                return DependencyResolver.Resolve<TImpl>(interfaceType, providerKey, args);
+                
+                if (args.Length == 0)
+                {
+                    return Activator.CreateInstance<TImpl>();
+                }
+                else
+                {
+                    return (TImpl)Activator.CreateInstance(typeof(TImpl), args);
+                }
             }
             finally
             {
@@ -318,7 +318,7 @@ namespace Stacks.Actors
             (actor.Parent as ActorWrapperBase)?.ActorImplementation.RemoveChild(actor.Wrapper);
             actor.SetParent(null);
 
-            DependencyResolver.Release(actor);
+            dependencyResolver?.Release(actor);
         }
     }
 }

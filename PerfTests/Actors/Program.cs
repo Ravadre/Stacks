@@ -60,7 +60,7 @@ namespace Actors
                 var destination = ActorSystem.Default.CreateActor<IDestination, Destination>();
                 var ts = new TaskCompletionSource<bool>();
                 tasks.Add(ts.Task);
-                var client = ActorSystem.Default.CreateActor<IClient, Client>(new Args { ["a"] = new Client(destination, repeatsPerClient, ts) });
+                var client = ActorSystem.Default.CreateActor<IClient, Client>(new object[] { new Client(destination, repeatsPerClient, ts) });
                 clients.Add(client);
             }
 
