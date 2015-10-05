@@ -1,4 +1,7 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Castle.MicroKernel.Context;
 using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 using Stacks.Actors.DI;
@@ -17,27 +20,22 @@ namespace Stacks.Actors.Tests.DI.Windsor
             container = new WindsorContainer();
             
             ActorSystem.Default.ResetSystem();
-            ActorSystem.Default.SetDependencyResolver(new WindsorDependencyResolver(container));
+            ActorSystem.Default.SetDependencyResolver(new WindsorDependencyResolver(ActorSystem.Default, container));
             Service1.ctr = 0;
         }
 
         [Fact]
         public void Actor_without_dependencies_should_be_resolved()
         {
-            container.Register(
-                Component.For<ICalculatorActor>().ImplementedBy<CalculatorActor>()
-            );
-
+            ActorSystem.Default.DI.Register<ICalculatorActor, CalculatorActor>();
             var actor = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
         }
 
         [Fact]
         public void Actor_registered_with_key_should_be_resolved()
         {
-            container.Register(
-                Component.For<IDataActor>().ImplementedBy<DataActor>()
-            );
-
+            ActorSystem.Default.DI.Register<IDataActor, DataActor>();
+            
             var actor = ActorSystem.Default.DI.Resolve<IDataActor>(new Args { ["data"] = "a" });
             Assert.Equal("a", actor.GetData().Result);
         }
@@ -57,8 +55,8 @@ namespace Stacks.Actors.Tests.DI.Windsor
         [Fact]
         public void Resolving_should_pickup_dependent_services()
         {
+            ActorSystem.Default.DI.Register<IDepActor, DepActor>();
             container.Register(
-                Component.For<IDepActor>().ImplementedBy<DepActor>(),
                 Component.For<IService1>().ImplementedBy<Service1>()
             );
 
@@ -71,8 +69,9 @@ namespace Stacks.Actors.Tests.DI.Windsor
         [Fact]
         public void Resolving_transient_service_should_create_new_instances()
         {
+            ActorSystem.Default.DI.RegisterTransient<IDepActor, DepActor>();
+
             container.Register(
-                Component.For<IDepActor>().ImplementedBy<DepActor>().LifestyleTransient(),
                 Component.For<IService1>().ImplementedBy<Service1>().LifestyleTransient()
             );
 
@@ -83,6 +82,39 @@ namespace Stacks.Actors.Tests.DI.Windsor
 
             Assert.Equal("$b", actor.Name);
             Assert.Equal("$c", actor2.Name);
+        }
+
+        [Fact]
+        public void When_service_is_resolved_with_actor_as_an_dependency_wrapper_should_be_returned()
+        {
+            ActorSystem.Default.DI.Register<IDepActor, DepActor>();
+
+            container.Register(
+                Component.For<IService1>().ImplementedBy<Service1>(),
+                Component.For<IService2>().ImplementedBy<Service2>()
+            );
+
+            var c = container.Resolve<IService2>();
+            var ac = container.Resolve<IDepActor>();
+            var ac2 = ActorSystem.Default.DI.Resolve<IDepActor>();
+
+            Assert.True(ReferenceEquals(ac, ac2));
+            Assert.True(ReferenceEquals(c.Actor, ac));
+        }
+    }
+
+    public interface IService2
+    {
+        IDepActor Actor { get; }
+    }
+
+    public class Service2 : IService2
+    {
+        public IDepActor Actor { get; }
+
+        public Service2(IDepActor actor)
+        {
+            Actor = actor;
         }
     }
 

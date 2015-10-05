@@ -25,7 +25,7 @@ namespace Stacks.Actors
 
         public string SystemName { get; }
 
-        public IDependencyResolverHelper DI { get; private set; }
+        public IDependencyInjectionHelper DI { get; private set; }
 
         private ConcurrentDictionary<string, IActor> registeredActors;
         private string autoGenActorName;
@@ -63,7 +63,7 @@ namespace Stacks.Actors
 
         private void Initialize()
         {
-            DI = new DependencyResolverHelper(this);
+            DI = new DependencyInjectionHelper(this);
             registeredActors = new ConcurrentDictionary<string, IActor>();
             CreateActor<IRootActor, RootActor>("root");
             autoGenActorName = "$a";

@@ -2,19 +2,23 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.Remoting.Messaging;
+using Castle.MicroKernel.ModelBuilder.Descriptors;
+using Castle.MicroKernel.Registration;
 using Castle.Windsor;
 
 namespace Stacks.Actors.DI.Windsor
 {
     public class WindsorDependencyResolver : IDependencyResolver
     {
+        private readonly ActorSystem actorSystem;
         private readonly IWindsorContainer container;
 
-        public WindsorDependencyResolver(IWindsorContainer container)
+        public WindsorDependencyResolver(ActorSystem actorSystem, IWindsorContainer container)
         {
             if (container == null)
                 throw new ArgumentNullException(nameof(container));
 
+            this.actorSystem = actorSystem;
             this.container = container;
         }
 
@@ -34,6 +38,34 @@ namespace Stacks.Actors.DI.Windsor
                 var dic = new Dictionary<string, object>(arguments);
                 return dic;
             }
+        }
+
+        public void Register<I, TImpl>()
+            where I: class
+            where TImpl: I
+        {
+            container.Register(
+                Component.For<I>().UsingFactoryMethod(
+                    (kernel, model, ctx) =>
+                    {
+                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration", ctx.AdditionalArguments), null, null);
+                    }),
+                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration")
+                );
+        }
+
+        public void RegisterTransient<I, TImpl>()
+          where I : class
+          where TImpl : I
+        {
+            container.Register(
+                Component.For<I>().UsingFactoryMethod(
+                    (kernel, model, ctx) =>
+                    {
+                        return actorSystem.CreateActor(() => kernel.Resolve<I>("$Stacks$Internal$Registration", ctx.AdditionalArguments), null, null);
+                    }).LifestyleTransient(),
+                Component.For<I>().ImplementedBy<TImpl>().Named("$Stacks$Internal$Registration").LifestyleTransient()
+                );
         }
 
         public T Resolve<T>(string resolverKey, IDictionary<string, object> arguments)
