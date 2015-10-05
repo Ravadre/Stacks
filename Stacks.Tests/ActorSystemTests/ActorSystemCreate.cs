@@ -81,6 +81,15 @@ namespace Stacks.Tests.ActorSystemTests
             });
         }
 
+        [Fact]
+        public void Using_DI_should_fail_if_no_dependency_resolver_was_set()
+        {
+            Assert.Throws<Exception>(() =>
+            {
+                ActorSystem.Default.DI.Resolve<ITestActor>();
+            });
+        }
+
     }
 
     public interface ITestActor

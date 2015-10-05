@@ -15,34 +15,4 @@ namespace Stacks.Actors.DI
             IActor parent = null);
         void Release<T>(T obj);
     }
-
-    class DependencyResolverHelper : IDependencyResolverHelper
-    {
-        private readonly ActorSystem actorSystem;
-
-        public DependencyResolverHelper(ActorSystem actorSystem)
-        {
-            this.actorSystem = actorSystem;
-        }
-
-        public T Resolve<T>(string name = null, IActor parent = null)
-        {
-            return actorSystem.CreateActor(() => actorSystem.DependencyResolver.Resolve<T>(null, null), name, parent);
-        }
-
-        public T Resolve<T>(IDictionary<string, object> args, string name = null, IActor parent = null)
-        {
-            return actorSystem.CreateActor(() => actorSystem.DependencyResolver.Resolve<T>(null, args), name, parent);
-        }
-
-        public T Resolve<T>(string resolveName, IDictionary<string, object> args = null, string name = null, IActor parent = null)
-        {
-            return actorSystem.CreateActor(() => actorSystem.DependencyResolver.Resolve<T>(resolveName, args), name, parent);
-        }
-
-        public void Release<T>(T obj)
-        {
-            actorSystem.DependencyResolver.Release(obj);
-        }
-    }
 }
