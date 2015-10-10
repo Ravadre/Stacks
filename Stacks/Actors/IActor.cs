@@ -16,6 +16,6 @@ namespace Stacks.Actors
 
         Task Stop();
 
-        IObservable<Exception> Crashed { get; } 
+        IObservable<Exception> ExceptionThrown { get; } 
     }
 }

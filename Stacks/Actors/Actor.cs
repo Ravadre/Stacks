@@ -28,9 +28,9 @@ namespace Stacks.Actors
         private volatile bool stopped;
         public bool Stopped => stopped;
 
-        private readonly AsyncSubject<Exception> crashedSubject;
+        private readonly Subject<Exception> exceptionThrownSubject;
 
-        public IObservable<Exception> Crashed => crashedSubject.AsObservable();
+        public IObservable<Exception> ExceptionThrown => exceptionThrownSubject.AsObservable();
        
         /// <summary>
         /// Constructor should NOT be used to initialize an actor, as it is still in process of creation and all
@@ -71,7 +71,7 @@ namespace Stacks.Actors
             isStoppingEvent = new ManualResetEventSlim();
             syncLock = new ManualResetEventSlim(true);
 
-            crashedSubject = new AsyncSubject<Exception>();
+            exceptionThrownSubject = new Subject<Exception>();
 
             executor.Error += ErrorOccuredInExecutor;
             context = new ActorContext(executor);
@@ -111,8 +111,8 @@ namespace Stacks.Actors
         public Task Stop()
         {
             // To avoid deadlocks, stopping procedure is called on threadpool. Is it necessary?
-            return Task.Run(() =>
-            {
+            //return Task.Run(() =>
+            //{
                 isStoppingEvent.Set();
                 syncLock.Wait();
 
@@ -134,7 +134,8 @@ namespace Stacks.Actors
                 {
                     // ignore
                 }
-            });
+            //});
+            return Task.FromResult(0);
         } 
 
 
@@ -197,10 +198,9 @@ namespace Stacks.Actors
             children.TryRemove(childActor, out a);
         }
 
-        internal void OnCrashed(Exception exn)
+        internal void OnExceptionThrown(Exception exn)
         {
-            crashedSubject.OnNext(exn);
-            crashedSubject.OnCompleted();
+            exceptionThrownSubject.OnNext(exn);
         }
 
         protected IActorContext Context => context;

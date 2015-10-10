@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Stacks.Actors;
 using Xunit;
@@ -102,10 +103,17 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
-        public void Error_thrown_through_non_task_method_should_stop_actor()
+        public void Error_thrown_through_non_task_method_should_signal_exception_thrown()
         {
+            var excThrown = new ManualResetEventSlim();
+
             var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
             var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            actor.ExceptionThrown.Subscribe(s =>
+            {
+                excThrown.Set();
+            });
 
             Assert.Equal(actor.Path, child.Parent.Path);
 
@@ -114,16 +122,21 @@ namespace Stacks.Tests.ActorSystemTests
                 actor.Throw();
             });
 
-            Assert.Equal(null, child.Parent);
-            Assert.Equal(true, child.Stopped);
-            Assert.Equal(true, actor.Stopped);
+            Assert.True(excThrown.IsSet);
         }
 
         [Fact]
-        public void Error_thrown_through_non_observable_property_should_stop_actor()
+        public void Error_thrown_through_non_observable_property_should_signal_exception_thrown()
         {
+            var excThrown = new ManualResetEventSlim();
+
             var actor = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>();
             var child = ActorSystem.Default.CreateActor<ISyncActor, SyncActor>(parent: actor);
+
+            actor.ExceptionThrown.Subscribe(s =>
+            {
+                excThrown.Set();
+            });
 
             Assert.Equal(actor.Path, child.Parent.Path);
 
@@ -132,9 +145,7 @@ namespace Stacks.Tests.ActorSystemTests
                 var x = actor.ThrowProp;
             });
 
-            Assert.Equal(null, child.Parent);
-            Assert.Equal(true, child.Stopped);
-            Assert.Equal(true, actor.Stopped);
+            Assert.True(excThrown.IsSet);
         }
 
         [Fact]

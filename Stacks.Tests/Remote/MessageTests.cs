@@ -97,7 +97,7 @@ namespace Stacks.Tests.Remote
         }
 
         [Fact]
-        public async Task If_actor_throws_on_server_and_is_stopped_it_should_throw_for_client_proxy()
+        public async Task If_actor_throws_on_server_it_should_propate_to_client()
         {
             Utils.CreateServerAndClient<IMessageActor, MessageActor>(out server, out client);
 
@@ -109,11 +109,6 @@ namespace Stacks.Tests.Remote
             {
                 Assert.Equal("Custom fail message", exc.InnerException.Message);
             }
-
-            await Assert.ThrowsAsync<Exception>(async () =>
-            {
-                await client.ValidateMonotonic(4, 6, 6, 7, 8, 10, 123, 312, 312);
-            });
         }
 
         [Fact]

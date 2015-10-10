@@ -102,24 +102,6 @@ namespace Stacks.Tests.ActorSystemTests
         }
 
         [Fact]
-        public async Task If_actor_method_throws_actor_should_be_stopped()
-        {
-            var stoppedEvent = new ManualResetEventSlim();
-            var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>(new object[] { stoppedEvent }, "ac");
-
-            await Assert.ThrowsAsync<Exception>(async () =>
-            {
-                await actor.Throw("test error");
-            });
-            
-            Assert.True(stoppedEvent.Wait(1000));
-            Assert.Throws<Exception>(() =>
-            {
-                var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
-            });
-        }
-
-        [Fact]
         public async Task When_actor_awaits_in_method_it_should_be_resumed_in_actor_context()
         {
             var stoppedEvent = new ManualResetEventSlim();
@@ -140,11 +122,7 @@ namespace Stacks.Tests.ActorSystemTests
                 await actor.ComplicatedThenThrow(5, 4);
             });
 
-            Assert.True(stoppedEvent.Wait(1000));
-            Assert.Throws<Exception>(() =>
-            {
-                var ac = ActorSystem.Default.GetActor<ICalculatorActor>("ac");
-            });
+            var ac = ActorSystem.Default.GetActor<ICalculatorExActor>("ac");
         }
 
         [Fact]
@@ -152,6 +130,11 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var crashedEvent = new ManualResetEventSlim();
             var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>("ac");
+
+            actor.ExceptionThrown.Subscribe(exn =>
+            {
+                crashedEvent.Set();
+            });
 
             try
             {
@@ -162,10 +145,6 @@ namespace Stacks.Tests.ActorSystemTests
                 // ignore
             }
 
-            actor.Crashed.Subscribe(exn =>
-            {
-                crashedEvent.Set();
-            });
 
             Assert.True(crashedEvent.Wait(1000));
         }
@@ -191,7 +170,7 @@ namespace Stacks.Tests.ActorSystemTests
 
             var actor = ActorSystem.Default.CreateActor<ICalculatorExActor, OnStartActor>("ac");
 
-            actor.Crashed.Subscribe(exn =>
+            actor.ExceptionThrown.Subscribe(exn =>
             {
                 Assert.IsType<Exception>(exn);
                 Assert.Equal("test-msg", exn.Message);
@@ -236,7 +215,7 @@ namespace Stacks.Tests.ActorSystemTests
         {
             var child = System.CreateActor<ICalculatorExActor, OnStartActor>(parent: this);
 
-            child.Crashed.Subscribe(ChildCrashed);
+            child.ExceptionThrown.Subscribe(ChildCrashed);
 
             Assert.Equal(1, Children.Count());
         }
@@ -246,10 +225,6 @@ namespace Stacks.Tests.ActorSystemTests
             await Context;
 
             childCrashed.Set();
-            Assert.Equal(0, Children.Count());
-            var child = System.CreateActor<ICalculatorExActor, OnStartActor>(parent: this);
-            child.Crashed.Subscribe(ChildCrashed);
-            Assert.Equal(1, Children.Count());
         }
 
         public async Task CrashChild()

@@ -13,7 +13,7 @@ namespace Stacks.Actors.CodeGen
         public string Path => actorImplementation.Path;
         public IActor Parent => actorImplementation.Parent;
         public IEnumerable<IActor> Children => actorImplementation.Children;
-        public IObservable<Exception> Crashed => actorImplementation.Crashed; 
+        public IObservable<Exception> ExceptionThrown => actorImplementation.ExceptionThrown; 
         public Task Stop() => actorImplementation.Stop();
         public bool Stopped => actorImplementation.Stopped;
 
@@ -25,8 +25,8 @@ namespace Stacks.Actors.CodeGen
 
         protected void StopActorAndNotifySystem(string methodName, Exception exception)
         {
-            actorImplementation.StopBecauseOfError(methodName, exception);
-            actorImplementation.OnCrashed(exception);
+            // actorImplementation.StopBecauseOfError(methodName, exception);
+            actorImplementation.OnExceptionThrown(exception);
         }
 
         protected Task<T> HandleException<T>(string methodName, Task<T> task)
