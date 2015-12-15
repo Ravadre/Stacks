@@ -181,6 +181,45 @@ namespace Stacks.Tests.ActorSystemTests
 
             Assert.True(childCrashedEvent.Wait(1000));
         }
+
+        [Fact]
+        public void Interface_hierarchy_should_be_supported()
+        {
+            var actor = ActorSystem.Default.CreateActor<IHierarchicalActor, HierarchicalActor>("testActor");
+
+            var actorAsBase = (IHierarchicalBaseActor) actor;
+
+            Assert.NotNull(actorAsBase);
+            Assert.Equal(6, actorAsBase.Base().Result);
+            Assert.Equal("testActor", actorAsBase.Name);
+        }
+    }
+
+    public interface IHierarchicalActor : IHierarchicalBaseActor
+    {
+        Task<int> Foo();
+    }
+
+    public interface IHierarchicalBaseActor : IActor
+    {
+        Task<int> Base();
+    }
+
+    public class HierarchicalActor : Actor, IHierarchicalActor
+    {
+        public async Task<int> Foo()
+        {
+            await Context;
+
+            return 5;
+        }
+
+        public async Task<int> Base()
+        {
+            await Context;
+
+            return 6;
+        }
     }
 
     public class ThrowsOnStartActor : Actor, ICalculatorActor
