@@ -245,16 +245,38 @@ namespace Stacks.Actors
             return actor;
         }
 
+        internal static string GenerateActorName(string lastName)
+        {
+            var n = lastName;
+            var idx = n.Length - 1;
+
+            while (idx >= 0)
+            {
+                var c = n[idx];
+                if (char.IsLetter(c))
+                {
+                    if (c != 'z')
+                    {
+                        var x = (char) (c + 1);
+                        return n.Substring(0, idx) + x + new string('a', n.Length - idx - 1);
+                    }
+                }
+                else
+                {
+                    return n.Substring(0, idx + 1) + new string('a', n.Length);
+                }
+
+                --idx;
+            }
+
+            return "a" + n;
+        }
+
         private string GenerateActorName()
         {
             lock (autoGenActorName)
             {
-                var n = autoGenActorName;
-                var prefix = n.Substring(0, n.Length - 1);
-                var x = n[n.Length - 1];
-                x = (char) (x + 1);
-                autoGenActorName = x > 'z' ? prefix + "aa" : prefix + x;
-                return autoGenActorName;
+                return autoGenActorName = GenerateActorName(autoGenActorName);
             }
         }
 

@@ -153,7 +153,7 @@ namespace Stacks.Tests.ActorSystemTests
                 actors[i] = ActorSystem.Default.CreateActor<ICalculatorActor, CalculatorActor>();
             }
 
-            Assert.Equal("/root/$aad/", actors[actors.Length - 1].Path);
+            Assert.Equal("/root/$bd/", actors[actors.Length - 1].Path);
         }
 
         [Fact]
