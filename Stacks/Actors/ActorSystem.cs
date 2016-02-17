@@ -29,6 +29,7 @@ namespace Stacks.Actors
 
         private ConcurrentDictionary<string, IActor> registeredActors;
         private string autoGenActorName;
+        private object genActorNameGate;
         private volatile IDependencyResolver dependencyResolver;
 
         internal IDependencyResolver DependencyResolver => dependencyResolver;
@@ -67,6 +68,7 @@ namespace Stacks.Actors
             registeredActors = new ConcurrentDictionary<string, IActor>();
             CreateActor<IRootActor, RootActor>("root");
             autoGenActorName = "$a";
+            genActorNameGate = new object();
         }
 
         private Type GuessActorInterfaceType<T>()
@@ -245,7 +247,7 @@ namespace Stacks.Actors
             return actor;
         }
 
-        internal static string GenerateActorName(string lastName)
+        private static string GenerateActorName(string lastName)
         {
             var n = lastName;
             var idx = n.Length - 1;
@@ -274,9 +276,11 @@ namespace Stacks.Actors
 
         private string GenerateActorName()
         {
-            lock (autoGenActorName)
+            lock (genActorNameGate)
             {
-                return autoGenActorName = GenerateActorName(autoGenActorName);
+                var newName = GenerateActorName(autoGenActorName);
+                autoGenActorName = newName;
+                return newName;
             }
         }
 
