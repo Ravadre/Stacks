@@ -135,8 +135,8 @@ namespace Stacks.Tests
 
             s.Start();
 
-            connected1.AssertWaitFor(300000);
-            connected2.AssertWaitFor(300000);
+            connected1.AssertWaitFor(3000);
+            connected2.AssertWaitFor(3000);
 
             server = s;
             client1 = lClient;

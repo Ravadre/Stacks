@@ -25,9 +25,9 @@ namespace RawStreamPerfTest
             c1.Disconnected.Subscribe(exn => { Console.WriteLine("C1 d/c " + exn); });
             c2.Disconnected.Subscribe(exn => { Console.WriteLine("C2 d/c " + exn); });
             
-            Measure(8192, 8192);
+            Measure(8192, 81920);
             Console.ReadLine();
-            Measure(8192, 8192 * 16);
+            Measure(8192, 81920 * 16);
 
             Console.ReadLine();
         }
@@ -50,9 +50,7 @@ namespace RawStreamPerfTest
                     totalRecv += bs.Count;
                     if (totalRecv == l * bufSize) received.Set();
                 };
-            Action<int> sent = (t) => Console.WriteLine("Sent ");
 
-            c1.Sent.Subscribe(sent);
             var recvHandle = c2.Received.Subscribe(recv);
            
 

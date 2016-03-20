@@ -27,7 +27,7 @@ namespace Stacks.Tcp
 
         private SocketAsyncEventArgs recvArgs;
         private byte[] recvBuffer;
-        private const int recvBufferLength = 8192;
+        private const int recvBufferLength = 16384;
 
         private SocketAsyncEventArgs sendArgs;
         private List<ArraySegment<byte>> toSendBuffers;
@@ -149,6 +149,8 @@ namespace Stacks.Tcp
             this.socket = new Socket(family,
                                      SocketType.Stream,
                                      ProtocolType.Tcp);
+            SetFastLoopbackOption(socket);
+            socket.NoDelay = true;
             this.wasConnected = false;
             this.connectionTimeoutTimer = new Timer(OnConnectionTimeout, null, -1, -1);
         }
@@ -286,6 +288,43 @@ namespace Stacks.Tcp
             isSending = false;
 
             CopyEndPoints();
+        }
+
+        private static void SetFastLoopbackOption(Socket socket)
+        {
+            //From StackExchange.Redis
+
+            // SIO_LOOPBACK_FAST_PATH (http://msdn.microsoft.com/en-us/library/windows/desktop/jj841212%28v=vs.85%29.aspx)
+            // Speeds up localhost operations significantly. OK to apply to a socket that will not be hooked up to localhost, 
+            // or will be subject to WFP filtering.
+            const int SIO_LOOPBACK_FAST_PATH = -1744830448;
+
+#if !CORE_CLR
+            // windows only
+            if (Environment.OSVersion.Platform == PlatformID.Win32NT)
+            {
+                // Win8/Server2012+ only
+                var osVersion = Environment.OSVersion.Version;
+                if (osVersion.Major > 6 || osVersion.Major == 6 && osVersion.Minor >= 2)
+                {
+                    byte[] optionInValue = BitConverter.GetBytes(1);
+                    socket.IOControl(SIO_LOOPBACK_FAST_PATH, optionInValue, null);
+                }
+            }
+#else
+            try
+            {
+                // Ioctl is not supported on other platforms at the moment
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    byte[] optionInValue = BitConverter.GetBytes(1);
+                    socket.IOControl(SIO_LOOPBACK_FAST_PATH, optionInValue, null);
+                }
+            }
+            catch (SocketException)
+            {
+            }
+#endif
         }
 
         internal void ScheduleStartReceiving()
