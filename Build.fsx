@@ -85,12 +85,22 @@ Target "Nuget" (fun _ ->
                    ("protobuf-net", "2.0.0.668") ]
                  "Stacks/stacks.nuspec"
     
-    BuildPackage "Stacks.DI.Windsor"
-                 ["Stacks.DI.Windsor.dll"]
-                 "Stacks.DI.Windsor.dll"
-                 [ ("Stacks", stacksVer );
+    BuildPackage "Stacks.Actors" 
+                 ["Stacks.Actors.dll";
+                  "Stacks.Actors.xml"] 
+                 "Stacks.Actors.dll"  
+                 [ ("Stacks", stacksVer);
+                   ("Microsoft.Tpl.Dataflow", "4.5.24" );
+                   ("Rx-Main", "2.2.5");
+                   ("protobuf-net", "2.0.0.668") ]
+                 "Stacks.Actors/stacks.actors.nuspec"
+    
+    BuildPackage "Stacks.Actors.DI.Windsor"
+                 ["Stacks.Actors.DI.Windsor.dll"]
+                 "Stacks.Actors.DI.Windsor.dll"
+                 [ ("Stacks.Actors", stacksVer );
                    ("Castle.Windsor", "3.3.0") ]
-                 "Stacks.DI.Windsor/stacks.di.windsor.nuspec"
+                 "Stacks.Actors.DI.Windsor/stacks.actors.di.windsor.nuspec"
 
     BuildPackage "Stacks.MessagePack"
                  ["Stacks.MessagePack.dll"]
