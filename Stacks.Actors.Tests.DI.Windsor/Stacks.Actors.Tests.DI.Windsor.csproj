@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Stacks.Actors.Tests.DI.Windsor</RootNamespace>
-    <AssemblyName>Stacks.Tests.DI.Windsor</AssemblyName>
+    <AssemblyName>Stacks.Actors.Tests.DI.Windsor</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
