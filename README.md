@@ -22,6 +22,12 @@ killing whole subtrees of actors when one of their ancestor encountered unhandle
 
 2.0 update is currently in alpha stage and as such, some changes might break an API.
 
+Since alpha 11 network and actor library have been split to 2 libraries: 
+* Stacks - network layer
+* Stacks.Actors - actor library using Stacks for remoting
+
+Stacks.DI.Windsor has been renamed to Stacks.Actors.DI.Windsor
+
 Build
 -----
 
