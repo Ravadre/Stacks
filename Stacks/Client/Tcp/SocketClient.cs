@@ -27,10 +27,10 @@ namespace Stacks.Tcp
 
         private SocketAsyncEventArgs recvArgs;
         private byte[] recvBuffer;
-        private const int recvBufferLength = 16384;
+        private const int recvBufferLength = 163840;
 
         private SocketAsyncEventArgs sendArgs;
-        private List<ArraySegment<byte>> toSendBuffers;
+        private LinkedList<List<ArraySegment<byte>>> toSendBuffers;
         private List<ArraySegment<byte>> sendingBuffers;
         private bool isSending;
 
@@ -281,7 +281,7 @@ namespace Stacks.Tcp
 
             sendArgs = new SocketAsyncEventArgs();
             sendArgs.Completed += DataSentCapture;
-            toSendBuffers = new List<ArraySegment<byte>>();
+            toSendBuffers = new LinkedList<List<ArraySegment<byte>>>();
             sendingBuffers = new List<ArraySegment<byte>>();
 
             disconnectionNotified = false;
@@ -469,7 +469,29 @@ namespace Stacks.Tcp
 
         private void AddBufferToBufferList(ArraySegment<byte> buffer)
         {
-            toSendBuffers.Add(buffer);
+            if (this.toSendBuffers.Count == 0)
+            {
+                this.toSendBuffers.AddLast(new List<ArraySegment<byte>>(1024)
+                {
+                    buffer
+                });
+            }
+            else
+            {
+                var lastBuffer = this.toSendBuffers.Last.Value;
+                if (lastBuffer.Count < 1024)
+                {
+                    lastBuffer.Add(buffer);
+                }
+                else
+                {
+                    var newBuffer = new List<ArraySegment<byte>>(1024)
+                    {
+                        buffer
+                    };
+                    this.toSendBuffers.AddLast(newBuffer);
+                }
+            }
         }
 
         private void StartSending()
@@ -478,24 +500,9 @@ namespace Stacks.Tcp
             {
                 if (toSendBuffers.Count == 0)
                     return;
-
-                if (this.toSendBuffers.Count > 1024)
-                {
-                    var toTake = Math.Min(1024, this.toSendBuffers.Count);
-                    var swap = this.toSendBuffers.Take(toTake).ToList();
-                    this.toSendBuffers.RemoveRange(0, toTake);
-                    this.sendingBuffers.Clear();
-                    this.sendingBuffers = swap;
-                }
-                else
-                {
-                    var tmp = this.sendingBuffers;
-                    this.sendingBuffers.Clear();
-                    this.sendingBuffers = this.toSendBuffers;
-                    this.toSendBuffers = tmp;
-                }
-
-                this.sendArgs.BufferList = this.sendingBuffers;
+                var sendingBuffer = this.toSendBuffers.First.Value;
+                this.toSendBuffers.RemoveFirst();
+                this.sendArgs.BufferList = sendingBuffer;
 
                 bool isPending = this.socket.SendAsync(sendArgs);
 

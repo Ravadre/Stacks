@@ -57,7 +57,6 @@ namespace Stacks.Tests
             var connected1 = new ManualResetEventSlim(false);
             var connected2 = new ManualResetEventSlim(false);
 
-            var ex = ServerHelpers.CreateExecutor();
             var s = ServerHelpers.CreateServer();
 
             SocketClient lClient = null;
@@ -71,7 +70,7 @@ namespace Stacks.Tests
 
             s.Started.Subscribe(_ =>
             {
-                var c = new SocketClient(ex);
+                var c = new SocketClient();
                 c.Connected.Subscribe(u =>
                 {
                     lClient = c;
