@@ -59,13 +59,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PingPong", "PingPong", "{F0
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "PerfTests\PingPong\PingPong.csproj", "{E46A1856-8BC9-4EB2-8B04-5E290872B211}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.DI.Windsor", "Stacks.DI.Windsor\Stacks.DI.Windsor.csproj", "{473A7898-24A3-44B5-A8C4-01C23F88EE1B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Actors.DI.Windsor", "Stacks.Actors.DI.Windsor\Stacks.Actors.DI.Windsor.csproj", "{473A7898-24A3-44B5-A8C4-01C23F88EE1B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DI", "DI", "{6543B6C2-75AC-409D-B976-C82B2C4A65B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Tests.DI.Windsor", "Stacks.Tests.DI.Windsor\Stacks.Tests.DI.Windsor.csproj", "{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Actors.Tests.DI.Windsor", "Stacks.Actors.Tests.DI.Windsor\Stacks.Actors.Tests.DI.Windsor.csproj", "{F5BA1DE4-D376-4FDD-8DAB-D7C3A8673307}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RawStreamManyClients", "PerfTests\SimpleThroughput\RawStreamManyClients\RawStreamManyClients.csproj", "{3582FB47-6715-44C6-9BDB-6BD863056A9F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Actors", "Stacks.Actors\Stacks.Actors.csproj", "{733E7987-F63E-4057-8454-F601C87E934B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stacks.Actors.Tests", "Stacks.Actors.Tests\Stacks.Actors.Tests.csproj", "{D07F335B-433E-4FBD-81AE-B98BAAE7144D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -231,6 +235,22 @@ Global
 		{3582FB47-6715-44C6-9BDB-6BD863056A9F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3582FB47-6715-44C6-9BDB-6BD863056A9F}.Release|x64.ActiveCfg = Release|Any CPU
 		{3582FB47-6715-44C6-9BDB-6BD863056A9F}.Release|x64.Build.0 = Release|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Debug|x64.Build.0 = Debug|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Release|x64.ActiveCfg = Release|Any CPU
+		{733E7987-F63E-4057-8454-F601C87E934B}.Release|x64.Build.0 = Release|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Debug|x64.Build.0 = Debug|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Release|x64.ActiveCfg = Release|Any CPU
+		{D07F335B-433E-4FBD-81AE-B98BAAE7144D}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

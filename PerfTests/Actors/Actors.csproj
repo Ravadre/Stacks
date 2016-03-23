@@ -88,6 +88,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Stacks.Actors\Stacks.Actors.csproj">
+      <Project>{733e7987-f63e-4057-8454-f601c87e934b}</Project>
+      <Name>Stacks.Actors</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Stacks\Stacks.csproj">
       <Project>{9e0d5c52-ad78-4a5e-82ad-289d272a111d}</Project>
       <Name>Stacks</Name>

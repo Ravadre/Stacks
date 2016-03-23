@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Stacks
 {
-    static class Ensure
+    public static class Ensure
     {
         public static void IsNotNull<T>(T o, string name) where T: class
         {

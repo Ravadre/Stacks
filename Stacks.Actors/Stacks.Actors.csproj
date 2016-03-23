@@ -4,14 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{473A7898-24A3-44B5-A8C4-01C23F88EE1B}</ProjectGuid>
+    <ProjectGuid>{733E7987-F63E-4057-8454-F601C87E934B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Stacks.Actors.DI.Windsor</RootNamespace>
-    <AssemblyName>Stacks.DI.Windsor</AssemblyName>
+    <RootNamespace>Stacks.Actors</RootNamespace>
+    <AssemblyName>Stacks.Actors</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,6 +20,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -29,18 +29,14 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Castle.Core, Version=3.3.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
-      <HintPath>..\packages\Castle.Core.3.3.0\lib\net45\Castle.Core.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Castle.Windsor, Version=3.3.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
-      <HintPath>..\packages\Castle.Windsor.3.3.0\lib\net45\Castle.Windsor.dll</HintPath>
+    <Reference Include="protobuf-net, Version=2.0.0.668, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\packages\protobuf-net.2.0.0.668\lib\net40\protobuf-net.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Collections" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
@@ -58,6 +54,10 @@
       <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Threading.Tasks.Dataflow, Version=4.5.24.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Tpl.Dataflow.4.5.24\lib\portable-net45+win8+wpa81\System.Threading.Tasks.Dataflow.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -66,20 +66,60 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\SharedAssemblyInfo.cs">
-      <Link>Properties\SharedAssemblyInfo.cs</Link>
-    </Compile>
-    <Compile Include="WindsorDependencyResolver.cs" />
+    <Compile Include="Actor.cs" />
+    <Compile Include="ActorContext.cs" />
+    <Compile Include="ActorContextSettings.cs" />
+    <Compile Include="ActorCtorGuardian.cs" />
+    <Compile Include="ActorSettings.cs" />
+    <Compile Include="ActorSystem.cs" />
+    <Compile Include="Bit.cs" />
+    <Compile Include="CodeGen\ActorTypeGenerator.cs" />
+    <Compile Include="CodeGen\ActorWrapperBase.cs" />
+    <Compile Include="CodeGen\FormattingExtensions.cs" />
+    <Compile Include="CodeGen\Helpers.cs" />
+    <Compile Include="CodeGen\IActorCompilerStrategy.cs" />
+    <Compile Include="CodeGen\ObservableMethodCompiler.cs" />
+    <Compile Include="CodeGen\ObservablePropertiesCompiler.cs" />
+    <Compile Include="CodeGen\StandardMethodCompiler.cs" />
+    <Compile Include="CodeGen\StandardPropertiesCompiler.cs" />
+    <Compile Include="CodeGen\TaskMethodsCompiler.cs" />
+    <Compile Include="DI\Args.cs" />
+    <Compile Include="DI\DependencyInjectionHelper.cs" />
+    <Compile Include="DI\IDependencyInjectionHelper.cs" />
+    <Compile Include="DI\IDependencyResolver.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="IActor.cs" />
+    <Compile Include="IActorContext.cs" />
+    <Compile Include="NoExceptionHandlerAttribute.cs" />
+    <Compile Include="PathUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <Compile Include="Remote\ActorClientProxy.cs" />
+    <Compile Include="Remote\ActorClientProxyOptions.cs" />
+    <Compile Include="Remote\ActorClientProxyTemplate.cs" />
+    <Compile Include="Remote\ActorPacketSerializer.cs" />
+    <Compile Include="Remote\ActorProtocol.cs" />
+    <Compile Include="Remote\ActorRemoteMessageClient.cs" />
+    <Compile Include="Remote\ActorServerProxy.cs" />
+    <Compile Include="Remote\ActorServerProxyOptions.cs" />
+    <Compile Include="Remote\ActorServerProxyTemplate.cs" />
+    <Compile Include="Remote\ClientActorDisconnectedData.cs" />
+    <Compile Include="Remote\CodeGen\ActorTypeBuilder.cs" />
+    <Compile Include="Remote\CodeGen\ClientActorTypeBuilder.cs" />
+    <Compile Include="Remote\CodeGen\ServerActorTypeBuilder.cs" />
+    <Compile Include="Remote\IActorClientProxy.cs" />
+    <Compile Include="Remote\IActorServerProxy.cs" />
+    <Compile Include="Remote\IActorSession.cs" />
+    <Compile Include="Remote\IReplyMessage.cs" />
+    <Compile Include="RootActor.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Stacks\Stacks.csproj">
       <Project>{9e0d5c52-ad78-4a5e-82ad-289d272a111d}</Project>
       <Name>Stacks</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

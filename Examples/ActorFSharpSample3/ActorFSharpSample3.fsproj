@@ -77,6 +77,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Stacks.Actors\Stacks.Actors.csproj">
+      <Name>Stacks.Actors</Name>
+      <Project>{733e7987-f63e-4057-8454-f601c87e934b}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\..\Stacks.FSharp\Stacks.FSharp.fsproj">
       <Name>Stacks.FSharp</Name>
       <Project>{eed900c6-16cd-47c6-a475-14ab25242db7}</Project>
