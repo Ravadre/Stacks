@@ -5,7 +5,7 @@ open System.Runtime.CompilerServices
 open System.Runtime.InteropServices
 
 [<assembly: AssemblyCompany("Marcin Deptuła")>]
-[<assembly: AssemblyCopyright("Copyright © Marcin Deptuła 2014")>]
+[<assembly: AssemblyCopyright("Copyright © Marcin Deptuła 2014-2016")>]
 [<assembly: AssemblyTrademark("")>]
 [<assembly: AssemblyCulture("")>]
 
