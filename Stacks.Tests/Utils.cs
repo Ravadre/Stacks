@@ -46,9 +46,9 @@ namespace Stacks.Tests
                                     new IPEndPoint(IPAddress.IPv6Any, 0));
         }
 
-        public static IExecutor CreateExecutor()
+        public static IExecutor CreateExecutor(string name = "")
         {
-            return new ActionBlockExecutor("", new ActionBlockExecutorSettings());
+            return new ActionBlockExecutor(name, new ActionBlockExecutorSettings());
         }
 
         public static void CreateServerAndConnectedClient(out SocketServer server,
@@ -98,7 +98,7 @@ namespace Stacks.Tests
             var connected1 = new ManualResetEventSlim(false);
             var connected2 = new ManualResetEventSlim(false);
 
-            var ex = ServerHelpers.CreateExecutor();
+            var ex = ServerHelpers.CreateExecutor("Client");
             var s = ServerHelpers.CreateServer();
 
             SslClient lClient = null;

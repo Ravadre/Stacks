@@ -154,8 +154,24 @@ namespace Stacks.Tcp
                     case SocketError.Success:
                         {
                             var sc = CreateSocketClient(e.AcceptSocket);
-                            OnConnected(sc);
-                            sc.ScheduleStartReceiving();
+
+                            // Putting ScheduleStartReceiving after connection is completed is vital here
+                            // Otherwise, there is a race condition for protocols on higher layers if
+                            // server sockets get their own scheduler.
+                            // Race condition:
+                            // * Client connects to server, we are accepting the socket
+                            // * OnConnected is scheduled, higher layer protocol is depending on it, so it can
+                            //   schedule its own logic
+                            // * Before OnConnected will run, ScheduleStartReceiving runs
+                            // * Client socket sends data to server socket and it is received
+                            // * Higher layer has a chance to run logic on Connected event,
+                            //   it connected to socket events, however, first bytes
+                            //   were already received, so higher layer does not receive
+                            //   appropriate event and the protocol's handshake is corrupted.
+                            OnConnected(sc).ContinueWith(_ =>
+                            {
+                                sc.ScheduleStartReceiving();
+                            });
 
                             StartAccepting();
                             break;
@@ -180,7 +196,7 @@ namespace Stacks.Tcp
 
         private SocketClient CreateSocketClient(Socket socket)
         {
-            return new SocketClient(this.executor, socket);
+            return new SocketClient(new ActionBlockExecutor(), socket);
         }
 
         private void OnStarted()
@@ -201,9 +217,9 @@ namespace Stacks.Tcp
                 });
         }
 
-        private void OnConnected(SocketClient client)
+        private Task<Unit> OnConnected(SocketClient client)
         {
-            executor.Enqueue(() =>
+            return executor.PostTask(() =>
                 {
                     this.connected.OnNext(client);
                 });
