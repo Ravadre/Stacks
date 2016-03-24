@@ -27,11 +27,10 @@ namespace Stacks.Tcp
 
         private SocketAsyncEventArgs recvArgs;
         private byte[] recvBuffer;
-        private const int recvBufferLength = 163840;
+        private const int recvBufferLength = 16384;
 
         private SocketAsyncEventArgs sendArgs;
         private LinkedList<List<ArraySegment<byte>>> toSendBuffers;
-        private List<ArraySegment<byte>> sendingBuffers;
         private bool isSending;
 
         private SocketAsyncEventArgs connectArgs;
@@ -282,7 +281,6 @@ namespace Stacks.Tcp
             sendArgs = new SocketAsyncEventArgs();
             sendArgs.Completed += DataSentCapture;
             toSendBuffers = new LinkedList<List<ArraySegment<byte>>>();
-            sendingBuffers = new List<ArraySegment<byte>>();
 
             disconnectionNotified = false;
             isSending = false;
