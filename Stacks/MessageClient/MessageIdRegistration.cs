@@ -8,7 +8,7 @@ namespace Stacks
 {
     public class MessageIdRegistration
     {
-        private ImperativeMessageIdCache cache;
+        private readonly ImperativeMessageIdCache cache;
 
         internal MessageIdRegistration()
         {

@@ -25,20 +25,9 @@ namespace Stacks
             this.client.Received.Subscribe(DataReceived);
         }
 
-        public override bool CanRead
-        {
-            get { return true; }
-        }
-
-        public override bool CanSeek
-        {
-            get { return false; }
-        }
-
-        public override bool CanWrite
-        {
-            get { return true; }
-        }
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
 
         public override void Flush()
         {

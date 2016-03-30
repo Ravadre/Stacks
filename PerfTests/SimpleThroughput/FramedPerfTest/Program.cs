@@ -30,7 +30,7 @@ namespace RawStreamPerfTest
 
             Measure(8192, 8192);
             Console.ReadLine();
-            Measure(8192, 8192 * 16);
+            Measure(8192, 8192 * 64);
 
             Console.ReadLine();
         }
@@ -53,11 +53,9 @@ namespace RawStreamPerfTest
             {
                 totalRecv += bs.Count;
                 ++totalPacketsRecv;
-                if (totalRecv == l * bufSize) received.Set();
+                if (totalPacketsRecv == packets) received.Set();
             };
-            Action<int> sent = (t) => Console.WriteLine("Sent ");
 
-            fc1.Sent.Subscribe(sent);
             var recvSub = fc2.Received.Subscribe(recv);
 
             for (int i = 0; i < l; ++i)
@@ -78,6 +76,7 @@ namespace RawStreamPerfTest
             Console.WriteLine("Elapsed s: " + elapsed);
             Console.WriteLine("Rate: " + (double)totalRecv * 8 / elapsed / 1024 / 1024 + " Mb/sec");
             Console.WriteLine("Sent {0} packets. Received: {1}", packets, totalPacketsRecv);
+            Console.WriteLine($"Rate: {(int)(packets / elapsed)} packets/sec");
         }
     }
 }

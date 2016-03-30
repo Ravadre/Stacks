@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reactive;
 using System.Reactive.Subjects;
-using System.Reactive.Linq; 
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,32 +48,54 @@ namespace Stacks.Tcp
         /// it can be treated as awaitable.
         /// </remarks>
         /// </summary>
-        public IObservable<Unit> Connected { get { return connected.AsObservable(); } }
+        public IObservable<Unit> Connected
+        {
+            get { return connected.AsObservable(); }
+        }
+
         /// <summary>
         /// Signalled, when socket is disconnected. Disconnected will never fail, as disconnection
         /// reason is given as a completion result.
         /// <remarks>Because Disconnected will signal completion immediately, it can be treated as awaitable.
         /// </remarks>
         /// </summary>
-        public IObservable<Exception> Disconnected { get { return disconnected.AsObservable(); } }
+        public IObservable<Exception> Disconnected
+        {
+            get { return disconnected.AsObservable(); }
+        }
+
         /// <summary>
         /// Signalled every time socket finishes sending bytes. This doesn't mean that
         /// they are received by remote endpoint. Parameter is number of bytes sent.
         /// </summary>
-        public IObservable<int> Sent { get { return sent.AsObservable(); } }
+        public IObservable<int> Sent
+        {
+            get { return sent.AsObservable(); }
+        }
+
         /// <summary>
         /// Signalled when bytes are received. Received bytes are given as a parameter.
         /// </summary>
-        public IObservable<ArraySegment<byte>> Received { get { return received.AsObservable(); } }
+        public IObservable<ArraySegment<byte>> Received
+        {
+            get { return received.AsObservable(); }
+        }
 
         /// <summary>
         /// Remote end point for socket. It is safe to access this property after disconnection.
         /// </summary>
-        public IPEndPoint RemoteEndPoint { get { return remoteEndPoint; } }
+        public IPEndPoint RemoteEndPoint
+        {
+            get { return remoteEndPoint; }
+        }
+
         /// <summary>
         /// Local socket end point. It is safe to access this property after disconnection.
         /// </summary>
-        public IPEndPoint LocalEndPoint { get { return localEndPoint; } }
+        public IPEndPoint LocalEndPoint
+        {
+            get { return localEndPoint; }
+        }
 
         private volatile bool disconnectionNotified;
         private volatile bool wasConnected;
@@ -86,12 +108,18 @@ namespace Stacks.Tcp
         /// Returned value might not be accurate if no communication 
         /// was done recently.
         /// </summary>
-        public bool IsConnected { get { return socket.Connected; } }
+        public bool IsConnected
+        {
+            get { return socket.Connected; }
+        }
 
         /// <summary>
         /// Access underlying executor.
         /// </summary>
-        public IExecutor Executor { get { return executor; } }
+        public IExecutor Executor
+        {
+            get { return executor; }
+        }
 
         /// <summary>
         /// Create new socket client using given executor and already connected socket.
@@ -105,8 +133,8 @@ namespace Stacks.Tcp
             this.wasConnected = true;
 
             EnsureSocketIsConnected();
-         
-            InitialiseConnectedSocket();           
+
+            InitialiseConnectedSocket();
         }
 
         private void EnsureSocketIsConnected()
@@ -120,21 +148,24 @@ namespace Stacks.Tcp
         /// </summary>
         public SocketClient()
             : this(new ActionBlockExecutor(), false)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates tcp socket client with default executor.
         /// </summary>
         public SocketClient(bool useIPv6)
             : this(new ActionBlockExecutor(), useIPv6)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates IPv4 tcp socket client with given executor.
         /// </summary>
         public SocketClient(IExecutor executor)
             : this(executor, false)
-        { }
+        {
+        }
 
         /// <summary>
         /// Creates tcp socket client with given executor.
@@ -144,10 +175,10 @@ namespace Stacks.Tcp
             InitialiseCommon(executor);
 
             var family = useIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
-            
+
             this.socket = new Socket(family,
-                                     SocketType.Stream,
-                                     ProtocolType.Tcp);
+                SocketType.Stream,
+                ProtocolType.Tcp);
             SetFastLoopbackOption(socket);
             socket.NoDelay = true;
             this.wasConnected = false;
@@ -191,36 +222,36 @@ namespace Stacks.Tcp
             this.wasConnected = true;
 
             executor.Enqueue(() =>
+            {
+                connectArgs = new SocketAsyncEventArgs();
+                connectArgs.Completed += ConnectedCapture;
+                connectArgs.RemoteEndPoint = remoteEndPoint;
+
+                bool isPending = this.socket.ConnectAsync(connectArgs);
+
+                if (!isPending)
+                    ConnectedCapture(this, this.connectArgs);
+                else
                 {
-                    connectArgs = new SocketAsyncEventArgs();
-                    connectArgs.Completed += ConnectedCapture;
-                    connectArgs.RemoteEndPoint = remoteEndPoint;
+                    connectionInProgress = true;
+                    connectionTimeoutTimer.Change(20000, -1);
+                }
+            });
 
-                    bool isPending = this.socket.ConnectAsync(connectArgs);
-
-                    if (!isPending)
-                        ConnectedCapture(this, this.connectArgs);
-                    else
-                    {
-                        connectionInProgress = true;
-                        connectionTimeoutTimer.Change(20000, -1);
-                    }
-                });
-            
             return Connected;
         }
 
         private void OnConnectionTimeout(object _)
         {
             executor.Enqueue(() =>
-                {
-                    if (!connectionInProgress)
-                        return;
+            {
+                if (!connectionInProgress)
+                    return;
 
-                    connectionInProgress = false;
-                    connectArgs.SocketError = SocketError.TimedOut;
-                    HandleConnected(null, connectArgs);
-                });
+                connectionInProgress = false;
+                connectArgs.SocketError = SocketError.TimedOut;
+                HandleConnected(null, connectArgs);
+            });
         }
 
         private void ConnectedCapture(object sender, SocketAsyncEventArgs e)
@@ -235,7 +266,7 @@ namespace Stacks.Tcp
                 // If connection is not in progress, then probably we
                 // have timed out, so make sure that only timed out error 
                 // will be processed.
-                if (!connectionInProgress && 
+                if (!connectionInProgress &&
                     e.SocketError != SocketError.TimedOut)
                     return;
 
@@ -262,7 +293,7 @@ namespace Stacks.Tcp
                 }
                 else
                 {
-                    HandleDisconnection(new SocketException((int)e.SocketError));
+                    HandleDisconnection(new SocketException((int) e.SocketError));
                 }
             }
             catch (Exception exc)
@@ -362,7 +393,7 @@ namespace Stacks.Tcp
                     if (transferred == 0)
                     {
                         //Graceful disconnection
-                        HandleDisconnection(new SocketException((int)SocketError.Disconnecting));
+                        HandleDisconnection(new SocketException((int) SocketError.Disconnecting));
 
                         return;
                     }
@@ -371,7 +402,7 @@ namespace Stacks.Tcp
                 }
                 else
                 {
-                    HandleDisconnection(new SocketException((int)e.SocketError));
+                    HandleDisconnection(new SocketException((int) e.SocketError));
                     return;
                 }
             }
@@ -386,83 +417,62 @@ namespace Stacks.Tcp
 
         private void CopyEndPoints()
         {
-            IPAddress ip;
-            if (this.socket.AddressFamily == AddressFamily.InterNetworkV6)
-                ip = IPAddress.IPv6Any;
-            else
-                ip = IPAddress.Any;
+            var ip = socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any;
 
-            this.remoteEndPoint = new IPEndPoint(ip, 0);
-            this.remoteEndPoint = (IPEndPoint)this.remoteEndPoint.Create(socket.RemoteEndPoint.Serialize());
-            this.localEndPoint = new IPEndPoint(ip, 0);
-            this.localEndPoint = (IPEndPoint)this.localEndPoint.Create(socket.LocalEndPoint.Serialize());
+            remoteEndPoint = new IPEndPoint(ip, 0);
+            remoteEndPoint = (IPEndPoint) remoteEndPoint.Create(socket.RemoteEndPoint.Serialize());
+            localEndPoint = new IPEndPoint(ip, 0);
+            localEndPoint = (IPEndPoint) localEndPoint.Create(socket.LocalEndPoint.Serialize());
         }
 
         private void SafeCloseSocket()
         {
-            try
-            {
-                socket.Shutdown(SocketShutdown.Both);
-            }
-            catch { }
+            try { socket.Shutdown(SocketShutdown.Both); }
+            catch { /* ignore */ }
 
-            try
-            {
-                socket.Close();
-            }
-            catch { }
+            try { socket.Close(); }
+            catch { /* ignore */ }
 
-            try
-            {
-                recvArgs.Dispose();
-            }
-            catch { }
+            try { recvArgs.Dispose(); }
+            catch { /* ignore */ }
 
-            try
-            {
-                sendArgs.Dispose();
-            }
-            catch { }
+            try { sendArgs.Dispose(); }
+            catch { /* ignore */ }
 
-            try
-            {
-                if (connectArgs != null)
-                    connectArgs.Dispose();
-            }
-            catch { }
+            try { connectArgs?.Dispose(); }
+            catch { /* ignore */ }
         }
 
         /// <summary>
         /// Enqueues buffer to be sent by the socket.
         /// </summary>
-        public void Send(byte[] buffer)
-        {
-            Send(new ArraySegment<byte>(buffer));
-        }
+        public void Send(byte[] buffer) => Send(new ArraySegment<byte>(buffer));
 
         /// <summary>
         /// Enqueues buffer to be sent by the socket.
+        /// Throws instantly only if buffer is null, otherwise, 
+        /// any errors will be signalled by socket events.
         /// </summary>
         public void Send(ArraySegment<byte> buffer)
         {
-            Ensure.IsNotNull(buffer.Array, "buffer.Array");
+            Ensure.IsNotNull(buffer.Array, $"{nameof(buffer)}.Array");
 
             executor.Enqueue(() =>
+            {
+                try
                 {
-                    try
-                    {
-                        AddBufferToBufferList(buffer);
+                    AddBufferToBufferList(buffer);
 
-                        if (!isSending)
-                        {
-                            StartSending();
-                        }
-                    }
-                    catch (Exception exn)
+                    if (!isSending)
                     {
-                        HandleDisconnection(exn);
+                        StartSending();
                     }
-                });
+                }
+                catch (Exception exn)
+                {
+                    HandleDisconnection(exn);
+                }
+            });
         }
 
         private void AddBufferToBufferList(ArraySegment<byte> buffer)
@@ -534,7 +544,7 @@ namespace Stacks.Tcp
                 }
                 else
                 {
-                    HandleDisconnection(new SocketException((int)e.SocketError));
+                    HandleDisconnection(new SocketException((int) e.SocketError));
                     return;
                 }
             }

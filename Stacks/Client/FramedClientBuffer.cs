@@ -1,15 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Stacks
 {
     public struct FramedClientBuffer
     {
         public ArraySegment<byte> Packet { get; private set; }
-        internal byte[] InternalBuffer { get { return Packet.Array; } }
+        internal byte[] InternalBuffer => Packet.Array;
 
         public FramedClientBuffer(int packetLength)
             : this()
@@ -27,7 +23,7 @@ namespace Stacks
             var intBuffer = new byte[buffer.Count + 4];
             PrepareHeader(intBuffer, buffer.Count + 4);
 
-            System.Buffer.BlockCopy(buffer.Array, buffer.Offset, intBuffer, 4, buffer.Count);
+            Buffer.BlockCopy(buffer.Array, buffer.Offset, intBuffer, 4, buffer.Count);
 
             var framedBuffer = new FramedClientBuffer();
             framedBuffer.Packet = new ArraySegment<byte>(intBuffer, 4, buffer.Count);

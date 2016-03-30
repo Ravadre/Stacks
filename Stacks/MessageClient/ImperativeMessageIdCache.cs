@@ -10,14 +10,12 @@ namespace Stacks
 {
     public class ImperativeMessageIdCache : IMessageIdCache
     {
-        private Dictionary<Type, int> messageIdByType;
-
-        ReaderWriterLockSlim rwLock;
+        private readonly Dictionary<Type, int> messageIdByType;
+        private readonly ReaderWriterLockSlim rwLock;
 
         public ImperativeMessageIdCache()
         {
             messageIdByType = new Dictionary<Type, int>();
-
             rwLock = new ReaderWriterLockSlim();
         }
 

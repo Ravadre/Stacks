@@ -16,42 +16,17 @@ namespace Stacks.Tcp
         protected readonly IStacksSerializer packetSerializer;
 
 
-        public IExecutor Executor
-        {
-            get { return framedClient.Executor; }
-        }
+        public IExecutor Executor => framedClient.Executor; 
+        public bool IsConnected => framedClient.IsConnected;
 
-        public bool IsConnected
-        {
-            get { return framedClient.IsConnected; }
-        }
+        public IObservable<Unit> Connected => framedClient.Connected;
+        public IObservable<Exception> Disconnected => framedClient.Disconnected;
+        public IObservable<int> Sent => framedClient.Sent;
 
-        public IObservable<Unit> Connected
-        {
-            get { return this.framedClient.Connected; }
-        }
+        public IPEndPoint LocalEndPoint => framedClient.LocalEndPoint;
+        public IPEndPoint RemoteEndPoint => framedClient.RemoteEndPoint;
 
-        public IObservable<Exception> Disconnected
-        {
-            get { return this.framedClient.Disconnected; }
-        }
-
-        public IObservable<int> Sent
-        {
-            get { return this.framedClient.Sent; }
-        }
-
-        public IPEndPoint LocalEndPoint
-        {
-            get { return framedClient.LocalEndPoint; }
-        }
-
-        public IPEndPoint RemoteEndPoint
-        {
-            get { return framedClient.RemoteEndPoint; }
-        }
-
-        public MessageClientBase(IFramedClient client, IMessageIdCache messageIdCache,
+        protected MessageClientBase(IFramedClient client, IMessageIdCache messageIdCache,
                                  IStacksSerializer packetSerializer)
         {
             this.framedClient = client;
@@ -59,15 +34,10 @@ namespace Stacks.Tcp
             this.packetSerializer = packetSerializer;
         }
 
-        public IObservable<Unit> Connect(IPEndPoint endPoint)
-        {
-            return framedClient.Connect(endPoint);
-        }
+        public IObservable<Unit> Connect(IPEndPoint endPoint) => framedClient.Connect(endPoint);
+        public IObservable<Unit> Connect(string endPoint) => Connect(IPHelpers.Parse(endPoint));
 
-        public IObservable<Unit> Connect(string endPoint)
-        {
-            return Connect(IPHelpers.Parse(endPoint));
-        }
+        public void Close() => framedClient.Close();
 
         public unsafe void Send<T>(T obj)
         {
@@ -105,11 +75,6 @@ namespace Stacks.Tcp
         public void PreLoadType(Type type)
         {
             messageIdCache.PreLoadType(type);
-        }
-
-        public void Close()
-        {
-            this.framedClient.Close();
-        }
+        } 
     }
 }

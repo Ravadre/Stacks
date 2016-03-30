@@ -11,16 +11,13 @@ namespace Stacks
 {
     public class MessageIdCache : IMessageIdCache
     {
-        private Dictionary<Type, int> messageIdByType;
-
-        ReaderWriterLockSlim rwLock;
+        private readonly Dictionary<Type, int> messageIdByType;
+        private readonly ReaderWriterLockSlim rwLock;
 
         public MessageIdCache()
         {
             messageIdByType = new Dictionary<Type, int>();
-
             rwLock = new ReaderWriterLockSlim();
-
         }
 
         public void PreLoadTypesFromAssemblyOfType<T>()
