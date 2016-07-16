@@ -27,14 +27,14 @@ namespace Stacks.Actors
             return proxyCreator.AuxCreate<T>(remoteEndPoint, options);
         }
 
-        public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint)
+        public static async Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint)
         {
-            return CreateProxy<T>(IPHelpers.Parse(endPoint));
+            return await CreateProxy<T>(await IPHelpers.Parse(endPoint));
         }
 
-        public static Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint, ActorClientProxyOptions options)
+        public static async Task<IActorClientProxy<T>> CreateProxy<T>(string endPoint, ActorClientProxyOptions options)
         {
-            return CreateProxy<T>(IPHelpers.Parse(endPoint), options);
+            return await CreateProxy<T>(await IPHelpers.Parse(endPoint), options);
         }
 
 
@@ -50,9 +50,9 @@ namespace Stacks.Actors
                         .Invoke(proxyCreator, new[] { remoteEndPoint });
         }
 
-        public static Task<IActorClientProxy> CreateProxy(Type actorType, string remoteEndPoint)
+        public static async Task<IActorClientProxy> CreateProxy(Type actorType, string remoteEndPoint)
         {
-            return CreateProxy(actorType, IPHelpers.Parse(remoteEndPoint));
+            return await CreateProxy(actorType, await IPHelpers.Parse(remoteEndPoint));
         }
 
 
@@ -73,14 +73,14 @@ namespace Stacks.Actors
             });
         }
 
-        public static Task<T> CreateActor<T>(string remoteEndPoint)
+        public static async Task<T> CreateActor<T>(string remoteEndPoint)
         {
-            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint));
+            return await CreateActor<T>(await IPHelpers.Parse(remoteEndPoint));
         }
 
-        public static Task<T> CreateActor<T>(string remoteEndPoint, ActorClientProxyOptions options)
+        public static async Task<T> CreateActor<T>(string remoteEndPoint, ActorClientProxyOptions options)
         {
-            return CreateActor<T>(IPHelpers.Parse(remoteEndPoint), options);
+            return await CreateActor<T>(await IPHelpers.Parse(remoteEndPoint), options);
         }
 
 

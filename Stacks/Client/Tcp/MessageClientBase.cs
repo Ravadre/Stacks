@@ -35,7 +35,7 @@ namespace Stacks.Tcp
         }
 
         public IObservable<Unit> Connect(IPEndPoint endPoint) => framedClient.Connect(endPoint);
-        public IObservable<Unit> Connect(string endPoint) => Connect(IPHelpers.Parse(endPoint));
+        public IObservable<Unit> Connect(string endPoint) => Connect(endPoint);
 
         public void Close() => framedClient.Close();
 

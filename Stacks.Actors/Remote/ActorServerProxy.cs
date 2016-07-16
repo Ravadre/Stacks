@@ -21,7 +21,7 @@ namespace Stacks.Actors
         public static IActorServerProxy Create<I, T>(string bindEndPoint)
             where T : Actor, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint),
+            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint).Result,
                 ActorServerProxyOptions.Default);
         }
 
@@ -34,7 +34,7 @@ namespace Stacks.Actors
         public static IActorServerProxy Create<I, T>(string bindEndPoint, ActorServerProxyOptions options)
             where T : Actor, I, new()
         {
-            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint), options);
+            return Create(ActorSystem.Default.CreateActor<I, T>(), IPHelpers.Parse(bindEndPoint).Result, options);
         }
 
         public static IActorServerProxy Create<I>(IPEndPoint bindEndPoint, I actorImpl)
@@ -44,7 +44,7 @@ namespace Stacks.Actors
 
         public static IActorServerProxy Create<I>(string bindEndPoint, I actorImpl)
         {
-            return Create(actorImpl, IPHelpers.Parse(bindEndPoint), ActorServerProxyOptions.Default);
+            return Create(actorImpl, IPHelpers.Parse(bindEndPoint).Result, ActorServerProxyOptions.Default);
         }
 
         public static IActorServerProxy Create<I>(IPEndPoint bindEndPoint, I actorImpl, ActorServerProxyOptions options)
@@ -54,7 +54,7 @@ namespace Stacks.Actors
 
         public static IActorServerProxy Create<I>(string bindEndPoint, I actorImpl, ActorServerProxyOptions options)
         {
-            return Create(actorImpl, IPHelpers.Parse(bindEndPoint), options);
+            return Create(actorImpl, IPHelpers.Parse(bindEndPoint).Result, options);
         }
 
         private static IActorServerProxy Create<I>(I actorImplementation, IPEndPoint bindEndPoint,

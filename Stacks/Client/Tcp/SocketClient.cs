@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Reactive;
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -207,7 +208,20 @@ namespace Stacks.Tcp
         /// </param>
         public IObservable<Unit> Connect(string remoteEndPoint)
         {
-            return Connect(IPHelpers.Parse(remoteEndPoint));
+            executor.Enqueue(() =>
+            {
+                try
+                {
+                    var host = IPHelpers.Parse(remoteEndPoint).Result;
+                    Connect(host);
+                }
+                catch (Exception exn)
+                {
+                    OnDisconnected(exn);
+                }
+            });
+
+            return Connected;
         }
 
         /// <summary>
