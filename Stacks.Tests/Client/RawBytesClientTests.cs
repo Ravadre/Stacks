@@ -87,6 +87,21 @@ namespace Stacks.Tests
         }
 
         [Fact]
+        public void Should_connect_from_dns()
+        {
+            var hasConnected = new ManualResetEventSlim();
+            var client = new SocketClient();
+            client.Connected.Subscribe(_ =>
+            {
+                hasConnected.Set();
+            });
+
+            client.Connect("tcp://google.com:80");
+
+            Assert.True(hasConnected.Wait(1000));
+        }
+
+        [Fact]
         public void Calling_connect_twice_should_throw_an_exception()
         {
             var hasConnected = new ManualResetEventSlim();

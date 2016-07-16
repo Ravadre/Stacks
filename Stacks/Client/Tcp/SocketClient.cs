@@ -212,8 +212,21 @@ namespace Stacks.Tcp
             {
                 try
                 {
-                    var host = IPHelpers.Parse(remoteEndPoint).Result;
-                    Connect(host);
+                    var host = IPHelpers.Parse(remoteEndPoint).ContinueWith(t =>
+                    {
+                        if (t.Exception != null)
+                        {
+                            OnDisconnected(t.Exception.InnerException);
+                        }
+                        else
+                        {
+                            executor.Enqueue(() =>
+                            {
+                                Connect(t.Result);
+                            });
+                            
+                        }
+                    });
                 }
                 catch (Exception exn)
                 {
